@@ -1,0 +1,36 @@
+.page {
+    margin-left: 300px;
+    margin-right: 200px;
+    padding-right: 5px;
+    display: flex;
+    background-color: var(--light-grey);
+    height: 100vh;
+}
+
+.chat_box {
+    margin-top: 75px;
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    width: 100%;
+    flex: 1;
+    overflow: scroll;
+    height: calc(100% - 150px);
+    overflow-x: hidden;
+}
+
+.scroll {
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+.chat_box::-webkit-scrollbar {
+    width: 7.5px;
+    background-color: var(--semi-deep-grey);
+    border-radius: 7.5px;
+}
+
+.chat_box::-webkit-scrollbar-thumb {
+  background: var(--deep-grey); 
+  border-radius: 7.5px;
+}

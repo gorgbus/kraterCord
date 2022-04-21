@@ -1,0 +1,50 @@
+.container {
+    background-color: var(--deep-grey);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 75px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+
+    .guild {
+        margin: 5px 0;
+        .avatar {
+            border-radius: 50%;
+            transition: ease-in-out 150ms;
+            cursor: pointer;
+        }
+
+        .avatar:hover {
+            border-radius: 30%;
+        }
+    }
+
+    .home {
+        margin: 5px 0;
+        background-color: var(--semi-deep-grey);
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        transition: ease-in-out 150ms;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .icon {
+            border-radius: 50%;
+            transition: ease-in-out 150ms;
+            cursor: pointer;
+            color: var(--grey-text-color);
+        }
+    }
+
+    .home:hover {
+        border-radius: 30%;
+        background-color: var(--primary-color);
+    }
+}

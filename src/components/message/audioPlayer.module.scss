@@ -1,0 +1,116 @@
+.container {
+    margin-top: 4px;
+    width: 400px;
+    height: 100px;
+    border-radius: 4px;
+    background-color: var(--semi-deep-grey);
+    border: solid 0.75px var(--deep-grey);
+
+
+    .info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 0;
+        padding-bottom: 0px;
+        margin: 6px 10px;
+
+        span {
+            color: var(--primary-color);
+            cursor: pointer;
+            flex: 1;
+        }
+
+        span:hover {
+            text-decoration: underline;
+        }
+
+        .download {
+            color: var(--darker-grey-text-color);
+            cursor: pointer;
+        }
+
+        .download:hover {
+            color: var(--grey-text-color);
+        }
+    }
+
+    .bar {
+        display: flex;
+        background-color: rgb(20, 20, 20);
+        color: var(--grey-text-color);
+        border-radius: 4px;
+        align-items: center;
+        justify-content: space-evenly;
+        margin: 10px;
+        padding: 5px 0;
+
+        .play {
+            color: var(--darker-grey-text-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .play:hover {
+            color: var(--grey-text-color);
+        }
+
+        .volume {
+            color: var(--darker-grey-text-color);
+            cursor: pointer;
+        }
+
+        .volume:hover {
+            color: var(--grey-text-color);
+        }
+
+        .timer {
+            font-size: 9.5pt;
+        }
+
+        .progress_bar {
+            --range: calc(var(--max) - var(--min));
+            --ratio: calc((var(--value) - var(--min)) / var(--range));
+            --sx: calc(0.5 * 6px + var(--ratio) * (100% - 6px));
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            max-width: 250px;
+            height: 6px;
+            border-radius: 5px;
+            background-color: var(--light-grey);
+            cursor: pointer;
+        }
+
+        .progress_bar:focus {
+            outline: none;
+        }
+
+        .progress_bar::-webkit-slider-runnable-track {
+            height: 6px;
+            -webkit-appearance: none;
+            color: var(--primary-color);
+            border-radius: 5px;
+            background: linear-gradient(var(--primary-color), var(--primary-color)) 0/var(--sx) 100% no-repeat, var(--light-grey);
+        }
+
+        .progress_bar::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            background-color: var(--primary-color);
+            height: 6px;
+            width: 6px;
+            border-radius: 50%;
+            transition: ease-in-out 100ms;
+        }
+
+        .progress_bar:hover::-webkit-slider-thumb {
+            height: 10px;
+            width: 10px;
+            margin-top: -2px;
+            background-color: #4252ff;
+        }
+    }
+}
