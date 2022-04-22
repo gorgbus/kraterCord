@@ -16,15 +16,17 @@ export async function authLoginController(req: Request, res: Response) {
         if (member.roles.includes("697507886326218902")) {
             res.redirect(`${HOST}/channels/@me`);
         } else {
-            req.session.destroy(err => {
+            res.redirect(`${HOST}`);
+            /*req.session.destroy(err => {
                 res.clearCookie('connect.sid', {path: '/'}).status(200).redirect(`${HOST}/noaccess`);
-            });
+            });*/
         }
     } catch (err) {
         console.log(err);
-        req.session.destroy(err => {
+        res.redirect(`${HOST}`);
+        /*req.session.destroy(err => {
             res.clearCookie('connect.sid', {path: '/'}).status(200).redirect(`${HOST}/noaccess`);
-        });
+        });*/
     }
 }
 
