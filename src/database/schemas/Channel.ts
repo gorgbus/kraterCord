@@ -22,7 +22,6 @@ const ChannelSchema = new Schema<channel>({
         {
             type: mongoose.SchemaTypes.ObjectId,
             ref: "members",
-            unique: true
         }
     ],
     guild: {
