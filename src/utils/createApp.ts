@@ -29,7 +29,6 @@ function createApp(): Express {
         saveUninitialized: false,
         proxy: true,
         cookie: {
-            domain: HOST!,
             maxAge: 60000 * 60 * 24 * 7,
             sameSite: PROD ? "none" : "lax",
             secure: PROD
