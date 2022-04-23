@@ -22,7 +22,7 @@ const ChannelPage: NextPageWithLayout<Props> = () => {
 
     const channelId = router.query.id as string;
 
-    const { data, isLoading, isError, error, fetchNextPage, hasNextPage } = useInfiniteQuery(
+    const { data, isLoading, isError, error, fetchNextPage, hasNextPage, isSuccess } = useInfiniteQuery(
         ["channel", channelId], 
         ({ pageParam = 0 }) => fetchMessages(channelId, pageParam),
         {
@@ -69,21 +69,25 @@ const ChannelPage: NextPageWithLayout<Props> = () => {
     return (
         <div className={style.page}>
             <div className={`${style.chat_box} ${style.scroll}`} onScroll={onScroll} ref={messageRef} onLoad={fetchMore} >
-                {data?.pages.map((group, i) => {
-                    return (
-                        <Fragment key={i}>
-                            {
-                                group.messages.map((msg, i, array) => {
-                                    //msg = array[(array.length - 1) - i]
+                {isSuccess ?
+                    data?.pages.map((group, i) => {
+                        return (
+                            <Fragment key={i}>
+                                {
+                                    group.messages.map((msg, i, array) => {
+                                        //msg = array[(array.length - 1) - i]
 
-                                    return (
-                                        <Message key={i} msg={msg}/>
-                                    )
-                                })
-                            }
-                        </Fragment>
-                    )
-                })}
+                                        return (
+                                            <Message key={i} msg={msg}/>
+                                        )
+                                    })
+                                }
+                            </Fragment>
+                        )
+                    })
+                    :
+                    <div></div>
+                }
             </div>
         </div>
     )

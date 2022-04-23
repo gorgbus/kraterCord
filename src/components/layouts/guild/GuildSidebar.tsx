@@ -41,6 +41,7 @@ const GuildSidebar: FC = () => {
 
         const peer = new Peer(user?._id, {
             host: PEERJS_HOST,
+            port: PEERJS_PORT,
             path: "peerjs"
         });
 
@@ -59,12 +60,13 @@ const GuildSidebar: FC = () => {
             stream = data;
         });
 
-        socket?.on("join_success", (id, _user) => {
+        socket?.on("join_success", async (id, _user) => {
             const call = peer.call(_user._id, stream);
-            const audio = new Audio()
-
-            call.on("stream", (userStream) => {
-                audio.srcObject = userStream;
+            const audio = new Audio();
+            
+            call.on("stream", (remoteStream) => {
+                console.log("ok");
+                audio.srcObject = remoteStream;
                 audio.play();
             });
 
@@ -73,7 +75,7 @@ const GuildSidebar: FC = () => {
             });
         });
 
-        peer.on("call", call => {
+        peer.on("call", (call) => {
             call.answer(stream);
 
             call.on("stream", (userStream) => {
@@ -143,11 +145,11 @@ const GuildSidebar: FC = () => {
         setChannels(data);
     }
 
-    if (isSuccess) {
-        return (
-            <div className={style.sidebar}>
-                <div className={style.channels}>
-                    {data?.map((chnl: channel, i: number) => {
+    return (
+        <div className={style.sidebar}>
+            <div className={style.channels}>
+                {
+                    data?.map((chnl: channel, i: number) => {
                         return (
                             <div key={i}>
                                 <div className={`${style.channel} ${chnl === channel ? `${style.sel_channel}` : `${style.nosel_channel}`}`} onClick={() => handleRedirect(chnl)}>
@@ -180,13 +182,11 @@ const GuildSidebar: FC = () => {
                                 })}
                             </div>
                         )
-                    })}
-                </div>
+                    })
+                }
             </div>
-        )
-    }
-
-    return <div>Error</div>;
+        </div>
+    )
 }
 
 export default GuildSidebar;

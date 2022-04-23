@@ -18,7 +18,7 @@ type data = {
 }
 
 export const fetchGuildChannels = async (guildId: string) => {
-    if (!guildId) return {};
+    if (!guildId) return [];
 
     try {
         const response = await axios.get(`${API_URl}/channels/${guildId}`, { withCredentials: true });
@@ -26,7 +26,7 @@ export const fetchGuildChannels = async (guildId: string) => {
         return response.data;
     } catch (err) {
         console.log(err);
-        return {};
+        return [];
     }
 }
 
