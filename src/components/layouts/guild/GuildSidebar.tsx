@@ -41,7 +41,6 @@ const GuildSidebar: FC = () => {
 
         const peer = new Peer(user?._id, {
             host: PEERJS_HOST,
-            port: PEERJS_PORT,
             path: "peerjs"
         });
 

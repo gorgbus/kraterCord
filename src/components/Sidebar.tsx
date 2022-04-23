@@ -6,13 +6,13 @@ import { io } from "socket.io-client";
 import { SOCKET_ENDPOINT } from "../utils/constants";
 import { ChannelContext } from "../utils/contexts/ChannelContext";
 import { UserContext } from "../utils/contexts/UserContext";
-import { guild, infQuery } from "../utils/types";
+import { guild, infQuery, member } from "../utils/types";
 import { HiHome } from "react-icons/hi";
 import style from "./sidebar.module.scss";
 
 const Sidebar: FC = () => {
     const { guilds, setSocket, socket, setScroll, setChannelType } = useContext(ChannelContext);
-    const { user } = useContext(UserContext);
+    const { user, setFriendReqs, friendReqs, friends, setFriends, dms, setDms } = useContext(UserContext);
 
     const router = useRouter();
     const queryClient = useQueryClient();
@@ -64,6 +64,35 @@ const Sidebar: FC = () => {
                     queryClient.setQueryData(["channel", data.id], cache);
                 }
             });
+
+            _socket.on("fr_accepted", (fr: member) => {
+                if (user?._id === fr._id) return;
+
+                setFriendReqs(friendReqs.filter(f => f.friend._id !== fr._id));
+                setFriends([...friends, fr]);
+            });
+
+            _socket.on("fr_declined", (fr: member) => {
+                if (user?._id === fr._id) return;
+
+                setFriendReqs(friendReqs.filter(f => f.friend._id !== fr._id));
+            });
+
+            _socket.on("fr_reqd", (fr: member) => {
+                if (user?._id === fr._id) return;
+                
+                setFriendReqs([...friendReqs, { friend: fr, type: "in" }]);
+            });
+
+            _socket.on("fr_removed", (fr: member) => {
+                if (user?._id === fr._id) return;
+
+                setFriends(friends.filter(f => f._id !== fr._id));
+            });
+
+            _socket.on("dm_created", (dm) => {
+                setDms([...dms, dm]);
+            })
         }
 
     }, []);

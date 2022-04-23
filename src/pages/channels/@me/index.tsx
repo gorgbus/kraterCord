@@ -93,41 +93,16 @@ const MainPage: NextPageWithLayout<any> = () => {
 
         if (response.data) {
             setChannel(response.data);
+            const friend = users[0] === user?._id ? users[1] : users[0];
 
-            if (!dms.find(ch => ch._id === response.data._id)) setDms([...dms, response.data]);
-
+            if (!dms.find(ch => ch._id === response.data._id)) {
+                setDms([...dms, response.data]);
+                socket?.emit("dm_create", friend, response.data);
+            }
+            
             router.push(`/channels/@me/${response.data._id}`, `/channels/@me/${response.data._id}`, { shallow: true });
         }
     }
-
-    useEffect(() => {
-        if (socket) {
-            socket.on("fr_accepted", (fr: member) => {
-                if (user?._id === fr._id) return;
-
-                setFriendReqs(friendReqs.filter(f => f.friend._id !== fr._id));
-                setFriends([...friends, fr]);
-            });
-
-            socket.on("fr_declined", (fr: member) => {
-                if (user?._id === fr._id) return;
-
-                setFriendReqs(friendReqs.filter(f => f.friend._id !== fr._id));
-            });
-
-            socket.on("fr_reqd", (fr: member) => {
-                if (user?._id === fr._id) return;
-                
-                setFriendReqs([...friendReqs, { friend: fr, type: "in" }]);
-            });
-
-            socket.on("fr_removed", (fr: member) => {
-                if (user?._id === fr._id) return;
-
-                setFriends(friends.filter(f => f._id !== fr._id));
-            });
-        }
-    }, []);
 
     switch(friendBar) {
         case "friends":
