@@ -23,7 +23,7 @@ const GuildSidebar: FC = () => {
     const guildId = router.query._id as string;
     const channelId = router.query.id as string;
 
-    const { data, isFetched } = useQuery(["guild", guildId], () => fetchGuildChannels(guildId));
+    const { data, isFetched, isSuccess, isError } = useQuery(["guild", guildId], () => fetchGuildChannels(guildId));
 
     const [_peer, setPeer] = useState<Peer>();
 
@@ -135,50 +135,58 @@ const GuildSidebar: FC = () => {
         });
     });
 
+    if (isError) {
+        return <div>Error</div>;
+    }
+
     if (isFetched) {
         setChannels(data);
     }
 
-    return (
-        <div className={style.sidebar}>
-            <div className={style.channels}>
-                {data?.map((chnl: channel, i: number) => {
-                    return (
-                        <div key={i}>
-                            <div className={`${style.channel} ${chnl === channel ? `${style.sel_channel}` : `${style.nosel_channel}`}`} onClick={() => handleRedirect(chnl)}>
-                                {
-                                    chnl.type === "text" ?
-                                        <div className={style.channel_name}>
-                                            <BsHash size={24}/>
-                                            <span>{chnl.name}</span>
-                                        </div>
-                                    :
-                                        (
-                                            <div>
-                                                <div className={style.channel_name}>
-                                                    <IoMdVolumeHigh size={22} />
-                                                    <span>{chnl.name}</span>
-                                                </div>
+    if (isSuccess) {
+        return (
+            <div className={style.sidebar}>
+                <div className={style.channels}>
+                    {data?.map((chnl: channel, i: number) => {
+                        return (
+                            <div key={i}>
+                                <div className={`${style.channel} ${chnl === channel ? `${style.sel_channel}` : `${style.nosel_channel}`}`} onClick={() => handleRedirect(chnl)}>
+                                    {
+                                        chnl.type === "text" ?
+                                            <div className={style.channel_name}>
+                                                <BsHash size={24}/>
+                                                <span>{chnl.name}</span>
                                             </div>
-                                        )
-                                        
-                                }
-                            </div>
+                                        :
+                                            (
+                                                <div>
+                                                    <div className={style.channel_name}>
+                                                        <IoMdVolumeHigh size={22} />
+                                                        <span>{chnl.name}</span>
+                                                    </div>
+                                                </div>
+                                            )
+                                            
+                                    }
+                                </div>
 
-                            {chnl.users?.map((user, i) => {
-                                return (
-                                    <div key={i} className={style.user}>
-                                        <Image src={user.avatar} width={22} height={22} className={style.avatar} />
-                                        <span>{user.username}</span>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    )
-                })}
+                                {chnl.users?.map((user, i) => {
+                                    return (
+                                        <div key={i} className={style.user}>
+                                            <Image src={user.avatar} width={22} height={22} className={style.avatar} />
+                                            <span>{user.username}</span>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )
+                    })}
+                </div>
             </div>
-        </div>
-    )
+        )
+    }
+
+    return <div>Error</div>;
 }
 
 export default GuildSidebar;
