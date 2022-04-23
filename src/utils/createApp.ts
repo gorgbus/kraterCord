@@ -32,7 +32,8 @@ function createApp(): Express {
         cookie: {
             maxAge: 60000 * 60 * 24 * 7,
             domain: DOMAIN,
-            secure: PROD
+            secure: PROD,
+            sameSite: PROD ? "none" : "lax",
         },
         store: store.create({ mongoUrl: process.env.MONGOOSE })
     }));
