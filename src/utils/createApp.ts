@@ -10,6 +10,7 @@ config();
 require("../strategies/discord");
 
 const HOST = process.env.HOST;
+const DOMAIN = process.env.DOMAIN;
 const PROD = process.env.PROD === "production";
 
 function createApp(): Express {
@@ -29,6 +30,7 @@ function createApp(): Express {
         saveUninitialized: false,
         cookie: {
             maxAge: 60000 * 60 * 24 * 7,
+            domain: DOMAIN,
             secure: PROD
         },
         store: store.create({ mongoUrl: process.env.MONGOOSE })
