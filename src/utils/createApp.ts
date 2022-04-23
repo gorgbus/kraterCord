@@ -27,10 +27,8 @@ function createApp(): Express {
         secret: process.env.SESSION_SECRET!,
         resave: false,
         saveUninitialized: false,
-        proxy: true,
         cookie: {
             maxAge: 60000 * 60 * 24 * 7,
-            sameSite: PROD ? "none" : "lax",
             secure: PROD
         },
         store: store.create({ mongoUrl: process.env.MONGOOSE })
@@ -40,8 +38,6 @@ function createApp(): Express {
     app.use(passport.session());
 
     app.use("/api", routes);
-
-    app.set('trust proxy', 1);
 
     return app;
 }
