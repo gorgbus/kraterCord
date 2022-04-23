@@ -41,6 +41,8 @@ function createApp(): Express {
 
     app.use("/api", routes);
 
+    app.set('trust proxy', 1);
+
     return app;
 }
 
