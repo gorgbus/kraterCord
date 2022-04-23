@@ -28,6 +28,7 @@ function createApp(): Express {
         secret: process.env.SESSION_SECRET!,
         resave: false,
         saveUninitialized: false,
+        proxy: PROD,
         cookie: {
             maxAge: 60000 * 60 * 24 * 7,
             domain: DOMAIN,
