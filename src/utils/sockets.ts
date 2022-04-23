@@ -34,6 +34,12 @@ function socketIo(io: Server, peerServer: any) {
             s.leave(_id);
         });
 
+        s.on("dm_create", (_id, dm) => {
+            s.join(_id);
+            s.to(_id).emit("dm_created", (dm));
+            s.leave(_id);
+        });
+
         s.on("create_message", (data) => {
             s.broadcast.emit("new_message", data);
         });
