@@ -12,14 +12,37 @@
 
     .guild {
         margin: 5px 0;
+
+        .sel_icon {
+            opacity: 0;
+            transform: scale(0.8);
+            background-color: var(--grey-text-color);
+            width: 18px;
+            height: 18px;
+            position: absolute;
+            margin-left: -28px;
+            margin-top: 14px;
+            border-radius: 30%;
+            transition: ease-in 150ms;
+        }
+
         .avatar {
             border-radius: 50%;
             transition: ease-in-out 150ms;
             cursor: pointer;
         }
 
-        .avatar:hover {
-            border-radius: 30%;
+        
+    }
+
+    .guild:hover {
+        .sel_icon {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        .avatar {
+            border-radius: 35%;
         }
     }
 
@@ -35,6 +58,18 @@
         align-items: center;
         justify-content: center;
 
+        .sel_icon {
+            opacity: 0;
+            transform: scale(0.8);
+            background-color: var(--grey-text-color);
+            width: 18px;
+            height: 18px;
+            position: absolute;
+            margin-left: -86px;
+            border-radius: 30%;
+            transition: ease-in 150ms;
+        }
+
         .icon {
             border-radius: 50%;
             transition: ease-in-out 150ms;
@@ -44,7 +79,38 @@
     }
 
     .home:hover {
-        border-radius: 30%;
+        .sel_icon {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        border-radius: 35%;
         background-color: var(--primary-color);
+    }
+
+    .active_home {
+        .sel_icon {
+            opacity: 1;
+            transform: scale(1);
+            height: 36px;
+            border-radius: 12.5%;
+        }
+
+        border-radius: 35%;
+        background-color: var(--primary-color);
+    }
+
+    .active_guild {
+        .sel_icon {
+            opacity: 1;
+            transform: scale(1);
+            height: 36px;
+            border-radius: 12.5%;
+            margin-top: 6px;
+        }
+
+        .avatar {
+            border-radius: 35%;
+        }
     }
 }

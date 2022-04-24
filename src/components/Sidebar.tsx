@@ -17,6 +17,10 @@ const Sidebar: FC = () => {
     const router = useRouter();
     const queryClient = useQueryClient();
 
+    const guildId = router.query._id as string;
+    const curGuild = guildId ? guildId : undefined;
+    console.log(curGuild);
+
     const openGuild = (guild: guild) => {
         setChannelType("guild");
         router.push(`/channels/[_id]/[id]`, `/channels/${guild._id}/${guild.firstChannel}`, { shallow: true });
@@ -99,16 +103,18 @@ const Sidebar: FC = () => {
 
     return (
         <div className={style.container}>
-            <div className={style.home} onClick={() => {
+            <div className={`${style.home} ${curGuild ? `` : style.active_home}`} onClick={() => {
                 setChannelType("dm");
                 router.push("/channels/@me", "/channels/@me", { shallow: true })
             }} >
+                <div className={style.sel_icon}></div>
                 <HiHome size={26} className={style.icon}/>
             </div>
             {
                 guilds?.map((guild, i) => {
                     return (
-                        <div key={i} className={style.guild} onClick={() => openGuild(guild)}>
+                        <div key={i} className={`${style.guild} ${curGuild === guild._id ? style.active_guild : ``}`} onClick={() => openGuild(guild)}>
+                            <div className={style.sel_icon}></div>
                             <Image className={style.avatar} src={guild.avatar} height={48} width={48} />
                         </div>
                     )

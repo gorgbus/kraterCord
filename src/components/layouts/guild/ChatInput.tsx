@@ -11,7 +11,7 @@ import { UserContext } from "../../../utils/contexts/UserContext";
 import { useRouter } from "next/router";
 
 const ChatInput: FC = () => {
-    const { channel, socket, setScroll, scroll, setChannel, channels } = useContext(ChannelContext);
+    const { channel, socket, setScroll, scroll, setChannel, channels, channelType } = useContext(ChannelContext);
     const { user } = useContext(UserContext);
 
     const uploadRef = useRef() as MutableRefObject<HTMLInputElement>;
@@ -19,7 +19,7 @@ const ChatInput: FC = () => {
 
     const channelId = router.query.id as string;
 
-    if (!channel) {
+    if (channelType === "guild") {
         setChannel(channels?.find(c => c._id === channelId)!);
     }
 
@@ -125,7 +125,7 @@ const ChatInput: FC = () => {
                     <IoIosAddCircle size={26} className={style.add} onClick={openUpload} />
                     
                     <form>
-                        <input type="text" value={content} placeholder={`Zpráva ${channel?.type === "dm" ? `@` : `#`}${channel?.type === "dm" ? (channel.users[0]._id === user?._id ? channel.users[1].username : channel.users[0].username) : channel?.name}`} onChange={(e) => setContent(e.target.value)} />
+                        <input type="text" value={content} placeholder={`Zpráva ${channelType === "dm" ? `@` : `#`}${channel?.type === "dm" ? (channel.users[0]._id === user?._id ? channel.users[1].username : channel.users[0].username) : channel?.name}`} onChange={(e) => setContent(e.target.value)} />
                         <button onClick={ async (e) => sendMessage(e)} className={style.input_btn} type="submit" >posrart zpravu</button>
                     </form>
                 </div>

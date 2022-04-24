@@ -25,8 +25,6 @@ const GuildSidebar: FC = () => {
 
     const { data, isFetched, isSuccess, isError } = useQuery(["guild", guildId], () => fetchGuildChannels(guildId));
 
-    const [_peer, setPeer] = useState<Peer>();
-
     const handleRedirect = async (chnl: channel) => {
         if (chnl.type === "voice") return handleJoin(chnl);
 
@@ -45,8 +43,6 @@ const GuildSidebar: FC = () => {
             path: "peerjs"
         });
 
-        setPeer(peer);
-
         peer.on("open", () => {
             socket?.emit("join_channel", chnl._id, user);
         });
@@ -60,19 +56,8 @@ const GuildSidebar: FC = () => {
             stream = data;
         });
 
-        socket?.on("join_success", async (id, _user) => {
-            const call = peer.call(_user._id, stream);
-            const audio = new Audio();
-            
-            call.on("stream", (remoteStream) => {
-                console.log("ok");
-                audio.srcObject = remoteStream;
-                audio.play();
-            });
-
-            call.on("close", () => {
-                audio.remove();
-            });
+        socket?.on("join_success", async (id, _user: member) => {
+            connectToNewUser(peer, _user._id, stream);
         });
 
         peer.on("call", (call) => {
@@ -83,6 +68,21 @@ const GuildSidebar: FC = () => {
                 newAudio.srcObject = userStream;
                 newAudio.play();
             });
+        });
+    }
+
+    const connectToNewUser = async (peer: Peer, id: string, stream: MediaStream) => {
+        const call = peer.call(id, stream);
+        const newAudio = new Audio()
+
+        call.on("stream", (userStream) => {
+            console.log("ok");
+            newAudio.srcObject = userStream;
+            newAudio.play();
+        });
+
+        call.on("close", () => {
+            newAudio.remove();
         });
     }
 
