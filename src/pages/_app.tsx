@@ -1,3 +1,4 @@
+import Head from 'next/head';
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Socket } from 'socket.io-client';
@@ -27,6 +28,16 @@ function MyApp({ Component, pageProps }: AppPropsWithLayout<any>) {
         <UserContext.Provider value={{ user, setUser, friends, setFriends, friendBar, setFriendBar, friendReqs, setFriendReqs, dms, setDms }}>
             <ChannelContext.Provider value={{ channels, setChannels, channel, setChannel, socket, setSocket, scroll, setScroll, guilds, setGuilds, channelType, setChannelType }}>
                 <QueryClientProvider client={queryClient}>
+                    <Head>
+                        <title>кратерCord</title>
+                        <link rel="icon" href="/favicon_.ico" />
+                        <meta property="og:title" content="кратерCord" />
+                        <meta property="og:type" content="website" />
+                        <meta property="og:url" content="https://krater-cord.tech/" />
+                        <meta property="og:image" content="https://cdn.discordapp.com/attachments/820057517437485106/954397959863291924/WNkk.png" />
+                        <meta property="og:description" content="кратерCord" />
+                        <meta name="theme-color" content="#41b00e"></meta>
+                    </Head>
                     {getLayout(<Component {...pageProps} />)}
                 </QueryClientProvider>
             </ChannelContext.Provider>
