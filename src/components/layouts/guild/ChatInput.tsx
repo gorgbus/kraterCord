@@ -17,6 +17,8 @@ const ChatInput: FC = () => {
     const uploadRef = useRef() as MutableRefObject<HTMLInputElement>;
     const router = useRouter();
 
+    const [uploadStop, setUploadStop] = useState<boolean>(false);
+
     const channelId = router.query.id as string;
 
     if (channelType === "guild") {
@@ -29,6 +31,7 @@ const ChatInput: FC = () => {
 
     const { mutate } = useMutation(createMessage, {
         onSuccess: (data) => {
+            setUploadStop(false);
             const cache = queryClient.getQueryData<infQuery>(["channel", channelId]);
 
             if (cache && data) {
@@ -74,11 +77,16 @@ const ChatInput: FC = () => {
     const sendMessage = async (e: any) => {
         e.preventDefault();
 
+        if (uploadStop) return;
+        setUploadStop(true);
+
         if (content.length < 1 && !file) return
 
         let url = ""
 
         if (file) {
+            if (file.size > 1024 * 1024 * 20) return alert("Soubor je vetší než 20MB");
+
             const data = new FormData();
 
             data.append("file", file);
