@@ -1,10 +1,9 @@
-import { GetServerSidePropsContext } from "next";
 import { useRouter } from "next/router";
 import { Fragment, MutableRefObject, ReactElement, useContext, useEffect, useRef, useState } from "react";
 import { useInfiniteQuery } from "react-query";
 import { ChannelLayout } from "../../../components/layouts/guild/channelLayout";
 import Message from "../../../components/message/Message";
-import { fetchChannels, fetchMessages } from "../../../utils/api";
+import { fetchMessages } from "../../../utils/api";
 import { ChannelContext } from "../../../utils/contexts/ChannelContext";
 import { UserContext } from "../../../utils/contexts/UserContext";
 import { channel, guild, member, NextPageWithLayout } from "../../../utils/types";
@@ -17,6 +16,9 @@ interface Props {
 }
 
 const ChannelPage: NextPageWithLayout<Props> = () => {
+    const { setNotifs, notifs, user } = useContext(UserContext);
+    const { socket } = useContext(ChannelContext);
+
     const router = useRouter();
     const messageRef = useRef() as MutableRefObject<HTMLDivElement>;
 
@@ -52,6 +54,34 @@ const ChannelPage: NextPageWithLayout<Props> = () => {
         }
     }
 
+    const onFocus = () => {
+        const index = notifs.findIndex(nf => nf.channel === channelId);
+        let temp = notifs;
+
+        if (index != -1) {
+            temp.splice(index, 1);
+        }
+
+        setNotifs(temp);
+        router.push(window.location.pathname, window.location.pathname, { shallow: true });
+        socket?.emit("notif_rm", channelId, user);
+    }
+    
+    useEffect(() => {
+        window.onfocus = onFocus;
+
+        const index = notifs.findIndex(nf => nf.channel === channelId);
+        let temp = notifs;
+        if (index != -1) {
+            temp.splice(index, 1);
+            //notifs[index].count = 0;
+        }
+
+        setNotifs(temp);
+        router.push(window.location.pathname, window.location.pathname, { shallow: true });
+        socket?.emit("notif_rm", channelId, user);
+    }, [channelId]);
+
     if (isLoading) {
         return (
             <div className={style.page}>
@@ -61,7 +91,7 @@ const ChannelPage: NextPageWithLayout<Props> = () => {
     }
 
     if (isError) {
-        console.log(error)
+        console.log(error);
 
         return <div className={style.page}>neco se pokazilo</div>
     }

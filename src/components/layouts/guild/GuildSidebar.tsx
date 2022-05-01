@@ -6,8 +6,6 @@ import Peer from "peerjs";
 import { FC, MutableRefObject, useContext, useEffect, useRef, useState } from "react";
 import { BsHash } from "react-icons/bs";
 import { IoMdVolumeHigh } from "react-icons/io";
-import { useQuery } from "react-query";
-import { fetchGuildChannels } from "../../../utils/api";
 import { PEERJS_HOST, PEERJS_PORT } from "../../../utils/constants";
 import { ChannelContext } from "../../../utils/contexts/ChannelContext";
 import { UserContext } from "../../../utils/contexts/UserContext";
@@ -16,15 +14,13 @@ import style from "./channelLayout.module.scss";
 
 const GuildSidebar: FC = () => {
     const { channels, setChannel, channel, setScroll, setChannels, socket } = useContext(ChannelContext);
-    const { user } = useContext(UserContext);
+    const { user, notifs } = useContext(UserContext);
 
     const router = useRouter();
     const audioRef = useRef() as MutableRefObject<HTMLAudioElement>;
 
     const guildId = router.query._id as string;
     const channelId = router.query.id as string;
-
-    const { data, isFetched, isSuccess, isError } = useQuery(["guild", guildId], () => fetchGuildChannels(guildId));
 
     const handleRedirect = async (chnl: channel) => {
         if (chnl.type === "voice") return handleJoin(chnl);
@@ -138,25 +134,22 @@ const GuildSidebar: FC = () => {
         });
     });
 
-    if (isError) {
-        return <div>Error</div>;
-    }
-
-    if (isFetched) {
-        setChannels(data);
-    }
-
     return (
         <div className={style.sidebar}>
             <Head>
                 <title>{channel?.name}</title>
             </Head>
+
+            <div className={style.head}>
+                КРАТЕР
+            </div>
+
             <div className={style.channels}>
                 {
-                    data?.map((chnl: channel, i: number) => {
+                    channels?.map((chnl: channel, i: number) => {
                         return (
                             <div key={i}>
-                                <div className={`${style.channel} ${chnl === channel ? `${style.sel_channel}` : `${style.nosel_channel}`}`} onClick={() => handleRedirect(chnl)}>
+                                <div className={`${style.channel} ${chnl === channel ? `${style.sel_channel}` : `${style.nosel_channel}`} ${notifs.find(ntf => ntf.channel === chnl._id) ? style.notif : ``}`} onClick={() => handleRedirect(chnl)}>
                                     {
                                         chnl.type === "text" ?
                                             <div className={style.channel_name}>
@@ -188,6 +181,24 @@ const GuildSidebar: FC = () => {
                         )
                     })
                 }
+            </div>
+
+            <div className={style.user_profile}>
+                <div className={style.profile}>
+                    {
+                        user?.avatar && (
+                            <Image className={style.avatar} src={user.avatar} height={28} width={28} />
+                        )
+                    }
+
+                    <div className={style.username}>
+                        {user?.username}
+                    </div>
+
+                    <div className={style.hash}>
+                        #{user?.discordId.slice(user?.discordId.length - 4, user?.discordId.length)}
+                    </div>
+                </div>
             </div>
         </div>
     )

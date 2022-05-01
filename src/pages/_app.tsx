@@ -5,7 +5,7 @@ import { Socket } from 'socket.io-client';
 import '../styles/globals.scss'
 import { ChannelContext } from '../utils/contexts/ChannelContext';
 import { UserContext } from '../utils/contexts/UserContext';
-import { AppPropsWithLayout, channel, guild, member, req } from "./../utils/types";
+import { AppPropsWithLayout, channel, guild, member, notif, req } from "./../utils/types";
 
 const queryClient = new QueryClient();
 
@@ -14,6 +14,7 @@ function MyApp({ Component, pageProps }: AppPropsWithLayout<any>) {
     const [channel, setChannel] = useState<channel>();
     const [socket, setSocket] = useState<Socket>();
     const [user, setUser] = useState<member>();
+    const [users, setUsers] = useState<member[]>([]);
     const [friends, setFriends] = useState<member[]>([]);
     const [friendBar, setFriendBar] = useState<string>("friends");
     const [friendReqs, setFriendReqs] = useState<req[]>([]);
@@ -21,16 +22,19 @@ function MyApp({ Component, pageProps }: AppPropsWithLayout<any>) {
     const [scroll, setScroll] = useState<boolean[]>([false, false]);
     const [guilds, setGuilds] = useState<guild[]>();
     const [channelType, setChannelType] = useState<string>("dm");
+    const [notifs, setNotifs] = useState<notif[]>([]);
 
     const getLayout = Component.getLayout ?? ((page) => page);
 
+    const icon = notifs.length != 0 ? `krater-oznameni.ico` : `favicon.ico`;
+
     return (
-        <UserContext.Provider value={{ user, setUser, friends, setFriends, friendBar, setFriendBar, friendReqs, setFriendReqs, dms, setDms }}>
+        <UserContext.Provider value={{ user, setUser, friends, setFriends, friendBar, setFriendBar, friendReqs, setFriendReqs, dms, setDms, notifs, setNotifs, users, setUsers }}>
             <ChannelContext.Provider value={{ channels, setChannels, channel, setChannel, socket, setSocket, scroll, setScroll, guilds, setGuilds, channelType, setChannelType }}>
                 <QueryClientProvider client={queryClient}>
                     <Head>
                         <title>кратерCord</title>
-                        <link rel="icon" href="/favicon_.ico" />
+                        {notifs.length === 0 ? <></> : <link rel="icon" type="image/x-icon" href="/krater-oznameni.ico" />}
                         <meta property="og:title" content="кратерCord" />
                         <meta property="og:type" content="website" />
                         <meta property="og:url" content="https://krater-cord.tech/" />

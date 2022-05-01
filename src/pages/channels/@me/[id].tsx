@@ -1,13 +1,18 @@
 import { useRouter } from "next/router";
-import { Fragment, MutableRefObject, ReactElement, useContext, useRef } from "react";
+import { Fragment, MutableRefObject, ReactElement, useContext, useEffect, useRef } from "react";
 import { useInfiniteQuery } from "react-query";
 import { ChannelLayout } from "../../../components/layouts/guild/channelLayout";
 import Message from "../../../components/message/Message";
 import { fetchMessages } from "../../../utils/api";
+import { ChannelContext } from "../../../utils/contexts/ChannelContext";
+import { UserContext } from "../../../utils/contexts/UserContext";
 import { NextPageWithLayout } from "../../../utils/types";
 import style from "./../[_id]/channel.module.scss";
 
 const DmPage: NextPageWithLayout<any> = () => {
+    const { setNotifs, notifs, user } = useContext(UserContext);
+    const { socket } = useContext(ChannelContext);
+
     const messageRef = useRef() as MutableRefObject<HTMLDivElement>;
 
     const router = useRouter()
@@ -42,6 +47,36 @@ const DmPage: NextPageWithLayout<any> = () => {
             fetchNextPage();
         }
     }
+
+    const onFocus = () => {
+        const index = notifs.findIndex(nf => nf.channel === channelId);
+        let temp = notifs;
+
+        if (window.location.pathname === "/channels/@me") return;
+
+        if (index != -1) {
+            temp.splice(index, 1);
+            setNotifs(temp);
+            router.push(window.location.pathname, window.location.pathname, { shallow: true });
+            socket?.emit("notif_rm", channelId, user);
+        }
+    }
+
+    useEffect(() => {
+        window.onfocus = onFocus;
+
+        const index = notifs.findIndex(nf => nf.channel === channelId);
+        let temp = notifs;
+
+        if (index != -1) {
+            temp.splice(index, 1);
+        }
+
+        setNotifs(temp);
+        router.push(window.location.pathname, window.location.pathname, { shallow: true });
+        socket?.emit("notif_rm", channelId, user);
+    }, [channelId]);
+
 
     if (isLoading) {
         return (

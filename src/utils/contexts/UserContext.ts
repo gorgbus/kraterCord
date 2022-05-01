@@ -1,9 +1,11 @@
 import { createContext } from "react";
-import { channel, member, req } from "../types";
+import { channel, member, notif, req } from "../types";
 
 type UserContextType = {
     user?: member;
     setUser: (user: member) => void;
+    users: member[];
+    setUsers: (users: member[]) => void;
     friends: member[];
     setFriends: (friends: member[]) => void;
     friendBar: string;
@@ -12,6 +14,8 @@ type UserContextType = {
     setFriendReqs: (friendReqs: req[]) => void;
     dms: channel[];
     setDms: (dms: channel[]) => void;
+    notifs: notif[];
+    setNotifs: (notifs: notif[]) => void;
 }
 
 export const UserContext = createContext<UserContextType>({
@@ -24,4 +28,8 @@ export const UserContext = createContext<UserContextType>({
     setFriendReqs: () => {},
     dms: [],
     setDms: () => {},
+    notifs: [],
+    setNotifs: () => {},
+    users: [],
+    setUsers: () => {}
 });

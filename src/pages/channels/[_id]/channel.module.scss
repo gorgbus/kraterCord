@@ -8,14 +8,14 @@
 }
 
 .chat_box {
-    margin-top: 75px;
+    margin-top: 50px;
     display: flex;
     flex-direction: column;
     align-items: left;
     width: 100%;
     flex: 1;
     overflow: scroll;
-    height: calc(100% - 150px);
+    height: calc(100% - 125px);
     overflow-x: hidden;
 }
 

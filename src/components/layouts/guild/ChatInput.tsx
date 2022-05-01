@@ -1,4 +1,4 @@
-import { FC, MutableRefObject, useContext, useRef, useState } from "react";
+import { FC, MutableRefObject, useContext, useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "react-query";
 import { createMessage, uploadFile } from "../../../utils/api";
 import { ChannelContext } from "../../../utils/contexts/ChannelContext";
@@ -9,6 +9,7 @@ import style from "./channelLayout.module.scss";
 import FilePreview from "../../message/FilePreview";
 import { UserContext } from "../../../utils/contexts/UserContext";
 import { useRouter } from "next/router";
+import Head from "next/head";
 
 const ChatInput: FC = () => {
     const { channel, socket, setScroll, scroll, setChannel, channels, channelType } = useContext(ChannelContext);
@@ -20,10 +21,7 @@ const ChatInput: FC = () => {
     const [uploadStop, setUploadStop] = useState<boolean>(false);
 
     const channelId = router.query.id as string;
-
-    if (channelType === "guild") {
-        setChannel(channels?.find(c => c._id === channelId)!);
-    }
+    const guildId = router.query._id as string;
 
     const [content, setContent] = useState<string>("");
     const [file, setFile] = useState<File>();
@@ -65,7 +63,8 @@ const ChatInput: FC = () => {
 
             const newData = {
                 id: channelId,
-                msg: data
+                msg: data,
+                guild: guildId ? guildId : null
             }
             
             queryClient.setQueryData(["channel", channelId], cache);
@@ -101,6 +100,7 @@ const ChatInput: FC = () => {
                 type: (url.length > 1 ? file?.type : "")!
             },
             author: user?._id!,
+            channel: channelId
         }
 
         setScroll([scroll[0], false]);
@@ -123,8 +123,17 @@ const ChatInput: FC = () => {
         setFile(e.target.files![0]);
     }
 
+    useEffect(() => {
+        if (channelType === "guild") {
+            setChannel(channels?.find(c => c._id === channelId)!);
+        }
+    });
+
     return (
         <div className={`${style.input_bar} ${file ? `${style.preview}` : ``}`}>
+            <Head>
+                <title>{channel?.type === "dm" ? (channel.users[0]._id === user?._id ? channel.users[1].username : channel.users[0].username) : channel?.name}</title>
+            </Head>
             <div className={style.input}>
                 {file ? (<FilePreview file={file} fileSet={setFile}/>) : (<div/>)}
 

@@ -5,6 +5,7 @@ import ChatInput from "./ChatInput";
 import MemberSidebar from "./MemberSidebar";
 import Sidebar from "../../Sidebar";
 import ChatSidebar from "../chatSidebar";
+import ChannelHead from "./ChannelHead";
 
 export function ChannelLayout({ children }: { children: ReactElement }) {
     const { channelType } = useContext(ChannelContext);
@@ -13,6 +14,7 @@ export function ChannelLayout({ children }: { children: ReactElement }) {
         <>
             <Sidebar />
             {channelType === "dm" ? <ChatSidebar /> : <GuildSidebar />}
+            <ChannelHead />
             <ChatInput />
             <MemberSidebar />
             <>{children}</>

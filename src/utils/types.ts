@@ -21,6 +21,7 @@ export type member = {
     username: string;
     avatar: string;
     hash: string;
+    status: string;
     friends: member[];
     friendRequests: req[];
 }
@@ -61,4 +62,11 @@ export type infQuery = {
 export type infQueryData = {
     messages: message[];
     nextId: number;
+}
+
+export type notif = {
+    guild: string;
+    channel: string;
+    count: number;
+    createdOn: Date;
 }

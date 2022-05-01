@@ -1,7 +1,7 @@
 import axios from "axios";
 import { GetServerSidePropsContext } from "next";
 import { validateCookies } from "./helpers";
-import { channel, guild, infQueryData, member, message } from "./types";
+import { channel, guild, infQueryData, member, message, notif } from "./types";
 import FormData from 'form-data';
 import { API_URl } from "./constants";
 
@@ -17,6 +17,15 @@ type data = {
     };
 }
 
+interface setup {
+    guilds: guild[];
+    channels: channel[];
+    member: member;
+    dms: channel[];
+    notifs: notif[];
+    users: member[];
+}
+
 export const fetchGuildChannels = async (guildId: string) => {
     if (!guildId) return [];
 
@@ -30,17 +39,15 @@ export const fetchGuildChannels = async (guildId: string) => {
     }
 }
 
-export const fetchChannels = async (ctx: GetServerSidePropsContext) => {
+export const fetchOnStart = async (ctx: GetServerSidePropsContext) => {
     const headers = validateCookies(ctx);
 
     if (!headers) return { redirect: { destination: "/" } };
 
     try {
-        const { data: member } = await axios.get<member>(`${API_URl}/auth/user`, { headers });
-        const { data: guilds } = await axios.get<guild[]>(`${API_URl}/guilds`, { headers });
-        const { data: channels } = await axios.get<channel[]>(`${API_URl}/dms`, { headers });
+        const { data: { member, guilds, channels, dms, notifs, users } } = await axios.get<setup>(`${API_URl}/auth/setup`, { headers });
         
-        return { props: { member, guilds, channels } };
+        return { props: { member, guilds, channels, dms, notifs, users } };
     } catch (err) {
         console.log(err);
         return { redirect: { destination: "/" } };

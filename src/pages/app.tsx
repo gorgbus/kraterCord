@@ -1,21 +1,24 @@
 import { GetServerSidePropsContext, NextPage } from "next";
 import { useRouter } from "next/router";
 import { useContext, useEffect } from "react";
-import { fetchChannels } from "../utils/api";
+import { fetchOnStart } from "../utils/api";
 import { ChannelContext } from "../utils/contexts/ChannelContext";
 import { UserContext } from "../utils/contexts/UserContext";
-import { channel, guild, member } from "../utils/types";
+import { channel, guild, member, notif } from "../utils/types";
 import style from "./../styles/fetch.module.scss";
 
 interface Props {
     guilds: guild[];
     member: member;
     channels: channel[];
+    dms: channel[];
+    notifs: notif[];
+    users: member[];
 }
 
-const FetchPage: NextPage<Props> = ({ guilds, member, channels }) => {
-    const { setGuilds } = useContext(ChannelContext);
-    const { setUser, setFriendReqs, setFriends, setDms } = useContext(UserContext);
+const FetchPage: NextPage<Props> = ({ guilds, member, channels, dms, notifs, users }) => {
+    const { setGuilds, setChannels } = useContext(ChannelContext);
+    const { setUser, setFriendReqs, setFriends, setDms, setNotifs, setUsers } = useContext(UserContext);
 
     const router = useRouter();
 
@@ -24,9 +27,15 @@ const FetchPage: NextPage<Props> = ({ guilds, member, channels }) => {
         setUser(member);
         setFriendReqs(member.friendRequests);
         setFriends(member.friends);
-        setDms(channels);
+        setDms(dms);
+        setChannels(channels);
+        setNotifs(notifs);
 
-        console.log(router);
+        let temp = users;
+        const index = temp.findIndex(u => u._id === member._id);
+        temp[index].status = "online";
+
+        setUsers(temp);
 
         setTimeout(() => {
             router.push("/channels/@me", "/channels/@me", { shallow: true });
@@ -46,7 +55,7 @@ const FetchPage: NextPage<Props> = ({ guilds, member, channels }) => {
 }
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
-    return fetchChannels(context);
+    return fetchOnStart(context);
 }
 
 export default FetchPage;
