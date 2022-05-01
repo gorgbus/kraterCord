@@ -4,6 +4,7 @@ import { VerifyCallback } from "passport-oauth2";
 import User from "../database/schemas/User";
 import Member from "../database/schemas/Member";
 import { encrypt } from "../utils/crypto";
+import Notif from "../database/schemas/Notif";
 
 passport.serializeUser((user: any, done) => {
     return done(null, user.id);
@@ -41,10 +42,11 @@ passport.use(new Strategy({
             if (!member) {
                 (avatar) ? avatar = `https://cdn.discordapp.com/avatars/${discordId}/${avatar}.png` : avatar = "https://cdn.discordapp.com/attachments/805393975900110852/950026779484094494/ano-ne.gif";
 
-                const newMember = new Member({ discordId, username, avatar, hash: discordId.slice(discordId.length - 4, discordId.length), friends: [], friendRequests: [] });
+                const newMember = new Member({ discordId, username, avatar, hash: discordId.slice(discordId.length - 4, discordId.length), friends: [], friendRequests: [], status: "offline" });
                 const savedMember = await newMember.save();
 
-                console.log(savedMember);
+                const memberNotifs = new Notif({ user: savedMember._id, notfis: [] });
+                await memberNotifs.save();
             }
 
             if (existingUser) return done(null, existingUser);

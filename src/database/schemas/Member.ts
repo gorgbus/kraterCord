@@ -6,6 +6,7 @@ export interface member {
     username: string;
     avatar: string;
     hash: string;
+    status: string;
     friends: member[];
     friendRequests: {
         friend: member,
@@ -28,6 +29,10 @@ const MemberSchema = new Schema<member>({
         required: true,
     },
     hash: {
+        type: mongoose.SchemaTypes.String,
+        required: true,
+    },
+    status: {
         type: mongoose.SchemaTypes.String,
         required: true,
     },

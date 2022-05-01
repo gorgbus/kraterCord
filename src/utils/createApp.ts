@@ -29,11 +29,11 @@ function createApp(): Express {
         resave: false,
         saveUninitialized: false,
         proxy: PROD,
+        rolling: true,
         cookie: {
             maxAge: 60000 * 60 * 24 * 7,
             domain: DOMAIN,
             secure: PROD,
-            sameSite: PROD ? "none" : "lax",
         },
         store: store.create({ mongoUrl: process.env.MONGOOSE })
     }));
