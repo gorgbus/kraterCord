@@ -3,7 +3,6 @@ import createApp from "./utils/createApp";
 import socketIo from "./utils/sockets";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { ExpressPeerServer } from "peer";
 import "./database";
 
 config();
@@ -23,13 +22,7 @@ async function main() {
             }
         });
 
-        const peerServer = ExpressPeerServer(httpServer, {
-            path: '/',
-        });
-
-        app.use("/peerjs", peerServer);
-
-        socketIo(io, peerServer);
+        socketIo(io);
 
         httpServer.listen(PORT, () => console.log(`Running on port ${PORT}`));
     } catch (error) {

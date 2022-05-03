@@ -8,7 +8,7 @@ interface ISocket extends Socket {
     user?: member;
 }
 
-function socketIo(io: Server, peerServer: any) {
+function socketIo(io: Server) {
     io.on("connection", (s: ISocket) => {
         console.log(`Socket: ${s.id} has connected`);
 
@@ -19,6 +19,11 @@ function socketIo(io: Server, peerServer: any) {
             s.user = _user;
             const user_ = await Member.findByIdAndUpdate(_user._id, { $set: { status: "online" } }, { new: true });
             s.broadcast.emit("online", user_);
+        });
+
+        s.on("update_user", async (user: member) => {
+            const _user = await Member.findByIdAndUpdate(user._id, user, { new: true });
+            s.broadcast.emit("online", _user);
         });
 
         s.on("fr_accept", (_id, friend) => {
@@ -50,6 +55,32 @@ function socketIo(io: Server, peerServer: any) {
             s.join(_id);
             s.to(_id).emit("dm_created", (dm));
             s.leave(_id);
+        });
+
+        s.on("create_message_dm", async (_id, data) => {
+            s.join(_id);
+            s.to(_id).emit("new_message", data);
+            s.leave(_id);
+
+            const users = await Member.find();
+
+            let offline: mongoose.Types.ObjectId[] = [];
+
+            for (const user of users) {
+                if (!io.sockets.adapter.rooms.get(`${user._id}-status`)) {
+                    const objId = new mongoose.Types.ObjectId(user._id)
+                    offline.push(objId);
+                }
+            }
+
+            const notif = {
+                guild: data.guild,
+                channel: data.msg.channel,
+                createdOn: Date.now(),
+            }
+
+            await Notif.updateMany({ user: { $in: offline }, 'notifs.channel': data.msg.channel }, { $inc: { 'notifs.$.count': 1 }});
+            await Notif.updateMany({ user: { $in: offline }, 'notifs.channel': { $nin: [data.id] } }, { $push: { notifs: notif } });
         });
 
         s.on("create_message", async (data) => {
@@ -135,14 +166,6 @@ function socketIo(io: Server, peerServer: any) {
             console.log(`Socket: ${s.id} has disconnected`);
             s.disconnect();
         });
-    });
-
-    peerServer.on("connection", (client: any) => {
-        console.log(`Peer: ${client.id} has connected`)
-    });
-
-    peerServer.on("disconnect", (client: any) => {
-        console.log(`Peer: ${client.id} has disconnected`)
     });
 }
 export default socketIo;
