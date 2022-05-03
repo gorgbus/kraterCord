@@ -97,8 +97,33 @@
                 column-gap: 10px;
                 cursor: pointer;
 
-                .avatar {
-                    border-radius: 50%;
+                .pic {
+                    position: relative;
+
+                    .status {
+                        position: absolute;
+                        bottom: -4px;
+                        right: -4px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 10px;
+                        height: 10px;
+                        border-radius: 50%;
+                        background-color: var(--status);
+                        border: solid 3px var(--semi-deep-grey);
+
+                        .inner {
+                            background-color: var(--semi-deep-grey);
+                            width: 4px;
+                            height: 4px;
+                            border-radius: 50%;
+                        }
+                    }
+
+                    .avatar {
+                        border-radius: 50%;
+                    }
                 }
 
                 .username {
@@ -115,6 +140,10 @@
             .chat:hover {
                 background-color: var(--light-grey);
                 color: var(--grey-text-color);
+
+                .status {
+                    border: solid 3px var(--light-grey);
+                }
             }
         }
     }
@@ -148,7 +177,8 @@
             grid-template-columns: 28px auto auto;
             grid-template-rows: 28px auto auto;
             column-gap: 5px;
-            margin-left: -90px;
+            flex: 1;
+            margin-left: 10px;
 
             .avatar {
                 border-radius: 50%;
@@ -175,6 +205,18 @@
                 color: var(--darker-grey-text-color);
             }
         }
+
+        .settings {
+            margin-right: 10px;
+            padding: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .settings:hover {
+            background-color: var(--light-grey);
+            color: var(--grey-text-color);
+        }
     }
 }
 
@@ -183,6 +225,7 @@
     margin-left: 300px;
     height: 50px;
     position: fixed;
+    z-index: 10;
     top: 0;
     border-bottom: solid 1px var(--deep-grey);
     color: var(--darker-grey-text-color);
@@ -223,6 +266,11 @@
     }
 
     .other:hover {
+        background: var(--hover-light-grey-color);
+        color: var(--grey-text-color);
+    }
+
+    .selected {
         background: var(--hover-light-grey-color);
         color: var(--grey-text-color);
     }

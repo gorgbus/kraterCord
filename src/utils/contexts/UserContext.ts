@@ -16,13 +16,15 @@ type UserContextType = {
     setDms: (dms: channel[]) => void;
     notifs: notif[];
     setNotifs: (notifs: notif[]) => void;
+    visible: boolean;
+    setVisible: (visible: boolean) => void;
 }
 
 export const UserContext = createContext<UserContextType>({
     setUser: () => {},
     friends: [],
     setFriends: () => {},
-    friendBar: "friends",
+    friendBar: "online",
     setFriendBar: () => {},
     friendReqs: [],
     setFriendReqs: () => {},
@@ -31,5 +33,7 @@ export const UserContext = createContext<UserContextType>({
     notifs: [],
     setNotifs: () => {},
     users: [],
-    setUsers: () => {}
+    setUsers: () => {},
+    visible: false,
+    setVisible: () => {}
 });

@@ -1,4 +1,4 @@
-import { FC, useContext } from "react";
+import { FC, useContext, useState } from "react";
 import { MdEmojiPeople } from "react-icons/md";
 import { HiOutlinePlusSm } from "react-icons/hi";
 import style from "./mainLayout.module.scss";
@@ -7,10 +7,11 @@ import { UserContext } from "../../utils/contexts/UserContext";
 import { channel } from "../../utils/types";
 import { useRouter } from "next/router";
 import { ChannelContext } from "../../utils/contexts/ChannelContext";
+import { IoMdSettings } from "react-icons/io";
 
 const ChatSidebar: FC = () => {
     const { setChannel } = useContext(ChannelContext);
-    const { user, dms } = useContext(UserContext);
+    const { user, dms, users, setVisible } = useContext(UserContext);
 
     const router = useRouter();
 
@@ -41,16 +42,29 @@ const ChatSidebar: FC = () => {
                         <HiOutlinePlusSm size={24}/>
                     </div>
 
-                    {dms.map((dm: channel, i: number) => (
-                        <div key={i} className={style.chat} onClick={() => handleRedir(dm)} >
-                            <Image className={style.avatar} src={dm.users[0]._id === user?._id ? dm.users[1].avatar : dm.users[0].avatar} alt={dm.users[0]._id === user?._id ? dm.users[1].username : dm.users[0].username} width={36} height={36} />
+                    {
+                        dms.map((dm: channel, i: number) => {
+                            const id = dm.users[0]._id === user?._id ? dm.users[1]._id : dm.users[0]._id;
+                            const _user = users.find(u => u._id === id);
 
-                            <div className={style.username}>
-                                {dm.users[0]._id === user?._id ? dm.users[1].username : dm.users[0].username}
-                            </div>
-                            
-                        </div>
-                    ))}
+                            return (
+                                <div key={i} className={style.chat} onClick={() => handleRedir(dm)} >
+                                    <div className={style.pic}>
+                                        <Image className={style.avatar} src={_user?.avatar!} alt={_user?.username} width={36} height={36} />
+                                        <div className={style.status} style={_user?.status === "online" ? { backgroundColor: "var(--green)" } : {}}>
+                                            <div className={style.inner} style={_user?.status === "online" ? { backgroundColor: "var(--green)" } : {}}></div>
+                                        </div>
+                                    </div>
+                                    
+
+                                    <div className={style.username}>
+                                        {_user?.username}
+                                    </div>
+                                    
+                                </div>
+                            )
+                        })
+                    }
                 </div>
             </div>
 
@@ -70,6 +84,8 @@ const ChatSidebar: FC = () => {
                         #{user?.discordId.slice(user?.discordId.length - 4, user?.discordId.length)}
                     </div>
                 </div>
+
+                <IoMdSettings size={20} className={style.settings} onClick={() => setVisible(true)} />
             </div>
         </div>
     )

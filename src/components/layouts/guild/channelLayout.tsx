@@ -16,7 +16,7 @@ export function ChannelLayout({ children }: { children: ReactElement }) {
             {channelType === "dm" ? <ChatSidebar /> : <GuildSidebar />}
             <ChannelHead />
             <ChatInput />
-            <MemberSidebar />
+            {channelType != "dm" && <MemberSidebar />}
             <>{children}</>
         </>
     )

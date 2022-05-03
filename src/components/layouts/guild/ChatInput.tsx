@@ -69,7 +69,11 @@ const ChatInput: FC = () => {
             
             queryClient.setQueryData(["channel", channelId], cache);
 
-            socket?.emit("create_message", newData);
+            if (channelType === "dm") {
+                socket?.emit("create_message_dm", channel?.users[0]._id === user?._id ? channel?.users[1]._id : channel?.users[0]._id, newData);
+            } else {
+                socket?.emit("create_message", newData);
+            }
         }
     });
 
@@ -134,7 +138,7 @@ const ChatInput: FC = () => {
             <Head>
                 <title>{channel?.type === "dm" ? (channel.users[0]._id === user?._id ? channel.users[1].username : channel.users[0].username) : channel?.name}</title>
             </Head>
-            <div className={style.input}>
+            <div className={style.input} style={channelType === "dm" ? { marginRight: "10px" } : {}} >
                 {file ? (<FilePreview file={file} fileSet={setFile}/>) : (<div/>)}
 
                 <div className={style.text_input}>

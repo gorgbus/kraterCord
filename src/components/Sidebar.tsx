@@ -6,7 +6,7 @@ import { io } from "socket.io-client";
 import { SOCKET_ENDPOINT } from "../utils/constants";
 import { ChannelContext } from "../utils/contexts/ChannelContext";
 import { UserContext } from "../utils/contexts/UserContext";
-import { guild, infQuery, member } from "../utils/types";
+import { channel, guild, infQuery, member } from "../utils/types";
 import { HiHome } from "react-icons/hi";
 import style from "./sidebar.module.scss";
 
@@ -36,6 +36,15 @@ const Sidebar: FC = () => {
                 const index = users.findIndex(u => u._id === _user._id);
                 let temp = users
 
+                let _temp = friends;
+                const _index = _temp.findIndex(f => f._id === _user._id);
+
+                if (_index != -1) {
+                    _temp[_index] = _user;
+
+                    setFriends(_temp);
+                }
+
                 if (index !== -1) {
                     temp[index] = _user;
                 } else {
@@ -43,6 +52,7 @@ const Sidebar: FC = () => {
                 }
 
                 setUsers(temp);
+                
                 router.push(window.location.pathname, window.location.pathname, { shallow: true });
             });
 
@@ -52,10 +62,12 @@ const Sidebar: FC = () => {
                 if (!document.hasFocus() || channel?._id != data.id) {
                     if (data.msg.author._id === user?._id) return;
 
-                    const audio = new Audio();
-                    audio.src = "https://storage.googleapis.com/krater/krater-msg-faster.mp3";
-                    audio.play();
-                    audio.onended = () => audio.remove();
+                    if (JSON.parse(localStorage.getItem("settings")!).notificationSound) {
+                        const audio = new Audio();
+                        audio.src = "https://storage.googleapis.com/krater/krater-msg-faster.mp3";
+                        audio.play();
+                        audio.onended = () => audio.remove();
+                    }
 
                     if (notifs.find(nf => nf.channel === data.id)) {
                         _socket.emit("create_notif", {
@@ -140,7 +152,7 @@ const Sidebar: FC = () => {
             });
 
             _socket.on("fr_reqd", (fr: member) => {
-                if (user?._id === fr._id) return;
+                if (user?._id === fr._id && friendReqs.find(f => f.friend._id === fr._id)) return;
                 
                 setFriendReqs([...friendReqs, { friend: fr, type: "in" }]);
             });

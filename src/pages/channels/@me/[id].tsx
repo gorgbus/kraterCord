@@ -7,7 +7,7 @@ import { fetchMessages } from "../../../utils/api";
 import { ChannelContext } from "../../../utils/contexts/ChannelContext";
 import { UserContext } from "../../../utils/contexts/UserContext";
 import { NextPageWithLayout } from "../../../utils/types";
-import style from "./../[_id]/channel.module.scss";
+import style from "./chat.module.scss";
 
 const DmPage: NextPageWithLayout<any> = () => {
     const { setNotifs, notifs, user } = useContext(UserContext);

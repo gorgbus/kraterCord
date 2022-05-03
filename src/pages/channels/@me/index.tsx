@@ -56,6 +56,7 @@ const MainPage: NextPageWithLayout<any> = () => {
             warnRef.current.style.color = "var(--green)";
             setWarning(`Žádost o přátelství byla úspěšně odeslána uživateli ${content}`);
             socket?.emit("fr_req", response.data._id, user);
+            setFriendReqs([...friendReqs, { friend: response.data, type: "on" }]);
         } else if (response.status === 203) {
             setWarning(`Neznámý uživatel ${content}`);
         }
@@ -104,32 +105,83 @@ const MainPage: NextPageWithLayout<any> = () => {
         }
     }
 
+    useEffect(() => {
+        setWarning("");
+        setContent("");
+    }, [friendBar])
+
     switch(friendBar) {
+        case "online":
+            return (
+                <div className={style.container}>
+                    <div className={style.friends}>
+                        {
+                            friends.filter(f => f.status === "online").map((friend: member, i: number) => {
+                                return (
+                                    <div key={i} className={style.friend}>
+                                        <div className={style.pic}>
+                                            <Image className={style.avatar} src={friend.avatar} alt={friend.username} width={32} height={32} />
+                                            <div className={style.status} style={friend.status === "online" ? { backgroundColor: "var(--green)" } : {}}>
+                                                <div className={style.inner} style={friend.status === "online" ? { backgroundColor: "var(--green)" } : {}}></div>
+                                            </div>
+                                        </div>
+                                            
+                                        <div className={style.username}>
+                                            {friend.username}
+                                        </div>
+
+                                        <div className={style.buttons}>
+                                            <div onClick={() => openDM([user?._id!, friend._id])}>
+                                                <BiMessage size={22} />
+                                                <span>Zpráva</span>
+                                            </div>
+
+                                            <div onClick={() => handleRemove(user?._id!, friend._id)}>
+                                                <MdClose className={style.cross} size={22} />
+                                                <span>Odebrat</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            })
+                        }
+                    </div>
+                </div>
+            )
         case "friends":
             return (
                 <div className={style.container}>
                     <div className={style.friends}>
-                        {friends.map((friend: member, i: number) => (
-                            <div key={i} className={style.friend}>
-                                <Image className={style.avatar} src={friend.avatar} alt={friend.username} width={32} height={32} />
-                            
-                                <div className={style.username}>
-                                    {friend.username}
-                                </div>
+                        {
+                            friends.map((friend: member, i: number) => {
+                                return (
+                                    <div key={i} className={style.friend}>
+                                        <div className={style.pic}>
+                                            <Image className={style.avatar} src={friend.avatar} alt={friend.username} width={32} height={32} />
+                                            <div className={style.status} style={friend.status === "online" ? { backgroundColor: "var(--green)" } : {}}>
+                                                <div className={style.inner} style={friend.status === "online" ? { backgroundColor: "var(--green)" } : {}}></div>
+                                            </div>
+                                        </div>
+                                            
+                                        <div className={style.username}>
+                                            {friend.username}
+                                        </div>
 
-                                <div className={style.buttons}>
-                                    <div onClick={() => openDM([user?._id!, friend._id])}>
-                                        <BiMessage size={22} />
-                                        <span>Zpráva</span>
-                                    </div>
+                                        <div className={style.buttons}>
+                                            <div onClick={() => openDM([user?._id!, friend._id])}>
+                                                <BiMessage size={22} />
+                                                <span>Zpráva</span>
+                                            </div>
 
-                                    <div onClick={() => handleRemove(user?._id!, friend._id)}>
-                                        <MdClose className={style.cross} size={22} />
-                                        <span>Odebrat</span>
+                                            <div onClick={() => handleRemove(user?._id!, friend._id)}>
+                                                <MdClose className={style.cross} size={22} />
+                                                <span>Odebrat</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        ))}
+                                )
+                            })
+                        }
                     </div>
                 </div>
             )
@@ -151,14 +203,11 @@ const MainPage: NextPageWithLayout<any> = () => {
 
                                 <div className={style.buttons}>
                                     {
-                                        req.type === "in" ? (
+                                        req.type === "in" && (
                                              <div>
                                                 <MdDone onClick={() => handleAccept(user?._id!, req.friend._id)} size={22} />
                                                 <span>Potvrdit</span>
                                             </div>
-                                        )
-                                        : (
-                                            <></>
                                         )
                                     }
 

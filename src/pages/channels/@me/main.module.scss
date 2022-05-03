@@ -81,8 +81,33 @@
             grid-template-rows: 36px auto auto;
             column-gap: 5px;
 
-            .avatar {
-                border-radius: 50%;
+            .pic {
+                position: relative;
+
+                .status {
+                    position: absolute;
+                    bottom: 0;
+                    right: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 10px;
+                    height: 10px;
+                    border-radius: 50%;
+                    background-color: var(--status);
+                    border: solid 3px var(--light-grey);
+
+                    .inner {
+                        background-color: var(--light-grey);
+                        width: 4px;
+                        height: 4px;
+                        border-radius: 50%;
+                    }
+                }
+
+                .avatar {
+                    border-radius: 50%;
+                }
             }
 
             .username {
@@ -115,6 +140,10 @@
 
         .friend:hover {
             background: var(--hover-light-grey-color);
+
+            .status {
+                border: solid 3px var(--hover-light-grey-color);
+            }
         }
     }
 

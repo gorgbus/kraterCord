@@ -2,11 +2,9 @@ import { Stream } from "form-data";
 import Head from "next/head";
 import Image from "next/image";
 import { useRouter } from "next/router";
-import Peer from "peerjs";
 import { FC, MutableRefObject, useContext, useEffect, useRef, useState } from "react";
 import { BsHash } from "react-icons/bs";
-import { IoMdVolumeHigh } from "react-icons/io";
-import { PEERJS_HOST, PEERJS_PORT } from "../../../utils/constants";
+import { IoMdSettings, IoMdVolumeHigh } from "react-icons/io";
 import { ChannelContext } from "../../../utils/contexts/ChannelContext";
 import { UserContext } from "../../../utils/contexts/UserContext";
 import { channel, member } from "../../../utils/types";
@@ -14,7 +12,7 @@ import style from "./channelLayout.module.scss";
 
 const GuildSidebar: FC = () => {
     const { channels, setChannel, channel, setScroll, setChannels, socket } = useContext(ChannelContext);
-    const { user, notifs } = useContext(UserContext);
+    const { user, notifs, setVisible } = useContext(UserContext);
 
     const router = useRouter();
     const audioRef = useRef() as MutableRefObject<HTMLAudioElement>;
@@ -31,7 +29,7 @@ const GuildSidebar: FC = () => {
     }
 
     const handleJoin = async (chnl: channel) => {
-        if (chnl.users?.find(usr => usr._id === user?._id)) return;
+        /*if (chnl.users?.find(usr => usr._id === user?._id)) return;
         const Peer = (await import("peerjs")).default;
 
         const peer = new Peer(user?._id, {
@@ -65,15 +63,14 @@ const GuildSidebar: FC = () => {
                 newAudio.srcObject = userStream;
                 newAudio.play();
             });
-        });
+        });*/
     }
 
-    const connectToNewUser = async (peer: Peer, id: string, stream: MediaStream) => {
+    /*const connectToNewUser = async (peer: Peer, id: string, stream: MediaStream) => {
         const call = peer.call(id, stream);
         const newAudio = new Audio()
 
         call.on("stream", (userStream) => {
-            console.log("ok");
             newAudio.srcObject = userStream;
             newAudio.play();
         });
@@ -81,7 +78,7 @@ const GuildSidebar: FC = () => {
         call.on("close", () => {
             newAudio.remove();
         });
-    }
+    }*/
 
     const updateChannels = (_user: member, id: string) => {
         let voice = channels?.filter(chnl => chnl._id === id);
@@ -199,6 +196,8 @@ const GuildSidebar: FC = () => {
                         #{user?.discordId.slice(user?.discordId.length - 4, user?.discordId.length)}
                     </div>
                 </div>
+
+                <IoMdSettings size={20} className={style.settings} onClick={() => setVisible(true)} />
             </div>
         </div>
     )

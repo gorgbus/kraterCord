@@ -2,6 +2,7 @@ import Head from 'next/head';
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Socket } from 'socket.io-client';
+import Settings from '../components/Settings';
 import '../styles/globals.scss'
 import { ChannelContext } from '../utils/contexts/ChannelContext';
 import { UserContext } from '../utils/contexts/UserContext';
@@ -16,20 +17,21 @@ function MyApp({ Component, pageProps }: AppPropsWithLayout<any>) {
     const [user, setUser] = useState<member>();
     const [users, setUsers] = useState<member[]>([]);
     const [friends, setFriends] = useState<member[]>([]);
-    const [friendBar, setFriendBar] = useState<string>("friends");
+    const [friendBar, setFriendBar] = useState<string>("online");
     const [friendReqs, setFriendReqs] = useState<req[]>([]);
     const [dms, setDms] = useState<channel[]>([]);
     const [scroll, setScroll] = useState<boolean[]>([false, false]);
     const [guilds, setGuilds] = useState<guild[]>();
     const [channelType, setChannelType] = useState<string>("dm");
     const [notifs, setNotifs] = useState<notif[]>([]);
+    const [visible, setVisible] = useState<boolean>(false);
 
     const getLayout = Component.getLayout ?? ((page) => page);
 
     const icon = notifs.length != 0 ? `krater-oznameni.ico` : `favicon.ico`;
 
     return (
-        <UserContext.Provider value={{ user, setUser, friends, setFriends, friendBar, setFriendBar, friendReqs, setFriendReqs, dms, setDms, notifs, setNotifs, users, setUsers }}>
+        <UserContext.Provider value={{ user, setUser, friends, setFriends, friendBar, setFriendBar, friendReqs, setFriendReqs, dms, setDms, notifs, setNotifs, users, setUsers, visible, setVisible }}>
             <ChannelContext.Provider value={{ channels, setChannels, channel, setChannel, socket, setSocket, scroll, setScroll, guilds, setGuilds, channelType, setChannelType }}>
                 <QueryClientProvider client={queryClient}>
                     <Head>
@@ -43,6 +45,7 @@ function MyApp({ Component, pageProps }: AppPropsWithLayout<any>) {
                         <meta name="theme-color" content="#41b00e"></meta>
                     </Head>
                     {getLayout(<Component {...pageProps} />)}
+                    <Settings visible={visible} />
                 </QueryClientProvider>
             </ChannelContext.Provider>
         </UserContext.Provider>

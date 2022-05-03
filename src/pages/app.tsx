@@ -24,6 +24,7 @@ const FetchPage: NextPage<Props> = ({ guilds, member, channels, dms, notifs, use
 
     useEffect(() => {
         setGuilds(guilds);
+        member.status = "online";
         setUser(member);
         setFriendReqs(member.friendRequests);
         setFriends(member.friends);
@@ -36,6 +37,12 @@ const FetchPage: NextPage<Props> = ({ guilds, member, channels, dms, notifs, use
         temp[index].status = "online";
 
         setUsers(temp);
+
+        if (!localStorage.getItem("settings")) {
+            localStorage.setItem("settings", JSON.stringify({
+                notificationSound: true,
+            }));
+        }
 
         setTimeout(() => {
             router.push("/channels/@me", "/channels/@me", { shallow: true });
