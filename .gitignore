@@ -2,3 +2,6 @@
 node_modules
 dist
 .idea
+.dockerignore
+Dockerfile
+docker-compose.yml
