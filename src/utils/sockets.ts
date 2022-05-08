@@ -4,12 +4,21 @@ import Member, { member } from "../database/schemas/Member";
 import Notif from "../database/schemas/Notif";
 import mongoose from "mongoose";
 import { createWorker } from "./worker";
+import { Router } from "mediasoup/node/lib/types";
+import { createWebRtcTrans } from "./createWebrtcTrans";
+import { producerTrans, producer, consumer } from "./types";
 
 interface ISocket extends Socket {
     user?: member;
 }
 
-let mediasoupRouter;
+let mediasoupRouter: Router;
+
+let producerTransports: producerTrans[] = [];
+let producers: producer[] = [];
+
+let consumerTransports: producerTrans[] = []
+let consumers: consumer[] = [];
 
 const socketIo = async (io: Server) => {
     try {
@@ -25,9 +34,86 @@ const socketIo = async (io: Server) => {
             s.join(id);
             s.join(`${id}-status`);
 
+            s.emit("ms_setup", mediasoupRouter.rtpCapabilities);
+
             s.user = _user;
             const user_ = await Member.findByIdAndUpdate(_user._id, { $set: { status: "online" } }, { new: true });
             s.broadcast.emit("online", user_);
+        });
+
+        s.on("crt_prod_trans", async ({ forceTcp, rtpCapabilities }) => {
+            const { Transport } = await createWebRtcTrans(mediasoupRouter);
+
+            producerTransports.push({ Transport, id: s.id });
+
+            s.emit("prod_trans_crted", { 
+                dtlsParameters: Transport.dtlsParameters, 
+                id: Transport.id, 
+                iceParameters: Transport.iceParameters, 
+                iceCandidates: Transport.iceCandidates
+            });
+        });
+
+        s.on("crt_consume_trans", async ({ forceTcp, producer }) => {
+            const { Transport } = await createWebRtcTrans(mediasoupRouter);
+
+            consumerTransports.push({ Transport, id: `${s.id}-${producer}` });
+
+            s.emit("consumer_trans_crted", { 
+                dtlsParameters: Transport.dtlsParameters, 
+                id: Transport.id, 
+                iceParameters: Transport.iceParameters, 
+                iceCandidates: Transport.iceCandidates
+            });
+        });
+
+        s.on("con_prod_trans", async (dtlsParameters, channel) => {
+            const producer = producerTransports.find(pr => pr.id === s.id);
+
+            await producer?.Transport.connect({ dtlsParameters });
+
+            s.join(channel);
+
+            s.emit("prod_connected");
+        });
+
+        s.on("con_consume_trans", async (transportId, dtlsParameters, producer) => {
+            const consumer = consumerTransports.find(pr => pr.id === `${s.id}-${producer}`);
+
+            await consumer?.Transport.connect({ dtlsParameters });
+
+            s.emit("consumer_connected");
+        });
+
+        s.on("produce", async (kind, rtpParameters) => {
+            const transport = producerTransports.find(pt => pt.id === s.id);
+            const producer = await transport?.Transport.produce({ kind, rtpParameters })
+
+            producers.push({ id: s.id, Producer: producer! });
+
+            //s.to(channel).emit("produced", producer!.id);
+            s.emit("produced", producer!.id);
+        });
+
+        s.on("consume", async (rtpCapabilities, producer) => {
+            const transport = consumerTransports.find(cn => cn.id === `${s.id}-${producer}`);
+            const _producer = producerTransports.find(pr => pr.id === producer);
+
+            try {
+                const consumer = await transport?.Transport.consume({ rtpCapabilities, paused: false, producerId: _producer?.Transport.id! });
+
+                if (!consumer) return;
+
+                s.emit("consumed", { 
+                    producerId: _producer?.Transport.id!,
+                    id: consumer.id,
+                    kind: consumer.kind,
+                    rtpParameters: consumer.rtpParameters,
+                    type: consumer.type,
+                });
+            } catch (err) {
+                console.error(err);
+            }
         });
 
         s.on("update_user", async (user: member) => {
@@ -132,12 +218,23 @@ const socketIo = async (io: Server) => {
             await Notif.findOneAndUpdate({ user: user }, { $pull: { notifs: { channel } } });
         })
 
-        s.on("join_channel", async (id, user) => {
+        s.on("con_user", async (userId, channelId) => {
+            const sockets = await io.fetchSockets() as any;
+
+            for (const _user of sockets.filter((soc: any) => soc.user._id === userId)) {
+                if (producerTransports.find(pr => pr.id === _user.id)) {
+                    _user.emit("user_join", s.id, channelId, userId);
+                    break;
+                }
+            }
+        });
+
+        s.on("user_join", async (id, user) => {
             s.emit("joined_success", id);
             s.broadcast.emit("joined_channel", id, user);
 
             s.join(id);
-            s.to(id).emit("join_success", id, user);
+            s.to(id).emit("user_joined", s.id, id, user);
 
             try {
                 await Channel.findByIdAndUpdate(id, { $push: { users: user } });
@@ -168,6 +265,11 @@ const socketIo = async (io: Server) => {
             if (io.sockets.adapter.rooms.get(`${s.user?._id}-status`)) return;
 
             const user = await Member.findByIdAndUpdate(s.user?._id, { $set: { status: "offline" } }, { new: true });
+
+            producerTransports.filter(pt => pt.id !== s.id);
+            consumerTransports.filter(pt => pt.id !== s.id);
+            producers.filter(pr => pr.id !== s.id);
+
             s.broadcast.emit("online", user);
         })
 

@@ -52,7 +52,11 @@ export const MS_CONFIG = {
                     ip: "0.0.0.0",
                     announcedIp: process.env.IP,
                 }
-            ] as TransportListenIp[]
+            ] as TransportListenIp[],
+            enableUdp: true,
+            enableTcp: true,
+            preferUdp: true,
+            initialAvailableOutgoingBitrate: 1000000
         },
     }
 } as const;
