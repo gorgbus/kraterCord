@@ -3,12 +3,21 @@ import Channel from "../database/schemas/Channel";
 import Member, { member } from "../database/schemas/Member";
 import Notif from "../database/schemas/Notif";
 import mongoose from "mongoose";
+import { createWorker } from "./worker";
 
 interface ISocket extends Socket {
     user?: member;
 }
 
-function socketIo(io: Server) {
+let mediasoupRouter;
+
+const socketIo = async (io: Server) => {
+    try {
+        mediasoupRouter = await createWorker();
+    } catch (err) {
+        console.log(err);
+    }
+
     io.on("connection", (s: ISocket) => {
         console.log(`Socket: ${s.id} has connected`);
 
@@ -168,4 +177,5 @@ function socketIo(io: Server) {
         });
     });
 }
+
 export default socketIo;
