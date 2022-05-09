@@ -6,5 +6,11 @@ export const createWebRtcTrans = async (router: Router) => {
 
     await transport.setMaxIncomingBitrate(1500000);
 
+    transport.on("dtlsstatechange", (state) => {
+        if (state === "closed") {
+            transport.close();
+        }
+    });
+
     return { Transport: transport };
 }

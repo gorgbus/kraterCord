@@ -97,15 +97,16 @@ const socketIo = async (io: Server) => {
 
         s.on("consume", async (rtpCapabilities, producer) => {
             const transport = consumerTransports.find(cn => cn.id === `${s.id}-${producer}`);
-            const _producer = producerTransports.find(pr => pr.id === producer);
+            const _producer = producers.find(pr => pr.id === producer);
 
             try {
-                const consumer = await transport?.Transport.consume({ rtpCapabilities, paused: false, producerId: _producer?.Transport.id! });
+                const consumer = await transport?.Transport.consume({ rtpCapabilities, paused: true, producerId: _producer?.Producer.id! });
+                consumers.push({ id: `${s.id}-${producer}`, Consumer: consumer! });
 
                 if (!consumer) return;
 
                 s.emit("consumed", { 
-                    producerId: _producer?.Transport.id!,
+                    producerId: _producer?.Producer.id!,
                     id: consumer.id,
                     kind: consumer.kind,
                     rtpParameters: consumer.rtpParameters,
@@ -114,6 +115,12 @@ const socketIo = async (io: Server) => {
             } catch (err) {
                 console.error(err);
             }
+        });
+
+        s.on("resume", async (producer) => {
+            const consumer = consumers.find(cn => cn.id === `${s.id}-${producer}`);
+
+            await consumer?.Consumer.resume();
         });
 
         s.on("update_user", async (user: member) => {
@@ -218,15 +225,8 @@ const socketIo = async (io: Server) => {
             await Notif.findOneAndUpdate({ user: user }, { $pull: { notifs: { channel } } });
         })
 
-        s.on("con_user", async (userId, channelId) => {
-            const sockets = await io.fetchSockets() as any;
-
-            for (const _user of sockets.filter((soc: any) => soc.user._id === userId)) {
-                if (producerTransports.find(pr => pr.id === _user.id)) {
-                    _user.emit("user_join", s.id, channelId, userId);
-                    break;
-                }
-            }
+        s.on("con_user", async (userId, channelId, user) => {
+            io.to(userId).emit("user_join_new", s.id, channelId, user);
         });
 
         s.on("user_join", async (id, user) => {
@@ -237,14 +237,14 @@ const socketIo = async (io: Server) => {
             s.to(id).emit("user_joined", s.id, id, user);
 
             try {
-                await Channel.findByIdAndUpdate(id, { $push: { users: user } });
+                // await Channel.findByIdAndUpdate(id, { $push: { users: user } });
             } catch (err) {
                 console.log(err);
             }
 
             s.on("disconnect", async () => {
                 try {
-                    await Channel.findByIdAndUpdate(id, { $pullAll: { users: [user] } });
+                    // await Channel.findByIdAndUpdate(id, { $pullAll: { users: [user] } });
                 } catch (err) {
                     console.log(err);
                 }
