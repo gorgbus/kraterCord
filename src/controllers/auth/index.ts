@@ -18,6 +18,7 @@ export async function authLoginController(req: Request, res: Response) {
 
         if (member.roles.includes("697507886326218902")) {
             res.redirect(`${HOST}/channels/@me`);
+            // res.redirect("http://localhost:3000");
         } else {
             req.session.destroy(err => {
                 res.clearCookie('connect.sid', {path: '/'}).status(200).redirect(`${HOST}/noaccess`);
@@ -28,6 +29,16 @@ export async function authLoginController(req: Request, res: Response) {
         req.session.destroy(err => {
             res.clearCookie('connect.sid', {path: '/'}).status(200).redirect(`${HOST}/noaccess`);
         });
+    }
+}
+
+export function checkAuthController(req: Request, res: Response) {
+    const user = req.user as User;
+
+    if (user) {
+        res.status(200).send({ msg: "Authorized" });
+    } else {
+        res.status(200).send({ msg: "Unauthorized" });
     }
 }
 

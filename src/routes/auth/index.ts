@@ -1,6 +1,6 @@
 import { Router } from "express";
 import passport from "passport";
-import { authLoginController, getSetupController, getUserController } from "../../controllers/auth";
+import { authLoginController, checkAuthController, getSetupController, getUserController } from "../../controllers/auth";
 import { isAuthenticated } from "../../utils/middlewares";
 
 const router = Router();
@@ -20,5 +20,7 @@ router.get("/status", (req, res) => {
 router.get("/user", isAuthenticated, getUserController);
 
 router.get("/setup", isAuthenticated, getSetupController);
+
+router.get("/check", checkAuthController);
 
 export default router;
