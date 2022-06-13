@@ -13,12 +13,8 @@ type Member = {
   mute: boolean;
 }
 
-export async function authLogin(id: string) {
-    const user = await User.findById(id);
-
-    if(!user) throw new Error("No user found");
-
+export async function authLogin(token: string) {
     return axios.get<Member>(`${DISCORD_API_URL}/users/@me/guilds/456060911573008385/member`, {
-        headers: { Authorization: `Bearer ${decrypt(user.accessToken)}` }
+        headers: { Authorization: `Bearer ${token}` }
     })
 }

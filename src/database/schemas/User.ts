@@ -12,14 +12,6 @@ const UserSchema = new Schema<User>({
         type: mongoose.SchemaTypes.String,
         required: true,
         unique: true
-    },
-    accessToken: {
-        type: mongoose.SchemaTypes.String,
-        required: true,
-    },
-    refreshToken: {
-        type: mongoose.SchemaTypes.String,
-        required: true,
     }
 });
 

@@ -1,16 +1,16 @@
 import { Router } from "express";
 import { friendAcceptController, friendDeclineController, friendRemoveController, friendReqController } from "../../controllers/user";
-import { isAuthenticatedClient } from "../../utils/middlewares";
+import { isAuthenticated } from "../../utils/middlewares";
 
 const router = Router();
 
-router.post("/friend_request", isAuthenticatedClient, friendReqController);
+router.post("/friend_request", isAuthenticated, friendReqController);
 
-router.post("/friend_accept", isAuthenticatedClient, friendAcceptController);
+router.post("/friend_accept", isAuthenticated, friendAcceptController);
 
-router.post("/friend_decline", isAuthenticatedClient, friendDeclineController);
+router.post("/friend_decline", isAuthenticated, friendDeclineController);
 
-router.post("/friend_remove", isAuthenticatedClient, friendRemoveController);
+router.post("/friend_remove", isAuthenticated, friendRemoveController);
 
 
 export default router;

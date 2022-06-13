@@ -6,29 +6,71 @@ import { config } from "dotenv";
 import Guild from "../../database/schemas/Guild";
 import Channel, { channel } from "../../database/schemas/Channel";
 import Notif from "../../database/schemas/Notif";
+import jwt from "jsonwebtoken";
+import Tokens from "../../database/schemas/Tokens";
+import { encrypt } from "../../utils/crypto";
 config();
 
 const HOST = process.env.HOST;
 
-export async function authLoginController(req: Request, res: Response) {
-    const user = req.user as User;
+interface tokenType extends Request {
+    _user?: {
+        token: string;
+        username: string;
+        avatar: string;
+        discordId: string;
+    };
+}
+
+const generateAccessToken = (user: any) => {
+    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET!, { expiresIn: "24h" });
+}
+
+export async function authLoginController(req: tokenType, res: Response) {
+    const user = req._user;
+    
+    if (!user) return res.status(200).redirect(`${HOST}/noaccess`);
 
     try {
-        const { data: member } = await authLogin(user.id);
+        const { data: _member } = await authLogin(user?.token!);
 
-        if (member.roles.includes("697507886326218902")) {
-            res.redirect(`${HOST}/channels/@me`);
-            // res.redirect("http://localhost:3000");
+        if (_member.roles.includes("697507886326218902")) {
+            const member = await Member.findOne({ discordId: user?.discordId });
+            let savedMember;
+
+            if (!member) {
+                let avatar = user?.avatar;
+
+                (avatar) ? avatar = `https://cdn.discordapp.com/avatars/${user?.discordId}/${avatar}.png` : avatar = "https://cdn.discordapp.com/attachments/805393975900110852/950026779484094494/ano-ne.gif";
+
+                const newMember = new Member({ discordId: user?.discordId, username: user?.username, avatar, hash: user?.discordId.slice(user?.discordId.length - 4, user?.discordId.length), friends: [], friendRequests: [], status: "offline" });
+                savedMember = await newMember.save();
+
+                const memberNotifs = new Notif({ user: savedMember._id, notfis: [] });
+                await memberNotifs.save();
+            }
+
+            const accessToken = generateAccessToken({ id: user?.discordId });
+            const refreshToken = jwt.sign({ id: user?.discordId }, process.env.REFRESH_TOKEN_SECRET!);
+
+            const tokens = await Tokens.findOne({ discordId: user?.discordId });
+
+            if (!tokens) {
+                const newTokens = new Tokens({ discordId: user?.discordId, accessToken: encrypt(accessToken), refreshToken: encrypt(refreshToken) });
+                await newTokens.save();
+
+                return res.redirect(`${HOST}/app?access=${accessToken}&refresh=${refreshToken}`);
+            }
+
+            await Tokens.updateOne({ discordId: user?.discordId }, { accessToken: encrypt(accessToken), refreshToken: encrypt(refreshToken) });
+
+            return res.redirect(`${HOST}/app?access=${accessToken}&refresh=${refreshToken}`);
         } else {
-            req.session.destroy(err => {
-                res.clearCookie('connect.sid', {path: '/'}).status(200).redirect(`${HOST}/noaccess`);
-            });
+            return res.status(200).redirect(`${HOST}/noaccess`);
         }
     } catch (err) {
         console.log(err);
-        req.session.destroy(err => {
-            res.clearCookie('connect.sid', {path: '/'}).status(200).redirect(`${HOST}/noaccess`);
-        });
+        res.status(200).redirect(`${HOST}/noaccess`);
     }
 }
 
@@ -46,7 +88,7 @@ export async function getUserController(req: Request, res: Response) {
     const user = req.user as User;
 
     try {
-        let member = await Member.findOne({ discordId: user.discordId });
+        let member = await Member.findOne({ discordId: user.id });
 
         if (!member) return res.status(500).send({ msg: "User not found" });
 
@@ -66,7 +108,7 @@ export async function getSetupController(req: Request, res: Response) {
     try {
         const guilds = await Guild.find();
 
-        let member = await Member.findOne({ discordId: user.discordId });
+        let member = await Member.findOne({ discordId: user.id });
 
         if (!member) return res.status(500).send({ msg: "User not found" });
 
