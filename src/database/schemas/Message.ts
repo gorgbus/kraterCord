@@ -22,7 +22,8 @@ const MessageSchema = new Schema<message>({
         },
         type: {
             type: mongoose.SchemaTypes.String,
-        }
+        },
+        required: false
     },
     author: {
         type: mongoose.SchemaTypes.ObjectId,
