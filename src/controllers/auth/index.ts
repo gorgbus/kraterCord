@@ -23,7 +23,7 @@ interface tokenType extends Request {
 }
 
 const generateAccessToken = (user: any) => {
-    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET!, { expiresIn: "24h" });
+    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET!);
 }
 
 export async function authLoginController(req: tokenType, res: Response) {
@@ -50,21 +50,31 @@ export async function authLoginController(req: tokenType, res: Response) {
                 await memberNotifs.save();
             }
 
-            const accessToken = generateAccessToken({ id: user?.discordId });
-            const refreshToken = jwt.sign({ id: user?.discordId }, process.env.REFRESH_TOKEN_SECRET!);
+            const access = generateAccessToken({ id: user?.discordId });
+            const refresh = jwt.sign({ id: user?.discordId }, process.env.REFRESH_TOKEN_SECRET!);
 
             const tokens = await Tokens.findOne({ discordId: user?.discordId });
 
             if (!tokens) {
-                const newTokens = new Tokens({ discordId: user?.discordId, accessToken: encrypt(accessToken), refreshToken: encrypt(refreshToken) });
+                const newTokens = new Tokens({ discordId: user?.discordId, accessToken: encrypt(access), refreshToken: encrypt(refresh) });
                 await newTokens.save();
 
-                return res.redirect(`${HOST}/app?access=${accessToken}&refresh=${refreshToken}`);
+                return res.cookie("JWT", JSON.stringify({ access, refresh }), {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: "none",
+                    maxAge: 1000 * 60 * 60 * 24 * 7
+                }).redirect(`${HOST}/app`);
             }
 
-            await Tokens.updateOne({ discordId: user?.discordId }, { accessToken: encrypt(accessToken), refreshToken: encrypt(refreshToken) });
+            await Tokens.updateOne({ discordId: user?.discordId }, { accessToken: encrypt(access), refreshToken: encrypt(refresh) });
 
-            return res.redirect(`${HOST}/app?access=${accessToken}&refresh=${refreshToken}`);
+            return res.cookie("JWT", JSON.stringify({ access, refresh }), {
+                httpOnly: true,
+                secure: true,
+                sameSite: "none",
+                maxAge: 1000 * 60 * 60 * 24 * 7
+            }).redirect(`${HOST}/app`);
         } else {
             return res.status(200).redirect(`${HOST}/noaccess`);
         }
@@ -127,11 +137,15 @@ export async function getSetupController(req: Request, res: Response) {
         member = await member.populate("friends");
         member = await member.populate("friendRequests.friend");
 
+        member.status = "online";
+
         const notifs = await Notif.find({ user: member._id });
 
         const users = await Member.find();
 
-        return res.status(200).send({ guilds, dms: popDMs, channels: guildChannels, member, notifs: notifs[0].notifs, users });
+        const token: string = req.cookies.JWT;
+
+        return res.status(200).cookie("JWT", token, { httpOnly: true, secure: true, sameSite: "none", maxAge: 1000 * 60 * 60 * 24 * 7 }).send({ guilds, dms: popDMs, channels: guildChannels, member, notifs: notifs[0].notifs, users });
     } catch (err) {
         console.log(err);
         return res.status(500)

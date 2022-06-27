@@ -29,15 +29,16 @@ const socketIo = async (io: Server) => {
     io.on("connection", (s: ISocket) => {
         console.log(`Socket: ${s.id} has connected`);
 
-        s.on("setup", async (id: string, _user: member) => {
+        s.on("setup", async (id: string, user: member) => {
             s.join(id);
             s.join(`${id}-status`);
 
-            // s.emit("ms_setup", mediasoupRouter.rtpCapabilities);
+            s.user = user;
+            s.broadcast.emit("online", user, s.id);
+        });
 
-            s.user = _user;
-            const user_ = await Member.findByIdAndUpdate(_user._id, { $set: { status: "online" } }, { new: true });
-            s.broadcast.emit("online", user_);
+        s.on("status", (user: member, id: string) => {
+            io.to(id).emit("online", user);
         });
 
         s.on("ms_setup", async (channel, callback) => {

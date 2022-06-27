@@ -4,12 +4,18 @@ import Tokens from "../database/schemas/Tokens";
 import { decrypt } from "./crypto";
 
 export const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-    const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1];
+    // const authHeader = req.headers["authorization"];
+    // const token = authHeader && authHeader.split(" ")[1];
+
+    if (!req.cookies.JWT) return res.status(403).send({ msg: "Unauthorized" });
+
+    let token = JSON.parse(req.cookies.JWT);
+
+    token = token.access ? token.access : null;
 
     if (token == null) return res.status(401).send({ msg: "Missing token" });
     
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!, async (err, user: any) => {
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!, async (err: any, user: any) => {
         if (err) return res.status(403).send({ msg: "Unauthorized" });
 
         const tokens = await Tokens.findOne({ discordId: user?.id });
