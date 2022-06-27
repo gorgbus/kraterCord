@@ -8,7 +8,7 @@ import "./database";
 config();
 
 const PORT = process.env.PORT || 3001;
-const HOST = process.env.HOST;
+const HOST = process.env.HOST?.split(',');
 
 async function main() {
     try {
@@ -18,7 +18,7 @@ async function main() {
         const io = new Server(httpServer, {
             pingTimeout: 60000,
             cors: {
-                origin: [HOST!],
+                origin: HOST!,
             }
         });
 

@@ -1,11 +1,19 @@
-import { Router } from "express";
+import { Request, Router } from "express";
 import passport from "passport";
 import { authLoginController, checkAuthController, getSetupController, getUserController } from "../../controllers/auth";
 import { isAuthenticated } from "../../utils/middlewares";
 
 const router = Router();
 
-router.get("/discord", passport.authenticate('discord', { session: false }), (req, res) => {
+router.get("/discord", (req, res, next) => {
+    const redir = req.query.redir;
+
+    if (!redir) return res.status(403).redirect('/status');
+
+    const authenticator = passport.authenticate('discord', { session: false, state: redir.toString() });
+
+    authenticator(req, res, next);
+}, (req, res) => {
     res.send(200);
 });
 

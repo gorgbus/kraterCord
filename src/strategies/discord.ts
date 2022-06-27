@@ -28,7 +28,7 @@ passport.use(new Strategy({
         accessToken: string, 
         refreshToken: string, 
         profile: Profile, 
-        done: VerifyCallback
+        done: VerifyCallback,
     ) => {
         try {
             const { id: discordId, username } = profile;
@@ -39,6 +39,7 @@ passport.use(new Strategy({
                 discordId,
                 avatar,
                 username,
+                redir: req.query.state
             };
 
             return done(null, { id: discordId });

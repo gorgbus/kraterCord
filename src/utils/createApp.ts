@@ -8,7 +8,7 @@ config();
 
 require("../strategies/discord");
 
-const HOST = process.env.HOST;
+const HOST = process.env.HOST?.split(',');
 
 function createApp(): Express {
     const app = express();
@@ -17,7 +17,7 @@ function createApp(): Express {
     app.use(express.urlencoded({ extended: true }));
 
     app.use(cors({
-        origin: [HOST!],
+        origin: HOST!,
         credentials: true
     }));
 

@@ -11,14 +11,13 @@ import Tokens from "../../database/schemas/Tokens";
 import { encrypt } from "../../utils/crypto";
 config();
 
-const HOST = process.env.HOST;
-
 interface tokenType extends Request {
     _user?: {
         token: string;
         username: string;
         avatar: string;
         discordId: string;
+        redir: string;
     };
 }
 
@@ -29,7 +28,7 @@ const generateAccessToken = (user: any) => {
 export async function authLoginController(req: tokenType, res: Response) {
     const user = req._user;
     
-    if (!user) return res.status(200).redirect(`${HOST}/noaccess`);
+    if (!user) return res.status(200).redirect(`/status`);
 
     try {
         const { data: _member } = await authLogin(user?.token!);
@@ -64,7 +63,7 @@ export async function authLoginController(req: tokenType, res: Response) {
                     secure: true,
                     sameSite: "none",
                     maxAge: 1000 * 60 * 60 * 24 * 7
-                }).redirect(`${HOST}/app`);
+                }).redirect(`${user.redir}app`);
             }
 
             await Tokens.updateOne({ discordId: user?.discordId }, { accessToken: encrypt(access), refreshToken: encrypt(refresh) });
@@ -74,13 +73,13 @@ export async function authLoginController(req: tokenType, res: Response) {
                 secure: true,
                 sameSite: "none",
                 maxAge: 1000 * 60 * 60 * 24 * 7
-            }).redirect(`${HOST}/app`);
+            }).redirect(`${user.redir}app`);
         } else {
-            return res.status(200).redirect(`${HOST}/noaccess`);
+            return res.status(200).redirect(`${user.redir}noaccess`);
         }
     } catch (err) {
         console.log(err);
-        res.status(200).redirect(`${HOST}/noaccess`);
+        res.status(200).redirect(`${user.redir}noaccess`);
     }
 }
 
