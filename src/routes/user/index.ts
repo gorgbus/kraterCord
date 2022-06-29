@@ -4,13 +4,13 @@ import { isAuthenticated } from "../../utils/middlewares";
 
 const router = Router();
 
-router.post("/friend_request", isAuthenticated, friendReqController);
+router.post("/friend/request", isAuthenticated, friendReqController);
 
-router.post("/friend_accept", isAuthenticated, friendAcceptController);
+router.post("/friend/accept", isAuthenticated, friendAcceptController);
 
-router.post("/friend_decline", isAuthenticated, friendDeclineController);
+router.post("/friend/decline", isAuthenticated, friendDeclineController);
 
-router.post("/friend_remove", isAuthenticated, friendRemoveController);
+router.post("/friend/remove", isAuthenticated, friendRemoveController);
 
 
 export default router;

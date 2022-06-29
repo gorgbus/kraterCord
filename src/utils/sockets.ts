@@ -9,8 +9,10 @@ import { createWebRtcTrans } from "./createWebrtcTrans";
 import { transports, producer, consumer, rooms, peers } from "./types";
 
 interface ISocket extends Socket {
-    user?: member;
+    user?: string;
 }
+
+const sockets = new Map<string, string[]>();
 
 let rooms: rooms = {};
 let peers: peers = {};
@@ -29,11 +31,20 @@ const socketIo = async (io: Server) => {
     io.on("connection", (s: ISocket) => {
         console.log(`Socket: ${s.id} has connected`);
 
-        s.on("setup", async (id: string, user: member) => {
-            s.join(id);
-            s.join(`${id}-status`);
+        s.on("setup", async (user: string) => {
+            s.join(user);
+            s.join(`${user}-status`);
 
             s.user = user;
+
+            const socket = sockets.get(user);
+
+            if (socket) {
+                sockets.set(user, [...socket, s.id]);
+            } else {
+                sockets.set(user, [s.id]);
+            }
+            
             s.broadcast.emit("online", user, s.id);
         });
 
@@ -50,7 +61,7 @@ const socketIo = async (io: Server) => {
                 transports: [],
                 consumers: [],
                 producers: [],
-                user: s.user?._id!,
+                user: s.user!,
             }
 
             s.join(channel);
@@ -110,7 +121,7 @@ const socketIo = async (io: Server) => {
 
             addPruducer(producer, channel, s.id);
 
-            s.to(channel).emit("new_producer", { producerId: producer.id, userId: s.user?._id! });
+            s.to(channel).emit("new_producer", { producerId: producer.id, userId: s.user! });
 
             // producers.push({ id: s.id, Producer: producer! });
 
@@ -182,29 +193,8 @@ const socketIo = async (io: Server) => {
             s.broadcast.emit("online", _user);
         });
 
-        s.on("fr_accept", (_id, friend) => {
-            s.join(_id);
-            s.to(_id).emit("fr_accepted", (friend));
-            s.leave(_id);
-        });
-
-        s.on("fr_decline", (_id, friend) => {
-            s.join(_id);
-            s.to(_id).emit("fr_declined", (friend));
-            s.leave(_id);
-        });
-
-        s.on("fr_remove", (_id, friend) => {
-            s.join(_id);
-            s.to(_id).emit("fr_removed", (friend));
-            s.leave(_id);
-        });
-
-        s.on("fr_req", (_id, friend) => {
-            console.log(_id, friend);
-            s.join(_id);
-            s.to(_id).emit("fr_reqd", (friend));
-            s.leave(_id);
+        s.on("friend", (type, id, friend) => {
+            emitToUser(friend, io, 'friend-client', type, id);
         });
 
         s.on("dm_create", (_id, dm) => {
@@ -327,9 +317,9 @@ const socketIo = async (io: Server) => {
 
         s.on("disconnect", async () => {
             if (!s.user) return;
-            if (io.sockets.adapter.rooms.get(`${s.user?._id}-status`)) return;
+            if (io.sockets.adapter.rooms.get(`${s.user}-status`)) return;
 
-            const user = await Member.findByIdAndUpdate(s.user?._id, { $set: { status: "offline" } }, { new: true });
+            const user = await Member.findByIdAndUpdate(s.user, { $set: { status: "offline" } }, { new: true });
 
             consumers = removeItems(consumers, s.id, "consumer");
             producers = removeItems(producers, s.id, "producer");
@@ -347,6 +337,15 @@ const socketIo = async (io: Server) => {
             }
 
             s.broadcast.emit("online", user);
+
+            const socket = sockets.get(s.id);
+
+            if (socket) {
+                sockets.set(s.user, socket.filter((sc: string) => sc !== s.id));
+            } else {
+                sockets.delete(s.user);
+            }
+
             console.log(`Socket: ${s.id} has disconnected`);
         });
     });
@@ -428,6 +427,22 @@ const removeItems = (items: Array<any>, id: string, type: string) => {
     items = items.filter(item => item.id !== id);
 
     return items;
+}
+
+const emitToUser = (id: string, io: Server, event: string, ...args: any) => {
+    const user = sockets.get(id);
+    let users: string[] = [];
+
+    console.log(user);
+
+    if (user) {
+        user.map((s) => {
+            users.push(s);
+        });
+
+        console.log(users, args, event);
+        io.to(users).emit(event, ...args);
+    }
 }
 
 export default socketIo;

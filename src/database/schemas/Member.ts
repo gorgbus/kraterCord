@@ -38,15 +38,13 @@ const MemberSchema = new Schema<member>({
     },
     friends: [
         {
-            type: mongoose.SchemaTypes.ObjectId,
-            ref: "members",
+            type: mongoose.SchemaTypes.String,
         }
     ],
     friendRequests: [
         {
             friend: {
-                type: mongoose.SchemaTypes.ObjectId,
-                ref: "members",
+                type: mongoose.SchemaTypes.String,
             },
             type: {
                 type: mongoose.SchemaTypes.String,

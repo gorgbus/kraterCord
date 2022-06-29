@@ -4,27 +4,31 @@ import Member from "../../database/schemas/Member";
 export async function friendReqController (req: Request, res: Response) {
     const { username, hash, id } = req.body;
 
-    if (!username || !hash || !id) return res.status(500);
+    if (!username || !hash || !id) return res.status(500).send({ msg: "Chybějící jméno, hash nebo id" });
 
     try {
         const friend = await Member.findById(id);
 
-        const isAlready = await Member.findOne({ username, hash, friendRequests: { $in: { friend: [id] } } });
+        if (!friend) return res.status(500).send({ msg: `Uživatel ${username}#${hash} nebyl nalezen` });
 
-        if (isAlready) return res.status(202).send({ msg: "Already send request to this user" });
+        const isAlready = await Member.findOne({ username, hash, friendRequests: { $in: { friend: id } } });
+        const isFriend = await Member.findOne({ username, hash, friends: { $in: [id] } });
 
-        const user = await Member.findOneAndUpdate({ username, hash }, { $push: { friendRequests: { friend, type: "in" } } }, { new: true });
+        if (isAlready) return res.status(500).send({ msg: `Už jsi poslal žádost o přátelství uživateli ${username}#${hash}` });
+        if (isFriend) return res.status(500).send({ msg: `${username}#${hash} už je tvůj přítel`});
+
+        const user = await Member.findOneAndUpdate({ username, hash }, { $push: { friendRequests: { friend: id, type: "in" } } }, { new: true });
         
         if (user && friend) {
-            await friend.updateOne({ $push: { friendRequests: { friend: user, type: "out" } } });
+            await friend.updateOne({ $push: { friendRequests: { friend: user._id, type: "out" } } });
 
-            return res.status(200).send(user);
+            return res.status(200).send({ msg: `Žádost o přátelství byla poslána uživateli ${username}#${hash}`, friend: user });
         }
 
-        return res.status(203).send({ msg: "User not found" });
+        return res.status(500).send({ msg: "Uživatel nebyl nalezen" });
     } catch (err) {
         console.log(err);
-        return res.status(500);
+        return res.status(500).send({ msg: "Něco se nepovedlo" });
     }
 }
 
