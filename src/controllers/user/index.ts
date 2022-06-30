@@ -7,9 +7,7 @@ export async function friendReqController (req: Request, res: Response) {
     if (!username || !hash || !id) return res.status(500).send({ msg: "Chybějící jméno, hash nebo id" });
 
     try {
-        const friend = await Member.findById(id);
-
-        if (!friend) return res.status(500).send({ msg: `Uživatel ${username}#${hash} nebyl nalezen` });
+        const user = await Member.findById(id);
 
         const isAlready = await Member.findOne({ username, hash, friendRequests: { $in: { friend: id } } });
         const isFriend = await Member.findOne({ username, hash, friends: { $in: [id] } });
@@ -17,12 +15,12 @@ export async function friendReqController (req: Request, res: Response) {
         if (isAlready) return res.status(500).send({ msg: `Už jsi poslal žádost o přátelství uživateli ${username}#${hash}` });
         if (isFriend) return res.status(500).send({ msg: `${username}#${hash} už je tvůj přítel`});
 
-        const user = await Member.findOneAndUpdate({ username, hash }, { $push: { friendRequests: { friend: id, type: "in" } } }, { new: true });
+        const friend = await Member.findOneAndUpdate({ username, hash }, { $push: { friendRequests: { friend: id, type: "in" } } }, { new: true });
         
         if (user && friend) {
-            await friend.updateOne({ $push: { friendRequests: { friend: user._id, type: "out" } } });
+            await user.updateOne({ $push: { friendRequests: { friend: friend._id, type: "out" } } });
 
-            return res.status(200).send({ msg: `Žádost o přátelství byla poslána uživateli ${username}#${hash}`, friend: user });
+            return res.status(200).send({ msg: `Žádost o přátelství byla poslána uživateli ${username}#${hash}`, friend });
         }
 
         return res.status(500).send({ msg: "Uživatel nebyl nalezen" });
@@ -35,11 +33,10 @@ export async function friendReqController (req: Request, res: Response) {
 export async function friendDeclineController (req: Request, res: Response) {
     const { id, friendId } = req.body;
 
-    if (!id || !friendId) return res.status(500);
+    if (!id || !friendId) return res.status(500).send({ msg: "Chybějící id" });
 
     try {
         const friend = await Member.findById(friendId);
-        console.log(friend);
 
         const user = await Member.findByIdAndUpdate(id, { $pull: { friendRequests: { friend: friendId } } }, { new: true });
 
@@ -68,8 +65,8 @@ export async function friendAcceptController (req: Request, res: Response) {
         if (user && friend) {
             await friend.updateOne({ $pull: { friendRequests: { friend: id } } });
 
-            await user.updateOne({ $push: { friends: friend } });
-            await friend.updateOne({ $push: { friends: user } }, { new: true });
+            await user.updateOne({ $push: { friends: friend._id } });
+            await friend.updateOne({ $push: { friends: user._id } }, { new: true });
 
             return res.status(200).send(friend);
         }

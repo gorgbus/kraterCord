@@ -31,18 +31,18 @@ const socketIo = async (io: Server) => {
     io.on("connection", (s: ISocket) => {
         console.log(`Socket: ${s.id} has connected`);
 
-        s.on("setup", async (user: string) => {
-            s.join(user);
-            s.join(`${user}-status`);
+        s.on("setup", async (id: string, user: member) => {
+            s.join(id);
+            s.join(`${id}-status`);
 
-            s.user = user;
+            s.user = id;
 
-            const socket = sockets.get(user);
+            const socket = sockets.get(id);
 
             if (socket) {
-                sockets.set(user, [...socket, s.id]);
+                sockets.set(id, [...socket, s.id]);
             } else {
-                sockets.set(user, [s.id]);
+                sockets.set(id, [s.id]);
             }
             
             s.broadcast.emit("online", user, s.id);
@@ -433,14 +433,11 @@ const emitToUser = (id: string, io: Server, event: string, ...args: any) => {
     const user = sockets.get(id);
     let users: string[] = [];
 
-    console.log(user);
-
     if (user) {
         user.map((s) => {
             users.push(s);
         });
 
-        console.log(users, args, event);
         io.to(users).emit(event, ...args);
     }
 }
