@@ -7,9 +7,9 @@ export interface member {
     avatar: string;
     hash: string;
     status: string;
-    friends: member[];
+    friends: string[];
     friendRequests: {
-        friend: member,
+        friend: string;
         type: string;
     }[];
 }
