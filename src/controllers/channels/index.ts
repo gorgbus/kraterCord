@@ -111,33 +111,19 @@ export async function createChannelController(req: Request, res: Response) {
     if (!type) return res.status(500);
 
     try {
-        let members: member[] = [];
-
-        if (type === "dm") {
-            for (const id of users) {
-                const user = await Member.findById(id);
-
-                if (!user) return res.status(500);
-
-                members.push(user);
-            }
-        } else return res.status(500);
-
-        let channel = {
+        const channel = {
             name: " ",
             type,
-            users: members,
+            users: users || [],
         }
 
-        let ch = await Channel.findOne({ type, users: { $in: members } });
+        let ch = await Channel.findOne({ type, users: { $in: users } });
 
         if (!ch) {
             ch = await Channel.create(channel);
         }
 
-        const popCh = await ch.populate("users");
-
-        return res.status(200).send(popCh);
+        return res.status(200).send(ch);
     } catch (err) {
         console.log(err);
         return res.status(500);

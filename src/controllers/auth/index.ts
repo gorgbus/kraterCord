@@ -121,20 +121,9 @@ export async function getSetupController(req: Request, res: Response) {
 
         if (!member) return res.status(500).send({ msg: "User not found" });
 
-        const dmChannels = await Channel.find({ type: "dm", users: { $in: [member] } });
-
-        let popDMs: channel[] = [];
-
-        for (const channel of dmChannels) {
-            const _channel = await channel.populate("users");
-
-            popDMs.push(_channel);
-        }
+        const dms = await Channel.find({ type: "dm", users: { $in: [member._id] } });
 
         const guildChannels = await Channel.find({ guild: { $exists: true } });
-
-        member = await member.populate("friends");
-        member = await member.populate("friendRequests.friend");
 
         member.status = "online";
 
@@ -144,7 +133,7 @@ export async function getSetupController(req: Request, res: Response) {
 
         const token: string = req.cookies.JWT;
 
-        return res.status(200).cookie("JWT", token, { httpOnly: true, secure: true, sameSite: "none", maxAge: 1000 * 60 * 60 * 24 * 7 }).send({ guilds, dms: popDMs, channels: guildChannels, member, notifs: notifs[0].notifs, users });
+        return res.status(200).cookie("JWT", token, { httpOnly: true, secure: true, sameSite: "none", maxAge: 1000 * 60 * 60 * 24 * 7 }).send({ guilds, dms, channels: guildChannels, member, notifs: notifs[0].notifs, users });
     } catch (err) {
         console.log(err);
         return res.status(500)

@@ -193,8 +193,8 @@ const socketIo = async (io: Server) => {
             s.broadcast.emit("online", _user);
         });
 
-        s.on("friend", (type, id, friend) => {
-            emitToUser(friend, io, 'friend-client', type, id);
+        s.on("friend", (type, id, friendId) => {
+            emitToUser(friendId, io, 'friend-client', type, id);
         });
 
         s.on("dm_create", (_id, dm) => {
@@ -203,54 +203,52 @@ const socketIo = async (io: Server) => {
             s.leave(_id);
         });
 
-        s.on("create_message_dm", async (_id, data) => {
-            s.join(_id);
-            s.to(_id).emit("new_message", data);
-            s.leave(_id);
+        s.on("create_message_dm", async (id, data) => {
+            emitToUser(id, io, 'new_message', data);
 
-            const users = await Member.find();
+            // const users = await Member.find();
 
-            let offline: mongoose.Types.ObjectId[] = [];
+            // let offline: mongoose.Types.ObjectId[] = [];
 
-            for (const user of users) {
-                if (!io.sockets.adapter.rooms.get(`${user._id}-status`)) {
-                    const objId = new mongoose.Types.ObjectId(user._id)
-                    offline.push(objId);
-                }
-            }
+            // for (const user of users) {
+            //     if (!io.sockets.adapter.rooms.get(`${user._id}-status`)) {
+            //         const objId = new mongoose.Types.ObjectId(user._id)
+            //         offline.push(objId);
+            //     }
+            // }
 
-            const notif = {
-                guild: data.guild,
-                channel: data.msg.channel,
-                createdOn: Date.now(),
-            }
+            // const notif = {
+            //     guild: data.guild,
+            //     channel: data.msg.channel,
+            //     createdOn: Date.now(),
+            // }
 
-            await Notif.updateMany({ user: { $in: offline }, 'notifs.channel': data.msg.channel }, { $inc: { 'notifs.$.count': 1 }});
-            await Notif.updateMany({ user: { $in: offline }, 'notifs.channel': { $nin: [data.id] } }, { $push: { notifs: notif } });
+            // await Notif.updateMany({ user: { $in: offline }, 'notifs.channel': data.msg.channel }, { $inc: { 'notifs.$.count': 1 }});
+            // await Notif.updateMany({ user: { $in: offline }, 'notifs.channel': { $nin: [data.id] } }, { $push: { notifs: notif } });
         });
 
         s.on("create_message", async (data) => {
             s.broadcast.emit("new_message", data);
 
-            const users = await Member.find();
+            // const users = await Member.find();
 
-            let offline: mongoose.Types.ObjectId[] = [];
+            // let offline: mongoose.Types.ObjectId[] = [];
 
-            for (const user of users) {
-                if (!io.sockets.adapter.rooms.get(`${user._id}-status`)) {
-                    const objId = new mongoose.Types.ObjectId(user._id)
-                    offline.push(objId);
-                }
-            }
+            // for (const user of users) {
+            //     if (!io.sockets.adapter.rooms.get(`${user._id}-status`)) {
+            //         const objId = new mongoose.Types.ObjectId(user._id)
+            //         offline.push(objId);
+            //     }
+            // }
 
-            const notif = {
-                guild: data.guild,
-                channel: data.msg.channel,
-                createdOn: Date.now(),
-            }
+            // const notif = {
+            //     guild: data.guild,
+            //     channel: data.msg.channel,
+            //     createdOn: Date.now(),
+            // }
 
-            await Notif.updateMany({ user: { $in: offline }, 'notifs.channel': data.msg.channel }, { $inc: { 'notifs.$.count': 1 }});
-            await Notif.updateMany({ user: { $in: offline }, 'notifs.channel': { $nin: [data.id] } }, { $push: { notifs: notif } });
+            // await Notif.updateMany({ user: { $in: offline }, 'notifs.channel': data.msg.channel }, { $inc: { 'notifs.$.count': 1 }});
+            // await Notif.updateMany({ user: { $in: offline }, 'notifs.channel': { $nin: [data.id] } }, { $push: { notifs: notif } });
         });
 
         s.on("create_notif", async (data) => {

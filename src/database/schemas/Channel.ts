@@ -1,11 +1,10 @@
 import mongoose, { Schema } from "mongoose";
-import { member } from "./Member";
 
 export interface channel {
     _id: string;
     name: string;
     type: string;
-    users: member[];
+    users: string[];
     guild: string;
 }
 
@@ -20,8 +19,7 @@ const ChannelSchema = new Schema<channel>({
     },
     users: [
         {
-            type: mongoose.SchemaTypes.ObjectId,
-            ref: "members",
+            type: mongoose.SchemaTypes.String,
         }
     ],
     guild: {
