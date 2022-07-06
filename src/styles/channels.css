@@ -1,0 +1,13 @@
+.channels::-webkit-scrollbar {
+    width: 0.4rem;
+    background-color: none;
+}
+
+.channels::-webkit-scrollbar-thumb {
+    background-color: none;
+    border-radius: 0.25rem;
+}
+
+.channels:hover::-webkit-scrollbar-thumb {
+    background-color: rgb(17 24 39 / var(--tw-bg-opacity));
+}
