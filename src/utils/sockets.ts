@@ -243,7 +243,7 @@ const socketIo = async (io: Server) => {
             await Notif.updateMany({ user: { $nin: online }, 'notifs.channel': { $nin: [data.id] } }, { $push: { notifs: notif } });
         });
 
-        s.on("create_notif", async (data) => {
+        s.on("create_notif", async (data, callback) => {
             const notif = {
                 guild: data.guild,
                 channel: data.channel,
@@ -253,6 +253,11 @@ const socketIo = async (io: Server) => {
 
             await Notif.updateOne({ user: data.user, 'notifs.channel': data.channel }, { $inc: { 'notifs.$.count': 1 } });
             await Notif.updateOne({ user: data.user, 'notifs.channel': { $nin: [data.channel] } }, { $push: { notifs: notif } });
+
+            const notifications = await Notif.findOne({ user: data.user });
+            const notification = notifications?.notifs.find(n => n.channel === data.channel);
+
+            if (notification) callback(notification);
         })
 
         s.on("notif_rm", async (channel, user) => {
