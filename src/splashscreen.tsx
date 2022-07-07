@@ -1,13 +1,10 @@
 import './index.css'
-import ReactDOM from 'react-dom/client';
 import { invoke } from '@tauri-apps/api/tauri';
 import { checkUpdate, installUpdate } from '@tauri-apps/api/updater';
 import { getVersion } from '@tauri-apps/api/app';
 import { relaunch } from '@tauri-apps/api/process';
 import { FC, useEffect, useState } from 'react';
 import Img from 'react-cool-img';
-
-const splash = ReactDOM.createRoot(document.getElementById('splash')!);
 
 let version: string;
 
@@ -50,6 +47,4 @@ const SplashScreen: FC = () => {
     )
 }
 
-splash.render(
-    <SplashScreen />    
-)
+export default SplashScreen;

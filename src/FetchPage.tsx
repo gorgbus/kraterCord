@@ -8,15 +8,17 @@ import { io } from "socket.io-client";
 import { useSocket } from "./store/socket";
 import { member } from "./utils/types";
 import { useFriend } from "./store/friend";
+import { useNotification } from "./store/notification";
 
 const FetchPage: FC = () => {
     const navigate = useNavigate();
 
-    const { setGuilds, setGuild } = useGuild(state => state);
-    const { setChannels, addChannels } = useChannel(state => state);
-    const { setUser, setUsers, updateUser } = useUser(state => state);
-    const { setSocket, socket } = useSocket(state => state);
-    const { setFriends, setReqs } = useFriend(state => state);
+    const { setGuilds, setGuild } = useGuild();
+    const { setChannels, addChannels } = useChannel();
+    const { setUser, setUsers, updateUser } = useUser();
+    const { setSocket, socket } = useSocket();
+    const { setFriends, setReqs } = useFriend();
+    const { setNotifications } = useNotification();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -33,6 +35,8 @@ const FetchPage: FC = () => {
 
             setReqs(member.friendRequests);
             setFriends(member.friends);
+
+            setNotifications(notifs);
 
             if (!socket) {
                 const SOCKET = io("http://localhost:3001");

@@ -2,6 +2,7 @@ import { FC } from "react";
 import { Link, Outlet } from "react-router-dom";
 import { useChannel } from "../../store/channel";
 import { useGuild } from "../../store/guild";
+import { useNotification } from "../../store/notification";
 import ChannelBar from "../ChannelBar";
 import ChatInput from "../ChatInput";
 import MemberSidebar from "../MemberSidebar";
@@ -11,6 +12,7 @@ const ChannelSidebar: FC = () => {
     const channel = useChannel(state => state.channel);
     const channels = useChannel(state => state.channels);
     const guild = useGuild(state => state.guild);
+    const notifications = useNotification(state => state.notifications);
 
     const setChannel = useChannel(state => state.setChannel);
 
@@ -26,10 +28,13 @@ const ChannelSidebar: FC = () => {
                 <div className="flex flex-col items-center">
                     {
                         channels.filter(ch => ch.guild === guild._id && ch.type !== 'voice').map((ch, i) => {
+                            const notification = notifications.find(n => n.channel === ch._id);
+
                             return (
-                                <Link onClick={() => setChannel(ch._id)} key={i} to={`/channels/${guild._id}/${ch._id}`} className={`${channel === ch._id ? `bg-gray-500` : ``} w-52 h-8 ml-1 mt-1 rounded-md hover:bg-gray-600 text-white text-base flex items-center`} >
+                                <Link onClick={() => setChannel(ch._id)} key={i} to={`/channels/${guild._id}/${ch._id}`} className={`${channel === ch._id ? `bg-gray-500` : notification && `font-semibold`} relative w-52 h-8 ml-1 mt-1 rounded-md hover:bg-gray-600 text-white text-base flex items-center`} >
                                     <span className="ml-2 text-xl font-bold text-gray-300 uppercase">#</span>
                                     <span className="ml-2">{ch.name}</span>
+                                    {notification && channel !== ch._id && <span className="absolute w-2 h-2 -translate-y-1/2 bg-white rounded-lg top-1/2 -left-[11px]"></span>}
                                 </Link>
                             )
                         })

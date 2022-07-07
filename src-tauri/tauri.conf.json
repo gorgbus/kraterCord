@@ -73,7 +73,7 @@
         "width": 250,
         "height": 350,
         "decorations": false,
-        "url": "splashscreen.html",
+        "url": "splashscreen",
         "label": "splashscreen",
         "center": true
       }

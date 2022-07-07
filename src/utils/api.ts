@@ -3,9 +3,9 @@ import { user } from "../store/user";
 import { infQueryData, message, _data } from "./types";
 import { invoke } from "@tauri-apps/api/tauri";
 
-let API_URL: string;
+let API_URL: string = 'http://localhost:3001/api';
 
-invoke("get_api_url").then((url) => API_URL = url as string);
+// invoke("get_api_url").then((url) => API_URL = url as string);
 
 export const isAuthenticated = async () => {
     const res = await axios.get(`${API_URL}/auth/check`, { withCredentials: true });

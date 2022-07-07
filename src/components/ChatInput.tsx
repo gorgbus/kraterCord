@@ -34,7 +34,7 @@ const ChatInput: FC = () => {
             const msg = {
                 id: channel,
                 msg: data,
-                guild: guild._id
+                guild: guild._id || null
             }
 
             queryClient.setQueryData(["channel", channel], newCache);
