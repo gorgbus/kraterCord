@@ -50,7 +50,12 @@
       "csp": null
     },
     "updater": {
-      "active": false
+      "active": true,
+      "endpoints": [
+        "https://gist.github.com/gorgbus/49616bddc8762d6e8a9f43fca5b74c06/raw"
+      ],
+      "dialog": false,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDkwRDlGNzdEMUVENUI3NkUKUldSdXQ5VWVmZmZaa01oRlJ5Vm5wK0hCd25pY05BamFVNDZnemNGb0xuLzY1M1FKcnJWYy8rVkwK"
     },
     "windows": [
       {
@@ -60,7 +65,17 @@
         "title": "кратерCord",
         "decorations": false,
         "width": 1280,
-        "theme": "Dark"
+        "theme": "Dark",
+        "visible": false,
+        "center": true
+      },
+      {
+        "width": 250,
+        "height": 350,
+        "decorations": false,
+        "url": "splashscreen.html",
+        "label": "splashscreen",
+        "center": true
       }
     ],
     "systemTray": {

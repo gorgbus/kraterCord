@@ -12,6 +12,20 @@ use tauri::Manager;
 use discord_rich_presence::{activity::{Activity, Assets, Button, Timestamps}, DiscordIpcClient, DiscordIpc};
 use chrono::prelude::Utc;
 
+#[tauri::command]
+async fn close_splashscreen(window: tauri::Window) {
+  if let Some(splashscreen) = window.get_window("splashscreen") {
+    splashscreen.close().unwrap();
+  }
+
+  window.get_window("main").unwrap().show().unwrap();
+}
+
+#[tauri::command]
+fn get_api_url() -> String {
+  env::var("API_URL").expect("API URL must be set")
+}
+
 fn main() -> Result<(), Box<(dyn std::error::Error)>> {
   dotenv().ok();
 
@@ -71,14 +85,9 @@ fn main() -> Result<(), Box<(dyn std::error::Error)>> {
       }
       _ => {}
     })
-    .invoke_handler(tauri::generate_handler![get_api_url])
+    .invoke_handler(tauri::generate_handler![get_api_url, close_splashscreen])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 
     Ok(())
-}
-
-#[tauri::command]
-fn get_api_url() -> String {
-  env::var("API_URL").expect("API URL must be set")
 }
