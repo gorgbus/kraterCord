@@ -1,16 +1,17 @@
 import create from 'zustand';
 
-type notification = {
+export type notification = {
     guild?: string;
     channel: string;
     createdOn: Date;
+    count: number;
 }
 
 type State = {
     notifications: notification[];
     setNotifications: (notifications: notification[]) => void;
-    addNotification: (notification: notification) => void;
     removeNotification: (channel: string) => void;
+    updateNotification: (notification: notification) => void;
 }
 
 export const useNotification = create<State>((set) => ({
@@ -23,5 +24,18 @@ export const useNotification = create<State>((set) => ({
     })),
     removeNotification: (channel: string) => set((state) => ({
         notifications: state.notifications.filter((n) => n.channel !== channel)
-    }))
+    })),
+    updateNotification: (notification: notification) => set((state) => {
+        const existing = state.notifications.find((n) => n.channel === notification.channel);
+
+        if (existing) {
+            return {
+                notifications: state.notifications.map((n) => n.channel === notification.channel ? notification : n)
+            }
+        }
+
+        return {
+            notifications: [...state.notifications, notification]
+        }
+    })
 }));

@@ -42,11 +42,11 @@ const FriendSidebar: FC = () => {
                             const friend = users.find(u => u._id === friendId);
 
                             return (
-                                <Link onClick={() => setChannel(ch._id)} to={ch._id} className="flex items-center justify-between p-2 m-2 rounded-md w-52 hover:bg-gray-600 group">
+                                <Link key={i} onClick={() => setChannel(ch._id)} to={ch._id} className="flex items-center justify-between p-2 m-2 rounded-md w-52 hover:bg-gray-600 group">
                                     <div className="relative flex items-center">
                                         <Img src={friend?.avatar} className="rounded-full h-9 w-9" />
                                         {friend?.status === 'online' && <span className="-bottom-[2px] left-[26px] absolute w-3.5 h-3.5 bg-green-400 border-2 border-white dark:border-gray-800 group-hover:dark:border-gray-600 rounded-full"></span>}
-                                        <span className="ml-3 text-gray-400 group-hover:text-gray-200">{friend?.username}</span>
+                                        <span className="ml-3 text-sm font-medium text-gray-400 group-hover:text-gray-200">{friend?.username}</span>
                                     </div>
 
                                     <CloseIcon size={'16'} color={'gray-200 mr-2 hidden group-hover:block'} />

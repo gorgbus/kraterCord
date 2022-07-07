@@ -1,12 +1,11 @@
-import { FC, Fragment, useEffect } from "react";
+import { FC, Fragment } from "react";
 import { useInfiniteQuery, useQueryClient } from "react-query";
 import Message from "./components/Message";
 import { fetchMessages } from "./utils/api";
 import "./styles/channel.css";
-import { addMessage, isCompact, isLast } from "./utils";
+import { isCompact, isLast } from "./utils";
 import { useChannel } from "./store/channel";
 import { useSocket } from "./store/socket";
-import { infQuery } from "./utils/types";
 import { useNotification } from "./store/notification";
 import { useUser } from "./store/user";
 
@@ -16,17 +15,15 @@ const Channel: FC<{ dm?: boolean }> = ({ dm }) => {
     const socket = useSocket(state => state.socket);
     const notifications = useNotification(state => state.notifications);
     const removeNotification = useNotification(state => state.removeNotification);
-    const addNotification = useNotification(state => state.addNotification);
 
     const notification = notifications.find(n => n.channel === channel);
 
     if (notification) {
         removeNotification(channel);
+        console.log(notifications);
         
         socket?.emit('notif_rm', channel, user._id);
     }
-
-    const queryClient = useQueryClient();
 
     const { data, isLoading, isError, error, fetchNextPage, hasNextPage, isSuccess } = useInfiniteQuery(
         ["channel", channel],
@@ -57,28 +54,6 @@ const Channel: FC<{ dm?: boolean }> = ({ dm }) => {
             fetchNextPage();
         }
     }
-
-    useEffect(() => {
-        socket?.on("new_message", (data) => {
-            const cache = queryClient.getQueryData<infQuery>(["channel", data.id]);
-
-            const newCache = addMessage(data.msg, cache);
-            if (!newCache) return;
-
-            queryClient.setQueryData(["channel", channel], newCache);
-
-            if (channel !== data.id) socket.emit('create_notif', {
-                channel: data.id,
-                guild: data.guild || null
-            });
-
-            addNotification({
-                channel: data.id,
-                guild: data.guild || null,
-                createdOn: new Date(Date.now()),
-            });
-        });
-    }, []);
 
     return (
         <div className={`bg-gray-700 h-[calc(100vh_-_132px)] ${dm ? `w-[calc(100vw_-_300px)]` : `w-[calc(100vw_-_523px)]`} mt-12`}>
