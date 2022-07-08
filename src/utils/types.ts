@@ -5,13 +5,10 @@ export type req = {
 
 export type member = {
     _id: string;
-    discordId: string;
     username: string;
     avatar: string;
     hash: string;
-    status: string;
-    friends: member[];
-    friendRequests: req[];
+    status?: string;
 }
 
 export type message = {
@@ -60,6 +57,6 @@ export type _data = {
             link: string;
             type: string;
         }
-        author: string;
+        author: member;
     };
 }

@@ -25,21 +25,31 @@ const ChatInput: FC = () => {
     const queryClient = useQueryClient();
 
     const { mutate } = useMutation(createMessage, {
-        onSuccess: (data) => {
+        onMutate: async ({ msg }) => {
+            await queryClient.cancelQueries(['channel', channel]);
+
             const cache = queryClient.getQueryData<infQuery>(["channel", channel]);
-            const newCache = addMessage(data, cache);
+            const newCache = addMessage(msg, cache);
 
-            if (!newCache) return;
-
-            const msg = {
+            const message = {
                 id: channel,
-                msg: data,
-                guild: guild._id || null
+                msg,
+                guild: guild._id
             }
 
             queryClient.setQueryData(["channel", channel], newCache);
 
-            if (dm?.type === 'dm') socket?.emit('create_message_dm', friendId, msg); else socket?.emit("create_message", msg);
+            if (dm?.type === 'dm') socket?.emit('create_message_dm', friendId, message); else socket?.emit("create_message", message);
+
+            return {
+                cache,
+            }
+        },
+        onError: (_error, _data, context) => {
+            queryClient.setQueryData(['channel', channel], context?.cache);
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries(['channel', channel]);
         }
     })
 
@@ -50,8 +60,10 @@ const ChatInput: FC = () => {
 
         const msg = {
             content,
-            author: user._id,
-            channel
+            author: user,
+            channel,
+            createdAt: new Date(Date.now()),
+            updatedAt: new Date(Date.now()),
         }
 
         setContent("");

@@ -25,9 +25,10 @@ type State = {
     setChannels: (channels: channel[]) => void;
     addChannel: (channel: channel) => void;
     addChannels: (channels: channel[]) => void;
+    currentChannel: () => string;
 }
 
-export const useChannel = create<State>((set) => ({
+export const useChannel = create<State>((set, get) => ({
     channels: channelsInitialState,
     channel: "none",
     setChannels: (channels: channel[]) => set((state) => ({
@@ -42,4 +43,5 @@ export const useChannel = create<State>((set) => ({
     setChannel: (channel: string) => set((state) => ({
         channel: channel,
     })),
+    currentChannel: () => !!get().channel ? get().channel : "none",
 }));

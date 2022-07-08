@@ -1,29 +1,13 @@
 import { FC, Fragment } from "react";
-import { useInfiniteQuery, useQueryClient } from "react-query";
+import { useInfiniteQuery } from "react-query";
 import Message from "./components/Message";
 import { fetchMessages } from "./utils/api";
 import "./styles/channel.css";
 import { isCompact, isLast } from "./utils";
 import { useChannel } from "./store/channel";
-import { useSocket } from "./store/socket";
-import { useNotification } from "./store/notification";
-import { useUser } from "./store/user";
 
 const Channel: FC<{ dm?: boolean }> = ({ dm }) => {
     const channel = useChannel(state => state.channel);
-    const user = useUser(state => state.user);
-    const socket = useSocket(state => state.socket);
-    const notifications = useNotification(state => state.notifications);
-    const removeNotification = useNotification(state => state.removeNotification);
-
-    const notification = notifications.find(n => n.channel === channel);
-
-    if (notification) {
-        removeNotification(channel);
-        console.log(notifications);
-        
-        socket?.emit('notif_rm', channel, user._id);
-    }
 
     const { data, isLoading, isError, error, fetchNextPage, hasNextPage, isSuccess } = useInfiniteQuery(
         ["channel", channel],

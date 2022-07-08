@@ -1,13 +1,10 @@
-import { FC, useEffect } from "react";
+import { FC } from "react";
 import Img from "react-cool-img";
 import { Link, Outlet } from "react-router-dom";
 import { useChannel } from "../../store/channel";
-import { useFriend } from "../../store/friend";
 import { useGuild } from "../../store/guild";
 import { useNotification } from "../../store/notification";
-import { useSocket } from "../../store/socket";
 import { useUser } from "../../store/user";
-import { updateFriends } from "../../utils";
 import Sockets from "../Sockets";
 
 const GuildSidebar: FC = () => {
@@ -42,7 +39,7 @@ const GuildSidebar: FC = () => {
                         const friend = users.find(u => u._id === friendId);
 
                         return (
-                            <Link onClick={() => {
+                            <Link key={i} onClick={() => {
                                 setChannel(n.channel);
                                 setGuild({
                                     name: "none",

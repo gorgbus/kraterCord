@@ -40,7 +40,7 @@ export const createMessage = async (data: _data) => {
 
     try {
         const response = await axios.post<message>(`${API_URL}/channels/${id}/message`, {
-            author,
+            author: author._id,
             content,
             media
         }, { withCredentials: true });
