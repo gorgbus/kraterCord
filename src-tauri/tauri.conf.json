@@ -65,6 +65,8 @@
         "title": "кратерCord",
         "decorations": false,
         "width": 1280,
+        "minWidth": 940,
+        "minHeight": 500,
         "theme": "Dark",
         "visible": false,
         "center": true

@@ -124,3 +124,73 @@ export const updateFriends = (type: string, id: string, state: FriendState) => {
             break;
     }
 }
+
+type Settings = {
+    everyone: boolean;
+    friends: boolean;
+    nfSound: boolean;
+    nfPopup: boolean;
+    startup: boolean;
+    startupSilent: boolean;
+    minimize: boolean;
+}
+
+export const getSettings = () : Settings | undefined => {
+
+    const settings = localStorage.getItem('settings');
+
+    if (settings) {
+        return JSON.parse(settings);
+    }
+
+    return undefined;
+}
+
+export const checkSettings = () => {
+    const settings = {
+        everyone: true,
+        friends: true,
+        nfSound: true,
+        nfPopup: true,
+        startup: false,
+        startupSilent: false,
+        minimize: true
+    } as any
+
+    let storageSettings: any = localStorage.getItem('settings');
+
+    if (storageSettings) {
+        storageSettings = JSON.parse(storageSettings) as Settings | undefined;
+
+        if (storageSettings) {
+            let hasAll = true;
+
+            Object.keys(settings).map(key => {
+                const has = Object.hasOwn(storageSettings, key);
+
+                if (!has) {
+                    storageSettings[key] = settings[key];
+                    hasAll = false;
+                }
+            });
+
+            if (!hasAll) return localStorage.setItem('settings', JSON.stringify(storageSettings));
+
+            return;
+        }
+    }
+
+    localStorage.setItem('settings', JSON.stringify(settings));
+}
+
+
+export const setSetting = (key: string, value: boolean) => {
+    const settings: any = getSettings();
+
+    if (settings && typeof settings !== 'boolean') {
+        if (settings[key] === value || typeof settings[key] === 'undefined') return;
+
+        settings[key] = value;
+        localStorage.setItem('settings', JSON.stringify(settings));
+    }
+}

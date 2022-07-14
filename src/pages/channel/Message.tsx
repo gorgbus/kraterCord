@@ -1,7 +1,6 @@
 import { FC, MutableRefObject, useEffect, useRef } from "react";
 import Img from "react-cool-img";
-import { message } from "../utils/types";
-import "./../styles/message.css";
+import { message } from "../../utils/types";
 
 interface Props {
     msg: message;

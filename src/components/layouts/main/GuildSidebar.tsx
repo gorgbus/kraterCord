@@ -1,11 +1,11 @@
 import { FC } from "react";
 import Img from "react-cool-img";
 import { Link, Outlet } from "react-router-dom";
-import { useChannel } from "../../store/channel";
-import { useGuild } from "../../store/guild";
-import { useNotification } from "../../store/notification";
-import { useUser } from "../../store/user";
-import Sockets from "../Sockets";
+import { useChannel } from "../../../store/channel";
+import { useGuild } from "../../../store/guild";
+import { useNotification } from "../../../store/notification";
+import { useUser } from "../../../store/user";
+import Sockets from "./Sockets";
 
 const GuildSidebar: FC = () => {
     const { guilds, setGuild, guild } = useGuild();
@@ -16,10 +16,10 @@ const GuildSidebar: FC = () => {
     const users = useUser(state => state.users);
 
     return (
-        <div className="inline-flex w-full h-full overflow-hidden">
+        <div className="flex w-full h-full overflow-hidden">
             <Sockets />
 
-            <div className="flex flex-col items-center w-20 h-full bg-gray-900">
+            <div className="flex flex-col items-center w-[76px] h-full bg-gray-900">
                 <Link onClick={() => {
                     setChannel('none');
                     setGuild({
@@ -75,7 +75,9 @@ const GuildSidebar: FC = () => {
                 }
             </div>
 
-            <Outlet />
+            <div className="w-[calc(100vw_-_76px)]">
+                <Outlet />
+            </div>
         </div>
     )
 }

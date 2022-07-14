@@ -1,13 +1,13 @@
 import { FC, useEffect } from "react";
 import { useQueryClient } from "react-query";
-import { useChannel } from "../store/channel";
-import { useFriend } from "../store/friend";
-import { useGuild } from "../store/guild";
-import { notification, useNotification } from "../store/notification";
-import { useSocket } from "../store/socket";
-import { useUser } from "../store/user";
-import { addMessage, updateFriends } from "../utils";
-import { infQuery } from "./../utils/types";
+import { useChannel } from "../../../store/channel";
+import { useFriend } from "../../../store/friend";
+import { useGuild } from "../../../store/guild";
+import { notification, useNotification } from "../../../store/notification";
+import { useSocket } from "../../../store/socket";
+import { useUser } from "../../../store/user";
+import { addMessage, updateFriends } from "../../../utils";
+import { infQuery } from "../../../utils/types";
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/api/notification'
 
 const Sockets: FC = () => {

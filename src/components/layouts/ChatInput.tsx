@@ -1,12 +1,12 @@
 import { FC, MouseEvent, useState } from "react";
 import { useMutation, useQueryClient } from "react-query";
-import { useChannel } from "../store/channel";
-import { useGuild } from "../store/guild";
-import { useSocket } from "../store/socket";
-import { useUser } from "../store/user";
-import { addMessage } from "../utils";
-import { createMessage } from "../utils/api";
-import { infQuery } from "../utils/types";
+import { useChannel } from "../../store/channel";
+import { useGuild } from "../../store/guild";
+import { useSocket } from "../../store/socket";
+import { useUser } from "../../store/user";
+import { addMessage } from "../../utils";
+import { createMessage } from "../../utils/api";
+import { infQuery } from "../../utils/types";
 
 const ChatInput: FC = () => {
     const channel = useChannel(state => state.channel);

@@ -1,10 +1,9 @@
 import { FC, Fragment } from "react";
 import { useInfiniteQuery } from "react-query";
-import Message from "./components/Message";
-import { fetchMessages } from "./utils/api";
-import "./styles/channel.css";
-import { isCompact, isLast } from "./utils";
-import { useChannel } from "./store/channel";
+import Message from "./Message";
+import { fetchMessages } from "../../utils/api";
+import { isCompact, isLast } from "../../utils";
+import { useChannel } from "../../store/channel";
 
 const Channel: FC<{ dm?: boolean }> = ({ dm }) => {
     const channel = useChannel(state => state.channel);
@@ -40,8 +39,8 @@ const Channel: FC<{ dm?: boolean }> = ({ dm }) => {
     }
 
     return (
-        <div className={`bg-gray-700 h-[calc(100vh_-_132px)] ${dm ? `w-[calc(100vw_-_300px)]` : `w-[calc(100vw_-_523px)]`} mt-12`}>
-            <div onScroll={onScroll} onLoad={fetchMore} className="flex flex-col-reverse h-full overflow-scroll overflow-x-hidden messages" >
+        <div className={`bg-gray-700 h-[calc(100vh_-_132px)] ${dm ? `w-[calc(100vw_-_300px)]` : `w-[calc(100vw_-_524px)]`} mt-12`}>
+            <div onScroll={onScroll} onLoad={fetchMore} className="flex flex-col-reverse h-full overflow-scroll overflow-x-hidden scrollbar" >
                 {
                     isSuccess && data.pages.map((group, i) => {
                         

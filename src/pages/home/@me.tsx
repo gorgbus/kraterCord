@@ -1,9 +1,9 @@
 import { FC, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import FriendContent from "./FriendContent";
-import { isAuthenticated } from "./utils/api";
+import { isAuthenticated } from "../../utils/api";
 
-const MainPage: FC = () => {
+const HomePage: FC = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -25,4 +25,4 @@ const MainPage: FC = () => {
     )
 }
 
-export default MainPage
+export default HomePage

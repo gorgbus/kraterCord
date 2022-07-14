@@ -2,13 +2,13 @@ import { AxiosResponse } from "axios";
 import { FC, Fragment, MouseEvent, useState } from "react";
 import Img from "react-cool-img";
 import { useNavigate } from "react-router-dom";
-import { AcceptIcon, CloseIcon, MessageIcon } from "./components/Icons";
-import { useChannel } from "./store/channel";
-import { useFriend } from "./store/friend";
-import { useSocket } from "./store/socket";
-import { user, useUser } from "./store/user";
-import { updateFriends } from "./utils";
-import { createChannel, handleFriend, sendFriendRequest } from "./utils/api";
+import { AcceptIcon, CloseIcon, MessageIcon } from "../../components/ui/Icons";
+import { useChannel } from "../../store/channel";
+import { useFriend } from "../../store/friend";
+import { useSocket } from "../../store/socket";
+import { user, useUser } from "../../store/user";
+import { updateFriends } from "../../utils";
+import { createChannel, handleFriend, sendFriendRequest } from "../../utils/api";
 
 const FriendContent: FC = () => {
     const { page } = useFriend(state => state);
@@ -127,10 +127,10 @@ const User: FC<{ friend: user; req?: string }> = ({ friend, req }) => {
 
     return (
         <div className="flex items-center justify-between p-2 m-4 border-t-2 border-gray-600 border-solid cursor-pointer hover:rounded-md group hover:bg-gray-600">
-            <div className="flex h-9">
+            <div className="flex items-center h-8">
                 <div className="relative">
-                    <Img className="rounded-full h-9 w-9" src={friend.avatar} />
-                    {!req && friend.status === 'online' && <span className="-bottom-[2px] left-6 absolute w-3.5 h-3.5 bg-green-400 border-2 border-white dark:border-gray-700 group-hover:dark:border-gray-600 rounded-full"></span>}
+                    <Img className="w-8 h-8 rounded-full" src={friend.avatar} />
+                    {!req && friend.status === 'online' && <span className="-bottom-[2px] -right-[2px] absolute w-3.5 h-3.5 bg-green-400 border-2 border-white dark:border-gray-700 group-hover:dark:border-gray-600 rounded-full"></span>}
                 </div>
 
                 <div className="flex flex-col">

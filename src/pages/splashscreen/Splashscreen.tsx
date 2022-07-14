@@ -1,4 +1,3 @@
-import './index.css'
 import { invoke } from '@tauri-apps/api/tauri';
 import { checkUpdate, installUpdate } from '@tauri-apps/api/updater';
 import { getVersion } from '@tauri-apps/api/app';

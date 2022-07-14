@@ -1,6 +1,6 @@
 import { FC } from "react"
-import { useChannel } from "../store/channel"
-import { useUser } from "../store/user";
+import { useChannel } from "../../../store/channel"
+import { useUser } from "../../../store/user";
 
 const ChannelBar: FC = () => {
     const { channel, channels } = useChannel(state => state);

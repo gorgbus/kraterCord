@@ -1,6 +1,6 @@
 import { FC } from "react";
-import { useFriend } from "../store/friend";
-import { FriendIcon } from "./Icons";
+import { useFriend } from "../../../store/friend";
+import { FriendIcon } from "../../ui/Icons";
 
 const FriendBar: FC = () => {
     const { page, setPage } = useFriend(state => state);

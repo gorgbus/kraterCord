@@ -1,6 +1,5 @@
 import ReactDOM from 'react-dom/client';
-import App from './App';
-import './index.css';
+import './assets/index.css';
 
 import {
   BrowserRouter,
@@ -8,35 +7,36 @@ import {
   Route,
 } from "react-router-dom";
 
-import MainPage from './@me';
-import GuildSidebar from './components/layouts/GuildSidebar';
-import FriendSidebar from './components/layouts/FriendSidebar';
-import ChannelSidebar from './components/layouts/ChannelSidebar';
-import Channel from './Channel';
-import FetchPage from './FetchPage';
+import HomePage from './pages/home/@me';
+import GuildSidebar from './components/layouts/main/GuildSidebar';
+import FriendSidebar from './components/layouts/home/FriendSidebar';
+import ChannelSidebar from './components/layouts/channel/ChannelSidebar';
+import Channel from './pages/channel/Channel';
+import FetchPage from './pages/fetch/FetchPage';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import SplashScreen from './splashscreen';
-import TitleBar from './components/layouts/TitleBar';
+import SplashScreen from './pages/splashscreen/Splashscreen';
+import TitleBar from './components/layouts/main/TitleBar';
+import Login from './pages/login/Login';
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 
 const queryClient = new QueryClient();
 
 root.render(
-    <div className="bg-gray-900">
+    <div className="w-screen bg-gray-900">
         <QueryClientProvider client={queryClient}>
             <BrowserRouter>
                 <Routes>
                     <Route path='/splashscreen' element={<SplashScreen />} />
 
                     <Route path="/" element={<TitleBar />}>
-                        <Route index element={<App />} />
+                        <Route index element={<Login />} />
 
                         <Route path="app" element={<FetchPage />} />
 
                         <Route path="channels" element={<GuildSidebar />} >
                             <Route path="@me" element={<FriendSidebar />} >
-                                <Route index element={<MainPage />} />
+                                <Route index element={<HomePage />} />
                                 <Route path=":channel" element={<Channel dm={true} />} />
                             </Route>
                             
