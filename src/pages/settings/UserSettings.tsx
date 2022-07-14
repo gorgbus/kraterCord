@@ -49,6 +49,8 @@ export const Profile: FC = () => {
     const discard = () => {
         uploadRef.current.value = "";
         setImage(undefined);
+        setVisibility(false);
+        setName(user.username);
     }
 
     const save = async () => {
@@ -131,7 +133,7 @@ export const Profile: FC = () => {
                 </div>
             </div>
 
-            {visModal && <Modal size='h-2/6 w-[30%]' content={
+            {visModal && <Modal close={discard} size='h-2/6 w-[30%]' content={
                 <>
                     <div className="flex flex-col items-center h-[calc(100%-4rem)] w-full">
                         <h1 className="mt-4 text-lg font-bold text-gray-100">Uprav své uživatelské jméno</h1>
@@ -144,10 +146,7 @@ export const Profile: FC = () => {
                     </div>
 
                     <div className="flex items-center justify-end w-full h-16 bg-gray-800 rounded-b-md">
-                        <button disabled={saving} onClick={() => {
-                            setVisibility(false);
-                            setName(user.username);
-                        }} className="mr-4 text-sm font-semibold text-gray-100">Zrušit</button>
+                        <button disabled={saving} onClick={discard} className="mr-4 text-sm font-semibold text-gray-100">Zrušit</button>
                         <button disabled={saving} onClick={updateName} className="flex items-center justify-center p-2 pl-2 pr-2 ml-2 mr-2 text-sm font-semibold text-gray-100 bg-blue-600 rounded hover:bg-blue-700">Hotovo</button>
                     </div>
                 </>
