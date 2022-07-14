@@ -52,6 +52,10 @@ const socketIo = async (io: Server) => {
             io.to(id).emit("online", user);
         });
 
+        s.on('update_user', (user: member) => {
+            s.broadcast.emit('online', user);
+        });
+
         s.on("ms_setup", async (channel, callback) => {
             const router = await createRoom(channel, s.id);
 

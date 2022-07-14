@@ -1,7 +1,7 @@
 import { Request, response, Response } from "express";
 import Member from "../../database/schemas/Member";
 
-export async function friendReqController (req: Request, res: Response) {
+export const friendReqController = async (req: Request, res: Response) => {
     const { username, hash, id } = req.body;
 
     if (!username || !hash || !id) return res.status(500).send({ msg: "Chybějící jméno, hash nebo id" });
@@ -30,7 +30,7 @@ export async function friendReqController (req: Request, res: Response) {
     }
 }
 
-export async function friendDeclineController (req: Request, res: Response) {
+export const friendDeclineController = async (req: Request, res: Response) => {
     const { id, friendId } = req.body;
 
     if (!id || !friendId) return res.status(500).send({ msg: "Chybějící id" });
@@ -53,7 +53,7 @@ export async function friendDeclineController (req: Request, res: Response) {
     }
 }
 
-export async function friendAcceptController (req: Request, res: Response) {
+export const friendAcceptController = async (req: Request, res: Response) => {
     const { id, friendId } = req.body;
 
     if (!id || !friendId) return res.status(500);
@@ -78,7 +78,7 @@ export async function friendAcceptController (req: Request, res: Response) {
     }
 }
 
-export async function friendRemoveController (req: Request, res: Response) {
+export const friendRemoveController = async (req: Request, res: Response) => {
     const { id, friendId } = req.body;
 
     if (!id || !friendId) return res.status(500);
@@ -94,6 +94,28 @@ export async function friendRemoveController (req: Request, res: Response) {
         }
 
         return res.status(203).send({ msg: "User not found" });
+    } catch (err) {
+        console.log(err);
+        return res.status(500);
+    }
+}
+
+export const userUpdateController = async (req: Request, res: Response) => {
+    const { avatar, username, id } = req.body;
+
+    if (!id) return res.status(500);
+    if (!avatar && !username) return res.status(500);
+
+    try {
+        const update = (avatar && username) ? { avatar, username } : avatar ? { avatar } : { username };
+
+        const updatedUser = await Member.findByIdAndUpdate(id, update, { new: true });
+
+        if (!updatedUser) return res.status(500);
+
+        updatedUser.status = 'online';
+
+        return res.status(200).send({ user: updatedUser });
     } catch (err) {
         console.log(err);
         return res.status(500);

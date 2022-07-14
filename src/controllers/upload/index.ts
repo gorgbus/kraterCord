@@ -33,7 +33,6 @@ export async function uploadController(req: Request, res: Response) {
 
     blobStream.on("finish", () => {
         const url = `https://storage.googleapis.com/${process.env.GCS_BUCKET}/${blob.name}`;
-        console.log(req.file);
         res.status(200).json({ file: req.file, url });
     })
 
