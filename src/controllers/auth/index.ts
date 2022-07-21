@@ -121,7 +121,7 @@ export async function getSetupController(req: Request, res: Response) {
 
         if (!member) return res.status(500).send({ msg: "User not found" });
 
-        const dms = await Channel.find({ type: "dm", users: { $in: [member._id] } });
+        const dms = await Channel.find({ type: "dm", 'users.user': { $in: [member._id] } });
 
         const guildChannels = await Channel.find({ guild: { $exists: true } });
 

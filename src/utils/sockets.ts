@@ -52,10 +52,6 @@ const socketIo = async (io: Server) => {
             io.to(id).emit("online", user);
         });
 
-        s.on('update_user', (user: member) => {
-            s.broadcast.emit('online', user);
-        });
-
         s.on("ms_setup", async (channel, callback) => {
             const router = await createRoom(channel, s.id);
 
@@ -77,7 +73,7 @@ const socketIo = async (io: Server) => {
             const { channel } = peers[s.id];
             const router = rooms[channel].router;
 
-            createWebRtcTrans(router).then((transport: any) => {
+            createWebRtcTrans(router).then((transport) => {
                 callback({
                     dtlsParameters: transport.dtlsParameters, 
                     id: transport.id, 
@@ -89,34 +85,11 @@ const socketIo = async (io: Server) => {
             }, error => {
                 console.log(error);
             });
-
-            // producerTransports.push({ Transport, id: s.id });
         });
-
-        // s.on("crt_consume_trans", async ({ forceTcp, producer }) => {
-        //     const { Transport } = await createWebRtcTrans(mediasoupRouter);
-
-        //     consumerTransports.push({ Transport, id: `${s.id}-${producer}` });
-
-        //     s.emit("consumer_trans_crted", { 
-        //         dtlsParameters: Transport.dtlsParameters, 
-        //         id: Transport.id, 
-        //         iceParameters: Transport.iceParameters, 
-        //         iceCandidates: Transport.iceCandidates
-        //     });
-        // });
 
         s.on("con_trans", async (dtlsParameters, consumer, id?) => {
             getTransport(s.id, consumer, id).connect({ dtlsParameters });
         });
-
-        // s.on("con_consume_trans", async (transportId, dtlsParameters, producer) => {
-        //     const consumer = consumerTransports.find(pr => pr.id === `${s.id}-${producer}`);
-
-        //     await consumer?.Transport.connect({ dtlsParameters });
-
-        //     s.emit("consumer_connected");
-        // });
 
         s.on("produce", async (kind, rtpParameters, consumer, callback) => {
             const producer = await getTransport(s.id, consumer).produce({ kind, rtpParameters })
@@ -125,11 +98,8 @@ const socketIo = async (io: Server) => {
 
             addPruducer(producer, channel, s.id);
 
-            s.to(channel).emit("new_producer", { producerId: producer.id, userId: s.user! });
+            s.to(channel).emit("new_producer", producer.id, s.user!);
 
-            // producers.push({ id: s.id, Producer: producer! });
-
-            //s.to(channel).emit("produced", producer!.id);
             callback({ 
                 id: producer.id,
                 producerExists: producers.length > 1 ? true : false
@@ -151,6 +121,8 @@ const socketIo = async (io: Server) => {
 
         s.on("consume", async (rtpCapabilities, producerId, transportId, callback) => {
             try {
+                console.log(producerId);
+
                 const { channel } = peers[s.id];
                 const router = rooms[channel].router;
 
@@ -186,8 +158,14 @@ const socketIo = async (io: Server) => {
             }
         });
 
-        s.on("resume", async (producer) => {
-            const consumer = consumers.find(c => c.consumer.id === producer)?.consumer;
+        s.on('pause', async (id, pause) => {
+            const producer = producers.find(p => p.producer.id === id)?.producer;
+
+            pause ? await producer?.pause() : await producer?.resume();
+        });
+
+        s.on("resume", async (id) => {
+            const consumer = consumers.find(c => c.consumer.id === id)?.consumer;
 
             await consumer?.resume();
         });
@@ -272,43 +250,64 @@ const socketIo = async (io: Server) => {
             io.to(userId).emit("user_join_new", s.id, channelId, user);
         });
 
-        s.on("user_join", async (id, user) => {
-            s.emit("joined_success", id);
-            s.broadcast.emit("joined_channel", id, user);
+        s.on('update_voice_state', async (channel: string, user: string, muted: boolean, deafen: boolean, callback) => {
+            try {
+                const updatedChannel = await Channel.findByIdAndUpdate(channel, { $set: { 'users.$[el].muted': muted, 'users.$[el].deafen': deafen } }, { arrayFilters: [{ 'el.user': user }], new: true });
+                s.broadcast.emit('updated_voice_state', updatedChannel);
+                callback(updatedChannel);
+            } catch (err) {
+                console.log(err);
+            }
+        });
 
-            s.join(id);
-            s.to(id).emit("user_joined", s.id, id, user);
+        s.on("user_join", async (id: string, user: string, muted: boolean, deafen: boolean) => {
+            const isAlready = await Channel.findById(id);
+
+            if (isAlready?.users.find(u => u.user === user)) return console.log('already in room');
+
+            s.broadcast.emit("joined_channel", id, user, muted, deafen);
+
+            await s.join(id);
 
             try {
-                // await Channel.findByIdAndUpdate(id, { $push: { users: user } });
+                await Channel.findByIdAndUpdate(id, { $push: { users: { user, muted, deafen } } });
             } catch (err) {
                 console.log(err);
             }
 
             s.on("disconnect", async () => {
                 try {
-                    // await Channel.findByIdAndUpdate(id, { $pullAll: { users: [user] } });
+                    await Channel.findByIdAndUpdate(id, { $pull: { users: { user } } });
                 } catch (err) {
                     console.log(err);
                 }
                 s.broadcast.emit("user_disconnected", id, user);
+                await s.leave(id);
             });
         });
 
         s.on("leave_channel", async (id, user) => {
             try {
-                // await Channel.findByIdAndUpdate(id, { $pullAll: { users: [user] } });
+                await Channel.findByIdAndUpdate(id, { $pull: { users: { user } } });
+
+                s.broadcast.emit("user_disconnected", id, user);
+
+                await s.leave(id);
+                
                 consumers = removeItems(consumers, s.id, "consumer");
                 producers = removeItems(producers, s.id, "producer");
                 transports = removeItems(transports, s.id, "transport");
 
+                if (!peers[s.id]) return;
+
                 const { channel } = peers[s.id];
-                delete peers[s.id];
 
                 rooms[channel] = {
                     router: rooms[channel].router,
                     peers: rooms[channel].peers.filter(peer => peer !== s.id),
                 }
+
+                delete peers[s.id];
             } catch (err) {
                 console.log(err);
             }
