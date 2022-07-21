@@ -39,8 +39,8 @@ const FriendSidebar: FC = () => {
 
                     {
                         channels.filter(ch => ch.type === 'dm').map((ch, i) => {
-                            const friendId = ch.users?.find(u => u !== user._id);
-                            const friend = users.find(u => u._id === friendId);
+                            const friendId = ch.users?.find(u => u.user !== user._id);
+                            const friend = users.find(u => u._id === friendId?.user);
 
                             return (
                                 <Link key={i} onClick={() => setChannel(ch._id)} to={ch._id} className="flex items-center justify-between p-2 m-2 mr-1 rounded-md w-52 hover:bg-gray-600 group">

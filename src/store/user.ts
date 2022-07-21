@@ -13,6 +13,8 @@ export type user = {
     avatar: string;
     status?: string;
     hash: string;
+    muted?: boolean;
+    deafen?: boolean;
 }
 
 type State = {

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^1.0.0-rc.5",
+    "mediasoup-client": "^3.6.54",
     "react": "^18.0.0",
     "react-cool-img": "^1.2.12",
     "react-dom": "^18.0.0",

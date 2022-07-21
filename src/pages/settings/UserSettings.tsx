@@ -180,7 +180,7 @@ const UnsavedWarning: FC<{ save: () => Promise<void>; discard: () => void; savin
 
             <div className="flex items-center mr-2">
                 <button disabled={saving} onClick={discard} className="text-sm font-semibold text-gray-100">Obnovit</button>
-                <button disabled={saving} onClick={save} className="flex items-center justify-center p-1 pl-2 pr-2 ml-2 text-sm font-semibold text-gray-100 bg-green-600 rounded-md hover:bg-green-700">{saving ? <LoadingIcon size='4' color="gray-100" /> : 'Uložit změny'}</button>
+                <button disabled={saving} onClick={save} className="flex items-center justify-center p-1 pl-2 pr-2 ml-2 text-sm font-semibold text-gray-100 bg-green-600 rounded-md hover:bg-green-700">{saving ? <LoadingIcon size='16' color="fill-gray-100" /> : 'Uložit změny'}</button>
             </div>
         </div>
     )

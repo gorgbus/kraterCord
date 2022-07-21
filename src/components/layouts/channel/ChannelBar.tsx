@@ -1,6 +1,7 @@
 import { FC } from "react"
 import { useChannel } from "../../../store/channel"
 import { useUser } from "../../../store/user";
+import { ChannelIcon } from "../../ui/Icons";
 
 const ChannelBar: FC = () => {
     const { channel, channels } = useChannel(state => state);
@@ -9,15 +10,15 @@ const ChannelBar: FC = () => {
 
     const dm = channels.find(ch => ch._id === channel);
 
-    const friendId = dm?.users?.find(u => u !== user._id);
-    const friend = users.find(u => u._id === friendId);
+    const friendId = dm?.users?.find(u => u.user !== user._id);
+    const friend = users.find(u => u._id === friendId?.user);
 
     return (
         <div>   
             {
                 dm?.type !== 'dm' &&
                     <div className="font-bold text-white h-12 w-full ml-56 fixed flex items-center bg-gray-700 border-b-[1px] border-gray-900">
-                        <span className="ml-2 text-2xl font-bold text-gray-300 uppercase">#</span>
+                        <ChannelIcon size="20" color="text-gray-300 ml-2" />
                         <span className="ml-1">{dm?.name}</span>
                     </div>
             }

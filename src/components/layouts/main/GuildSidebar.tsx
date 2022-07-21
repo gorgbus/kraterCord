@@ -35,8 +35,8 @@ const GuildSidebar: FC = () => {
                 {
                     notifications.filter(n => n.guild === 'none').map((n, i) => {
                         const channel = channels.find(ch => ch._id === n.channel);
-                        const friendId = channel?.users?.find(u => u !== user._id);
-                        const friend = users.find(u => u._id === friendId);
+                        const friendId = channel?.users?.find(u => u.user !== user._id);
+                        const friend = users.find(u => u._id === friendId?.user);
 
                         return (
                             <Link key={i} onClick={() => {

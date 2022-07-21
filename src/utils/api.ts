@@ -87,7 +87,7 @@ export const handleFriend = async (id: string, friendId: string, type: string) =
     }
 }
 
-export const createChannel = async (users: string[], type: string) => {
+export const createChannel = async (users: { user: string; }[], type: string) => {
     try {
         const response = await axios.post(`/channels/create/${type}`, { users });
 

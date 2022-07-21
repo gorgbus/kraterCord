@@ -18,8 +18,8 @@ const ChatInput: FC = () => {
 
     const dm = channels.find(ch => ch._id === channel);
 
-    const friendId = dm?.users?.find(u => u !== user._id);
-    const friend = users.find(u => u._id === friendId);
+    const friendId = dm?.users?.find(u => u.user !== user._id);
+    const friend = users.find(u => u._id === friendId?.user);
 
     const [content, setContent] = useState("");
     const queryClient = useQueryClient();
@@ -39,7 +39,7 @@ const ChatInput: FC = () => {
 
             queryClient.setQueryData(["channel", channel], newCache);
 
-            if (dm?.type === 'dm') socket?.emit('create_message_dm', friendId, message); else socket?.emit("create_message", message);
+            if (dm?.type === 'dm') socket?.emit('create_message_dm', friendId?.user, message); else socket?.emit("create_message", message);
 
             return {
                 cache,

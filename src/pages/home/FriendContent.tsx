@@ -108,14 +108,14 @@ const User: FC<{ friend: user; req?: string }> = ({ friend, req }) => {
     }
 
     const openDM = async () => {
-        const dm = channels.find((ch => ch.users![0] === friend._id || ch.users![1] === friend._id))
+        const dm = channels.find((ch => ch.users![0].user === friend._id || ch.users![1].user === friend._id))
 
         if (dm) {
             setChannel(dm._id);
             return navigate(dm._id);
         }
 
-        const res: AxiosResponse = await createChannel([user._id, friend._id], 'dm');
+        const res: AxiosResponse = await createChannel([{ user: user._id }, { user: friend._id }], 'dm');
 
         if (res && res.status === 200) {
             setChannel(res.data._id);
