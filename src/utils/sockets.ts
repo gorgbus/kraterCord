@@ -286,6 +286,25 @@ const socketIo = async (io: Server) => {
             });
         });
 
+        s.on('swapping_media', (callback) => {
+            consumers = removeItems(consumers, s.id, "consumer");
+            producers = removeItems(producers, s.id, "producer");
+            transports = removeItems(transports, s.id, "transport");
+
+            if (!peers[s.id]) return callback();
+
+            const { channel } = peers[s.id];
+
+            rooms[channel] = {
+                router: rooms[channel].router,
+                peers: rooms[channel].peers.filter(peer => peer !== s.id),
+            }
+
+            delete peers[s.id];
+
+            callback();
+        });
+
         s.on("leave_channel", async (id, user) => {
             try {
                 await Channel.findByIdAndUpdate(id, { $pull: { users: { user } } });

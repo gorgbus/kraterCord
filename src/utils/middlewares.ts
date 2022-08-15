@@ -4,10 +4,7 @@ import Tokens from "../database/schemas/Tokens";
 import { decrypt } from "./crypto";
 
 export const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-    // const authHeader = req.headers["authorization"];
-    // const token = authHeader && authHeader.split(" ")[1];
-
-    if (!req.cookies.JWT) return res.status(403).send({ msg: "Unauthorized" });
+    if (!req.cookies.JWT) return res.status(401).send({ msg: "Missing token" });
 
     let token = JSON.parse(req.cookies.JWT);
 

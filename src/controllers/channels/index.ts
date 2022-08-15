@@ -32,7 +32,7 @@ export async function getDMController(req: Request, res: Response) {
     const user = req.user as User;
 
     try {
-        const member = await Member.findOne({ discordId: user.discordId });
+        const member = await Member.findOne({ discordId: user.id });
 
         if (!member) return res.status(500).send({ msg: "User not found" });
 
