@@ -146,8 +146,8 @@ const socketIo = async (io: Server) => {
                 } catch (err) {
                     console.log(err);
                 }
+                
                 s.broadcast.emit("user_disconnected", id, user);
-                await s.leave(id);
             });
         });
 
