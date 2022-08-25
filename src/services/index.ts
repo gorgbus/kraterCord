@@ -1,7 +1,5 @@
 import axios from "axios";
-import User from "../database/schemas/User";
 import { DISCORD_API_URL } from "../utils/constants";
-import { decrypt } from "../utils/crypto";
 
 type Member = {
   user: {};

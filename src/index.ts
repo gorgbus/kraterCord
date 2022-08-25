@@ -3,7 +3,7 @@ import createApp from "./utils/createApp";
 import socketIo from "./utils/sockets";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import "./database";
+import "./prisma";
 
 config();
 
@@ -26,7 +26,7 @@ async function main() {
 
         httpServer.listen(PORT, () => console.log(`Running on port ${PORT}`));
     } catch (error) {
-        console.log(error);
+        console.error(error);
     }
 }
 

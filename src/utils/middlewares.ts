@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import Tokens from "../database/schemas/Tokens";
+import { prisma } from "../prisma";
 import { decrypt } from "./crypto";
 
 export const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
@@ -15,9 +15,15 @@ export const isAuthenticated = (req: Request, res: Response, next: NextFunction)
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!, async (err: any, user: any) => {
         if (err) return res.status(403).send({ msg: "Unauthorized" });
 
-        const tokens = await Tokens.findOne({ discordId: user?.id });
+        const tokens = await prisma.token.findUnique({
+            where: {
+                id: user.id
+            }
+        });
 
-        if (tokens && decrypt(tokens.accessToken) !== token) return res.status(403).send({ msg: "Unauthorized" });
+        if (!tokens) return res.status(403).send({ msg: "Unauthorized" });
+
+        if (decrypt(tokens.accessToken) !== token) return res.status(403).send({ msg: "Unauthorized" });
 
         req.user = user;
         next();

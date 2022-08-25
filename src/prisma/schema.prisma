@@ -1,0 +1,119 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+enum ChannelType {
+    VOICE
+    TEXT
+    DM
+}
+
+enum StatusType {
+    OFFLINE
+    ONLINE
+}
+
+model User {
+    id                  String              @id @default(uuid())
+    discordId           String              @unique
+    hash                String              @db.VarChar(4)
+    username            String
+    avatar              String
+    status              StatusType
+    muted               Boolean             @default(false)
+    deafen              Boolean             @default(false)
+    friend              User?               @relation("friends", fields: [friendId], references: [id])
+    friendId            String?
+    friends             User[]              @relation("friends")
+    incomingFriendReqs  FriendsRequest[]    @relation("user")
+    outgoingFriendReqs  FriendsRequest[]    @relation("requester")
+    notifications       Notification[]
+    guilds              Guild[]
+    dms                 Channel[]
+    members             Member[]
+    messages            Message[]
+
+    @@unique([username, hash])
+}
+
+model FriendsRequest {
+    id                  String              @id @default(uuid())
+    user                User                @relation("user", fields: [userId], references: [id])
+    userId              String
+    requester           User                @relation("requester", fields: [requesterId], references: [id])
+    requesterId         String
+
+    @@unique([userId, requesterId])
+}
+
+model Guild {
+    id                  String              @id @default(uuid())
+    name                String
+    avatar              String
+    owner               User                @relation(fields: [ownerId], references: [id])
+    ownerId             String
+    members             Member[]
+    channels            Channel[]
+    notifications       Notification[]
+}
+
+model Channel {
+    id                  String              @id @default(uuid())
+    name                String
+    type                ChannelType
+    guild               Guild?              @relation(fields: [guildId], references: [id])
+    guildId             String?
+    users               User[]
+    messages            Message[]
+    notifications       Notification[]
+}
+
+model Member {
+    id                  String              @id @default(uuid())
+    user                User                @relation(fields: [userId], references: [id])
+    userId              String
+    guild               Guild               @relation(fields: [guildId], references: [id])
+    guildId             String
+    
+    @@unique([userId, guildId])
+}
+
+model Message {
+    id                  String              @id @default(uuid())
+    author              User                @relation(fields: [authorId], references: [id])
+    authorId            String
+    content             String
+    channel             Channel             @relation(fields: [channelId], references: [id])
+    channelId           String
+    createdAt           DateTime            @default(now())
+    updatedAt           DateTime            @updatedAt
+}
+
+model Notification {
+    id                  String              @id @default(uuid())
+    user                User                @relation(fields: [userId], references: [id])
+    userId              String
+    channel             Channel             @relation(fields: [channelId], references: [id])
+    channelId           String
+    guild               Guild?              @relation(fields: [guildId], references: [id])
+    guildId             String?
+    count               Int                 @default(1)
+    createdAt           DateTime            @default(now())
+
+    @@unique([userId, channelId])
+}
+
+model Token {
+    id                  String              @id @default(uuid())
+    discordId           String              @unique
+    accessToken         String
+    refreshToken        String
+}

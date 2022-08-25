@@ -1,5 +1,5 @@
-import { Request, response, Response } from "express";
-import Member from "../../database/schemas/Member";
+import { Request, Response } from "express";
+import { prisma } from "../../prisma";
 
 export const friendReqController = async (req: Request, res: Response) => {
     const { username, hash, id } = req.body;
@@ -7,25 +7,71 @@ export const friendReqController = async (req: Request, res: Response) => {
     if (!username || !hash || !id) return res.status(500).send({ msg: "Chybějící jméno, hash nebo id" });
 
     try {
-        const user = await Member.findById(id);
+        const user = await prisma.user.findUnique({
+            where: {
+                id
+            },
+            include: {
+                incomingFriendReqs: { include: { requester: true } },
+                outgoingFriendReqs: { include: { user: true } },
+                friends: true
+            }
+        });
 
-        const isAlready = await Member.findOne({ username, hash, friendRequests: { $in: { friend: id } } });
-        const isFriend = await Member.findOne({ username, hash, friends: { $in: [id] } });
+        if (!user) return res.status(500).send({ msg: 'User not found' });
 
-        if (isAlready) return res.status(500).send({ msg: `Už jsi poslal žádost o přátelství uživateli ${username}#${hash}` });
-        if (isFriend) return res.status(500).send({ msg: `${username}#${hash} už je tvůj přítel`});
+        const isAlready = user.outgoingFriendReqs.find(friend => friend.user.hash === hash && friend.user.username === username);
+        const isFriend = user.friends.find(friend => friend.hash === hash && friend.username === username);
 
-        const friend = await Member.findOneAndUpdate({ username, hash }, { $push: { friendRequests: { friend: id, type: "in" } } }, { new: true });
-        
-        if (user && friend) {
-            await user.updateOne({ $push: { friendRequests: { friend: friend._id, type: "out" } } });
+        if (isAlready) return res.status(500).send({ msg: 'Already sent request' });
+        if (isFriend) return res.status(500).send({ msg: 'Already your friend'});
 
-            return res.status(200).send({ msg: `Žádost o přátelství byla poslána uživateli ${username}#${hash}`, friend });
+        const hasRequested = user.incomingFriendReqs.find(friend => friend.requester.hash === hash && friend.requester.username === username);
+
+        if (hasRequested) {
+            await prisma.friendsRequest.delete({
+                where: {
+                    id: hasRequested.id
+                }
+            });
+
+            const friendIds = user.friends.map(friend => ({ id: friend.id }));
+
+            await prisma.user.update({
+                where: {
+                    id
+                },
+                data: {
+                    friends: {
+                        set: [...friendIds, { id: hasRequested.requesterId }]
+                    }
+                }
+            });
+
+            return res.status(200).send({ msg: 'Added as friend', friend: hasRequested.requester });
         }
 
-        return res.status(500).send({ msg: "Uživatel nebyl nalezen" });
+        const friend = await prisma.user.findUnique({
+            where: {
+                username_hash: {
+                    hash,
+                    username
+                }
+            }
+        });
+
+        if (!friend) return res.status(500).send({ msg: "Friend not found" });
+        
+        await prisma.friendsRequest.create({
+            data: {
+                requester: { connect: { id: user.id } },
+                user: { connect: { id: friend.id } }
+            }
+        })
+
+        return res.status(200).send({ msg: `Friend request sent`, friend });
     } catch (err) {
-        console.log(err);
+        console.error(err);
         return res.status(500).send({ msg: "Něco se nepovedlo" });
     }
 }
@@ -36,19 +82,20 @@ export const friendDeclineController = async (req: Request, res: Response) => {
     if (!id || !friendId) return res.status(500).send({ msg: "Chybějící id" });
 
     try {
-        const friend = await Member.findById(friendId);
+        const req = await prisma.friendsRequest.delete({
+            where: {
+                userId_requesterId: {
+                    requesterId: friendId,
+                    userId: id
+                }
+            }
+        });
 
-        const user = await Member.findByIdAndUpdate(id, { $pull: { friendRequests: { friend: friendId } } }, { new: true });
+        if (req) return res.status(200).send({ msg: "Success" });
 
-        if (user && friend) {
-            await friend.updateOne({ $pull: { friendRequests: { friend: id } } });
-
-            return res.status(200).send({ msg: "Success" });
-        }
-
-        return res.status(203).send({ msg: "User not found" });
+        return res.status(203).send({ msg: "Request not found" });
     } catch (err) {
-        console.log(err);
+        console.error(err);
         return res.status(500);
     }
 }
@@ -59,21 +106,46 @@ export const friendAcceptController = async (req: Request, res: Response) => {
     if (!id || !friendId) return res.status(500);
 
     try {
-        const friend = await Member.findById(friendId);
-        const user = await Member.findByIdAndUpdate(id, { $pull: { friendRequests: { friend: friendId } } }, { new: true });
+        await prisma.friendsRequest.delete({
+            where: {
+                userId_requesterId: {
+                    requesterId: friendId,
+                    userId: id
+                }
+            }
+        });
 
-        if (user && friend) {
-            await friend.updateOne({ $pull: { friendRequests: { friend: id } } });
+        const user = await prisma.user.findUnique({
+            where: {
+                id
+            },
+            include: {
+                friends: { select: { id: true } }
+            }
+        });
 
-            await user.updateOne({ $push: { friends: friend._id } });
-            await friend.updateOne({ $push: { friends: user._id } }, { new: true });
+        const friend = await prisma.user.findUnique({
+            where: {
+                id: friendId
+            }
+        })
 
-            return res.status(200).send(friend);
-        }
+        if (!user || !friend) return res.status(500).send({ msg: 'User/Friend not found' });
 
-        return res.status(203).send({ msg: "User not found" });
+        await prisma.user.update({
+            where: {
+                id
+            },
+            data: {
+                friends: {
+                    set: [...user.friends, { id: friendId }]
+                }
+            }
+        })
+
+        return res.status(200).send({ friend });
     } catch (err) {
-        console.log(err);
+        console.error(err);
         return res.status(500);
     }
 }
@@ -84,18 +156,31 @@ export const friendRemoveController = async (req: Request, res: Response) => {
     if (!id || !friendId) return res.status(500);
 
     try {
-        const friend = await Member.findById(friendId);
-        const user = await Member.findByIdAndUpdate(id, { $pull: { friends: friendId } }, { new: true });
+        const user = await prisma.user.findUnique({
+            where: {
+                id
+            },
+            include: {
+                friends: { select: { id } }
+            }
+        });
 
-        if (user && friend) {
-            await friend.updateOne({ $pull: { friends: id } }, { new: true });
+        if (!user) return res.status(500).send({ msg: 'User not found' });
 
-            return res.status(200).send(friend);
-        }
+        await prisma.user.update({
+            where: {
+                id
+            },
+            data: {
+                friends: {
+                    set: user.friends.filter(friend => friend.id !== friendId)
+                }
+            }
+        })
 
-        return res.status(203).send({ msg: "User not found" });
+        return res.status(200).send({ friendId });
     } catch (err) {
-        console.log(err);
+        console.error(err);
         return res.status(500);
     }
 }
@@ -109,15 +194,18 @@ export const userUpdateController = async (req: Request, res: Response) => {
     try {
         const update = (avatar && username) ? { avatar, username } : avatar ? { avatar } : { username };
 
-        const updatedUser = await Member.findByIdAndUpdate(id, update, { new: true });
+        const user = await prisma.user.update({
+            where: {
+                id
+            },
+            data: update
+        })
 
-        if (!updatedUser) return res.status(500);
+        if (!user) return res.status(500);
 
-        updatedUser.status = 'online';
-
-        return res.status(200).send({ user: updatedUser });
+        return res.status(200).send({ user });
     } catch (err) {
-        console.log(err);
+        console.error(err);
         return res.status(500);
     }
 }

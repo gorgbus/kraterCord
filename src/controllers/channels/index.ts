@@ -1,8 +1,6 @@
+import { ChannelType } from "@prisma/client";
 import { Request, Response } from "express";
-import Channel, { channel } from "../../database/schemas/Channel";
-import Member, { member } from "../../database/schemas/Member";
-import Message, { message } from "../../database/schemas/Message";
-import { User } from "../../database/schemas/User";
+import { prisma } from "../../prisma";
 
 export async function geChannelsController(req: Request, res: Response) {
     const { guild } = req.params;
@@ -10,71 +8,48 @@ export async function geChannelsController(req: Request, res: Response) {
     if (!guild) return res.status(500);
 
     try {
-        const channels = await Channel.find({ guild });
+        const channels = await prisma.channel.findMany({
+            where: {
+                guildId: guild
+            },
+            include: {
+                users: true
+            }
+        });
 
-        let popChannels: channel[] = [];
+        if (!channels) return res.status(500).send({ msg: 'Channels not found' });
 
-        for (const channel of channels) {
-            const _channel = await channel.populate("users");
-
-            popChannels.push(_channel);
-        }
-
-        return res.status(200).send(popChannels);
+        return res.status(200).send(channels);
     } catch(err) {
-        console.log(err);
-        return res.status(500);
-    }
-    
-}
-
-export async function getDMController(req: Request, res: Response) {
-    const user = req.user as User;
-
-    try {
-        const member = await Member.findOne({ discordId: user.id });
-
-        if (!member) return res.status(500).send({ msg: "User not found" });
-
-        const dmChannels = await Channel.find({ type: "dm", users: { $in: [member] } });
-
-        let popChannels: channel[] = [];
-
-        for (const channel of dmChannels) {
-            const _channel = await channel.populate("users");
-
-            popChannels.push(_channel);
-        }
-
-        return res.status(200).send(popChannels);
-    } catch(err) {
-        console.log(err);
+        console.error(err);
         return res.status(500);
     }
 }
 
 export async function getMessagesController(req: Request, res: Response) {
     const { id } = req.params;
-    const { _skip, _limit } = req.query;
+    const { cursor } = req.query;
     
-    if (!id || !_skip || !_limit) return res.send(500);
+    if (!id || !cursor) return res.send(500);
 
     try {
-        const count = await Message.countDocuments({ channel: { $in: [id] } });
-        const messages = await Message.find({ channel: { $in: [id] } }).sort({ createdAt: "desc" }).skip(Number(_skip)).limit(Number(_limit));
+        const take = 20;
+        const cursorObj = cursor === '' ? undefined : { id: cursor as string };
 
-        let popMessages: message[] = [];
+        const messages = await prisma.message.findMany({
+            where: {
+                channelId: id
+            },
+            take,
+            cursor: cursorObj,
+            skip: cursor === '' ? 0 : 1
+        });
 
-        for (const msg of messages) {
-            const popMessage = await msg.populate("author");
-            popMessages.push(popMessage);
-        }
+        const nextId = messages.length === take ? messages[messages.length - 1].id : undefined;
 
-        const nextId = count % Number(_limit) === 0 ? Math.floor(count / Number(_limit)) : Math.floor(count / Number(_limit)) + 1;
-
-        return res.status(200).send({ messages: popMessages, nextId });
+        return res.status(200).send({ messages, nextId });
     } catch (err) {
-        console.log(err);
+        console.error(err);
         return res.status(200).send({ messages: [], nextId: 0 });
     }
 }
@@ -86,46 +61,41 @@ export async function createMessageController(req: Request, res: Response) {
     if (!id || !author) return res.status(500);
 
     try {
-        let message = {
-            author,
-            content,
-            media,
-            channel: id
-        }
+        const message = await prisma.message.create({
+            data: {
+                author: { connect: { id: author } },
+                channel: { connect: { id } },
+                content,
+            }
+        });
 
-        const msg = await Message.create(message);
-
-        const popMsg = await msg.populate("author");
-
-        return res.status(200).send(popMsg);
+        return res.status(200).send(message);
     } catch (err) {
-        console.log(err);
+        console.error(err);
         return res.status(500);
     }
 }
 
 export async function createChannelController(req: Request, res: Response) {
     const { type } = req.params;
-    const { users } = req.body;
+    const { user, name, guild } = req.body;
 
-    if (!type) return res.status(500);
+    if (!type || !name) return res.status(500);
 
     try {
-        const channel = {
-            name: " ",
-            type,
-            users: users || [],
-        }
+        const channel = await prisma.channel.create({
+            data: {
+                name,
+                type: type as ChannelType,
+                users: {
+                    connect: user.map((usr: string) => { id: usr })
+                }
+            }
+        });
 
-        let ch = await Channel.findOne({ type, users: { $in: users } });
-
-        if (!ch) {
-            ch = await Channel.create(channel);
-        }
-
-        return res.status(200).send(ch);
+        return res.status(200).send(channel);
     } catch (err) {
-        console.log(err);
+        console.error(err);
         return res.status(500);
     }
 }

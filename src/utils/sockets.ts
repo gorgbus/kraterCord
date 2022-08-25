@@ -1,8 +1,5 @@
 import { Server, Socket } from "socket.io";
-import Channel from "../database/schemas/Channel";
-import Member, { member } from "../database/schemas/Member";
-import Notif from "../database/schemas/Notif";
-import mongoose from "mongoose";
+import { prisma } from "../prisma";
 
 interface ISocket extends Socket {
     user?: string;
@@ -14,7 +11,7 @@ const socketIo = async (io: Server) => {
     io.on("connection", (s: ISocket) => {
         console.log(`Socket: ${s.id} has connected`);
 
-        s.on("setup", async (id: string, user: member) => {
+        s.on("setup", async (id: string, user) => {
             s.join(id);
             s.join(`${id}-status`);
 
@@ -31,13 +28,19 @@ const socketIo = async (io: Server) => {
             s.broadcast.emit("online", user, s.id);
         });
 
-        s.on("status", (user: member, id: string) => {
+        s.on("status", (user, id: string) => {
             io.to(id).emit("online", user);
         });
 
-        s.on("update_user", async (user: member) => {
-            const _user = await Member.findByIdAndUpdate(user._id, user, { new: true });
-            s.broadcast.emit("online", _user);
+        s.on("update_user", async (user) => {
+            const updatedUser = await prisma.user.update({
+                where: {
+                    id: user.id
+                },
+                data: user
+            });
+            
+            s.broadcast.emit("online", updatedUser);
         });
 
         s.on("friend", (type, id, friendId) => {
@@ -53,41 +56,63 @@ const socketIo = async (io: Server) => {
         s.on("create_message_dm", async (id, data) => {
             emitToUser(id, io, 'new_message', data);
 
-            let online: mongoose.Types.ObjectId[] = [];
+            if (sockets.has(id)) return;
 
-            for (const user of sockets.keys()) {
-                const objId = new mongoose.Types.ObjectId(user);
-                online.push(objId);
-            }
-
-            const notif = {
-                guild: data.guild,
-                channel: data.msg.channel,
-                createdOn: Date.now(),
-            }
-
-            await Notif.updateMany({ user: { $nin: online }, 'notifs.channel': data.msg.channel }, { $inc: { 'notifs.$.count': 1 }});
-            await Notif.updateMany({ user: { $nin: online }, 'notifs.channel': { $nin: [data.id] } }, { $push: { notifs: notif } });
+            await prisma.notification.upsert({
+                where: {
+                    userId_channelId: {
+                        userId: id,
+                        channelId: data.msg.channel
+                    }
+                },
+                update: {
+                    count: {
+                        increment: 1
+                    }
+                },
+                create: {
+                    channel: { connect: { id: data.msg.channel } },
+                    user: { connect: { id } },
+                }
+            });
         });
 
         s.on("create_message", async (data) => {
             s.broadcast.emit("new_message", data);
 
-            let online: mongoose.Types.ObjectId[] = [];
+            const online = Array.from(sockets.keys());
 
-            for (const user of sockets.keys()) {
-                const objId = new mongoose.Types.ObjectId(user);
-                online.push(objId);
-            }
+            const offline = await prisma.user.findMany({
+                where: {
+                    id: {
+                        notIn: online
+                    }
+                },
+                select: {
+                    id: true
+                }
+            });
 
-            const notif = {
-                guild: data.guild,
-                channel: data.msg.channel,
-                createdOn: Date.now(),
-            }
+            const offlineIds = offline.map(user => (user.id));
 
-            await Notif.updateMany({ user: { $nin: online }, 'notifs.channel': data.msg.channel }, { $inc: { 'notifs.$.count': 1 }});
-            await Notif.updateMany({ user: { $nin: online }, 'notifs.channel': { $nin: [data.id] } }, { $push: { notifs: notif } });
+            offlineIds.map(id => prisma.notification.upsert({
+                where: {
+                    userId_channelId: {
+                        userId: id,
+                        channelId: data.msg.channel
+                    }
+                },
+                update: {
+                    count: {
+                        increment: 1
+                    }
+                },
+                create: {
+                    channel: { connect: { id: data.msg.channel } },
+                    user: { connect: { id } },
+                    guild: { connect: { id: data.guild } }
+                }
+            }));
         });
 
         s.on("create_notif", async (data, callback) => {
@@ -98,18 +123,38 @@ const socketIo = async (io: Server) => {
                 createdOn: Date.now(),
             }
 
-            await Notif.updateOne({ user: data.user, 'notifs.channel': data.channel }, { $inc: { 'notifs.$.count': 1 } });
-            await Notif.updateOne({ user: data.user, 'notifs.channel': { $nin: [data.channel] } }, { $push: { notifs: notif } });
-
-            const notifications = await Notif.findOne({ user: data.user });
-            const notification = notifications?.notifs.find(n => n.channel === data.channel);
+            const notification = await prisma.notification.upsert({
+                where: {
+                    userId_channelId: {
+                        userId: data.user,
+                        channelId: data.channel
+                    }
+                },
+                update: {
+                    count: {
+                        increment: 1
+                    }
+                },
+                create: {
+                    channel: { connect: { id: data.channel } },
+                    user: { connect: { id: data.user } },
+                    guild: data.guild ? { connect: { id: data.guild } } : undefined
+                }
+            });
 
             if (notification) callback(notification);
-        })
+        });
 
         s.on("notif_rm", async (channel, user) => {
-            await Notif.findOneAndUpdate({ user: user }, { $pull: { notifs: { channel } } });
-        })
+            await prisma.notification.delete({
+                where: {
+                    userId_channelId: {
+                        userId: user,
+                        channelId: channel
+                    }
+                }
+            });
+        });
 
         s.on("con_user", async (userId, channelId, user) => {
             io.to(userId).emit("user_join_new", s.id, channelId, user);
@@ -117,34 +162,80 @@ const socketIo = async (io: Server) => {
 
         s.on('update_voice_state', async (channel: string, user: string, muted: boolean, deafen: boolean, callback) => {
             try {
-                const updatedChannel = await Channel.findByIdAndUpdate(channel, { $set: { 'users.$[el].muted': muted, 'users.$[el].deafen': deafen } }, { arrayFilters: [{ 'el.user': user }], new: true });
-                s.broadcast.emit('updated_voice_state', updatedChannel);
-                callback(updatedChannel);
+                const updatedUser = await prisma.user.update({
+                    where: {
+                        id: user
+                    },
+                    data: {
+                        muted,
+                        deafen
+                    }
+                });
+
+                s.broadcast.emit('updated_voice_state', channel, user, muted, deafen);
+
+                callback();
             } catch (err) {
-                console.log(err);
+                console.error(err);
             }
         });
 
-        s.on("user_join", async (id: string, user: string, muted: boolean, deafen: boolean) => {
-            const isAlready = await Channel.findById(id);
+        s.on("user_join", async (id: string, user: string) => {
+            const isAlready = await prisma.channel.findUnique({
+                where: {
+                    id
+                },
+                include: {
+                    users: { select: { id: true } }
+                }
+            });
 
-            if (isAlready?.users.find(u => u.user === user)) return console.log('already in room');
+            if (!isAlready) return console.log('Channel not found')
 
-            s.broadcast.emit("joined_channel", id, user, muted, deafen);
+            if (isAlready?.users.find(usr => usr.id === user)) return console.log('Already in room');
+
+            s.broadcast.emit("joined_channel", id, user);
 
             await s.join(id);
 
             try {
-                await Channel.findByIdAndUpdate(id, { $push: { users: { user, muted, deafen } } });
+                await prisma.channel.update({
+                    where: {
+                        id
+                    },
+                    data: {
+                        users: {
+                            set: [...isAlready.users,  { id: user }]
+                        }
+                    }
+                });
             } catch (err) {
-                console.log(err);
+                console.error(err);
             }
 
             s.on("disconnect", async () => {
                 try {
-                    await Channel.findByIdAndUpdate(id, { $pull: { users: { user } } });
+                    const channelUsers = await prisma.channel.findUnique({
+                        where: {
+                            id
+                        },
+                        include: {
+                            users: { select: { id: true } }
+                        }
+                    });
+
+                    await prisma.channel.update({
+                        where: {
+                            id
+                        },
+                        data: {
+                            users: {
+                                set: channelUsers?.users.filter(usr => usr.id !== user)
+                            }
+                        }
+                    });
                 } catch (err) {
-                    console.log(err);
+                    console.error(err);
                 }
                 
                 s.broadcast.emit("user_disconnected", id, user);
@@ -153,11 +244,29 @@ const socketIo = async (io: Server) => {
 
         s.on("leave_channel", async (id, user) => {
             try {
-                await Channel.findByIdAndUpdate(id, { $pull: { users: { user } } });
+                const channelUsers = await prisma.channel.findUnique({
+                    where: {
+                        id
+                    },
+                    include: {
+                        users: { select: { id: true } }
+                    }
+                });
+
+                await prisma.channel.update({
+                    where: {
+                        id
+                    },
+                    data: {
+                        users: {
+                            set: channelUsers?.users.filter(usr => usr.id !== user)
+                        }
+                    }
+                });
 
                 s.broadcast.emit("user_disconnected", id, user);
             } catch (err) {
-                console.log(err);
+                console.error(err);
             }
         });
 
@@ -165,7 +274,14 @@ const socketIo = async (io: Server) => {
             if (!s.user) return;
             if (io.sockets.adapter.rooms.get(`${s.user}-status`)) return;
 
-            const user = await Member.findByIdAndUpdate(s.user, { $set: { status: "offline" } }, { new: true });
+            const user = await prisma.user.update({
+                where: {
+                    id: s.user
+                },
+                data: {
+                    status: 'OFFLINE'
+                }
+            });
 
             s.broadcast.emit("online", user);
 
