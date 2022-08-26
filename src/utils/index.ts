@@ -126,7 +126,14 @@ export const updateFriends = (type: string, id: string, state: FriendState) => {
 }
 
 type Settings = {
-    [key: string]: boolean;
+    everyone: boolean;
+    friends: boolean;
+    nfSound: boolean;
+    nfPopup: boolean;
+    startup: boolean;
+    startupSilent: boolean;
+    minimize: boolean;
+    audioInput: string;
 }
 
 export const getSettings = () : Settings | undefined => {
@@ -148,7 +155,8 @@ export const checkSettings = () => {
         nfPopup: true,
         startup: false,
         startupSilent: false,
-        minimize: true
+        minimize: true,
+        audioInput: 'default'
     } as any
 
     let storageSettings: any = localStorage.getItem('settings');
@@ -178,7 +186,7 @@ export const checkSettings = () => {
 }
 
 
-export const setSetting = (key: string, value: boolean) => {
+export const setSetting = (key: string, value: boolean | string) => {
     const settings: any = getSettings();
 
     if (settings && typeof settings !== 'boolean') {
@@ -190,7 +198,7 @@ export const setSetting = (key: string, value: boolean) => {
 }
 
 export const playSound = (sound: string, loop: boolean) : HTMLAudioElement | undefined => {
-    const settings = getSettings();
+    const settings = getSettings() as any;
 
     if (settings && settings[sound] === false) return undefined;
 

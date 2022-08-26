@@ -1,8 +1,30 @@
-import { Dispatch, FC, SetStateAction } from "react";
-import { getSettings } from "../../utils";
+import { Dispatch, FC, SetStateAction, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { AcceptIcon, DropDownIcon } from "../../components/ui/Icons";
+import { useChannel } from "../../store/channel";
+import { useSettings } from "../../store/settings";
+import { useSocket } from "../../store/socket";
+import { getSettings, setSetting } from "../../utils";
+import { logout } from "../../utils/api";
+import { loadDevice } from "../../utils/vcLogic";
 import ToggleLabel from "./ToggleLabel";
+import UnsavedWarning from "./UnsavedWarning";
 
 const AppSettings: FC<{ set: Dispatch<SetStateAction<string>>; }> = ({ set }) => {
+    const navigate = useNavigate();
+    const closeSettings = useSettings(state => state.closeSettings);
+
+    const handleLogout = async () => {
+        const logedOut = await logout();
+
+        if (logedOut) {
+            navigate('/');
+            closeSettings();
+        } else {
+            alert('Něco se nepovedlo');
+        }
+    }
+
     return (
         <div className="mt-2 text-gray-300">
             <div className="h-[2px] ml-2 mt-2 bg-gray-600 w-48"></div>
@@ -15,12 +37,102 @@ const AppSettings: FC<{ set: Dispatch<SetStateAction<string>>; }> = ({ set }) =>
 
             <div className="h-[2px] ml-2 bg-gray-600 mt-2 w-48"></div>
 
-            <button className="item hover:text-red-500 hover:bg-transparent">Odhlásit se</button>
+            <button className="item hover:text-red-500 hover:bg-transparent" onClick={handleLogout} >Odhlásit se</button>
         </div>
     )
 }
 
 export default AppSettings;
+
+export const VoiceAndVideo: FC = () => {
+    const settings = getSettings();
+
+    if (!settings) return <div></div>
+
+    const producer = useSettings(state => state.producer);
+    const voice = useChannel(state => state.voice);
+    const socket = useSocket(state => state.socket);
+    const voiceSocket = useSocket(state => state.voiceSocket);
+
+    const [dropDown, toggleDropDown] = useState(false);
+    const [devices, setDevices] = useState<{ label: string; deviceId: string; }[]>([{ label: 'Default', deviceId: 'default' }]);
+    const [curDevice, setDevice] = useState(settings.audioInput);
+    const [saving, setSaving] = useState(false);
+
+    const save = () => {
+        setSaving(true);
+
+        setSetting('audioInput', curDevice);
+
+        if (producer !== 'none' && voice !== 'none') {
+            voiceSocket?.emit('swapping_media', () => {
+                voiceSocket.emit('setup', voice, loadDevice);
+            });
+        }
+
+        setSaving(false);
+    }
+
+    useEffect(() => {
+        (async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: false
+            });
+
+            if (stream) {
+                stream.getAudioTracks()[0].stop();
+
+                const devices = await navigator.mediaDevices.enumerateDevices()
+
+                let audioInput = devices.filter(device => device.kind === 'audioinput');
+                audioInput = audioInput.filter(device => device.deviceId !== 'default' && device.deviceId !== 'communications');
+
+                setDevices((prev) => {
+                    return [...prev, ...audioInput];
+                });
+            }
+        })();
+    }, []);
+
+    return (
+        <div className="relative w-[calc(100%-2rem)] h-[calc(100%-1rem)] m-4 mt-0">
+            <h1 className="text-lg font-semibold text-gray-100">Nastavení hlasu</h1>
+
+            <div className="mt-2">
+                <h3 className="text-xs font-semibold text-gray-400 uppercase">vstupní zařízení</h3>
+                
+                <div onClick={() => toggleDropDown(prev => !prev)} className={`relative mt-1 flex items-center justify-between w-64 p-2 bg-gray-900 cursor-pointer h-9 ${dropDown ? 'rounded-t-md' : 'rounded-md'}`}>
+                    <span className="text-sm font-semibold text-gray-100">{devices.find(device => device.deviceId === curDevice)?.label}</span>
+                    <DropDownIcon color={`text-gray-100 ${dropDown && 'rotate-180'}`} size="20" />
+
+                    <div className={`absolute flex flex-col items-center top-full left-0 w-64 rounded-b-md bg-gray-600 ${dropDown ? 'block' : 'hidden'}`}>
+                        {
+                            devices.map((device, i, arr) => {
+                                const selected = curDevice === device.deviceId
+                                const isLast = arr.length - 1 === i
+
+                                return (
+                                    <div key={device.deviceId} onClick={() => setDevice(device.deviceId)} className={`flex items-center justify-between w-64 h-10 p-2 ${isLast && 'rounded-b-md'} ${selected ? 'bg-gray-500' : 'bg-gray-600'}`}>
+                                        <span className="w-56 text-sm font-semibold text-gray-100">{device.label}</span>
+                                        {
+                                            selected &&
+                                                <div className="flex items-center justify-center w-5 h-5 bg-blue-500 rounded-full">
+                                                    <AcceptIcon size="14" color="text-gray-100" />
+                                                </div>
+                                        }
+                                    </div>
+                                )
+                            })
+                        }
+                    </div>
+                </div>
+            </div>
+
+            {curDevice !== settings.audioInput && <UnsavedWarning save={save} discard={() => setDevice(settings.audioInput)} saving={saving} />}
+        </div>
+    )
+}
 
 export const Notifications: FC = () => {
     const settings = getSettings();

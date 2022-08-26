@@ -1,11 +1,12 @@
 import { FC } from "react";
 import Img from "react-cool-img";
-import Settings from "../../pages/settings/Setings";
+import Settings from "../../pages/settings/Settings";
 import { useChannel } from "../../store/channel";
 import { useGuild } from "../../store/guild";
 import { useSettings } from "../../store/settings";
 import { useSocket } from "../../store/socket";
 import { useUser } from "../../store/user";
+import { disconnecteSocket } from "../../utils/vcLogic";
 import { ConnectionIcon, DeafenHeadphoneIcon, HeadphoneIcon, LeaveCallIcon, MicIcon, MutedMicIcon, SettingsIcon } from "../ui/Icons";
 
 const UserProfile: FC = () => {
@@ -16,7 +17,6 @@ const UserProfile: FC = () => {
     const guild = useChannel(state => state.voiceGuild);
     const channels = useChannel(state => state.channels);
     const voice = useChannel(state => state.voice);
-    const socket = useSocket(state => state.socket);
 
     const setVoice = useChannel(state => state.setVoice);
     const setVoiceGuild = useChannel(state => state.setVoiceGuild);
@@ -32,12 +32,35 @@ const UserProfile: FC = () => {
     const voiceGuild = guilds.find(g => g._id === guild);
 
     const disconnect = () => {
-        socket?.emit('leave_channel', voice, user._id);
-
         setProducer('none');
         removeUser(voice, user._id);
         setVoice('none');
         setVoiceGuild('none');
+
+        disconnecteSocket();
+    }
+
+    const mute = async () => {
+        type PermissionNameI = PermissionName & 'microphone'
+
+        interface PermissionDescriptorI extends PermissionDescriptor {
+            name: PermissionNameI;
+        }
+
+        const permissionStatus = await navigator.permissions.query({
+            name: 'microphone'
+        } as PermissionDescriptorI);
+
+        if (permissionStatus && permissionStatus.state === 'denied') {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: false
+            });
+
+            if (stream) toggleMute();
+        } else {
+            toggleMute();
+        }
     }
 
     return (
@@ -72,7 +95,7 @@ const UserProfile: FC = () => {
                 </div>
 
                 <div className="flex items-center justify-center mr-2">
-                    <div onClick={toggleMute} className="icons group">
+                    <div onClick={mute} className="icons group">
                         {muted ? <MutedMicIcon size='18' color='text-gray-400 group-hover:text-gray-100' strikeColor='text-red-500' /> : <MicIcon size='18' color='text-gray-400 group-hover:text-gray-100' />}
                     </div>
 

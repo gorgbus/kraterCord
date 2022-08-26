@@ -6,7 +6,7 @@ import { useGuild } from "../../../store/guild";
 import { notification, useNotification } from "../../../store/notification";
 import { useSocket } from "../../../store/socket";
 import { useUser } from "../../../store/user";
-import { addMessage, playSound, updateFriends } from "../../../utils";
+import { addMessage, getSettings, playSound, updateFriends } from "../../../utils";
 import { infQuery } from "../../../utils/types";
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/api/notification'
 import { useSettings } from "../../../store/settings";
@@ -15,6 +15,7 @@ import { createConsumer, loadDevice } from "../../../utils/vcLogic";
 const Sockets: FC = () => {
     const updateNotification = useNotification(state => state.updateNotification);
     const socket = useSocket(state => state.socket);
+    const voiceSocket = useSocket(state => state.voiceSocket);
     const channel = useChannel(state => state.channel);
     const channels = useChannel(state => state.channels);
     const currentChannel = useChannel(state => state.currentChannel);
@@ -50,21 +51,23 @@ const Sockets: FC = () => {
     }, [channel]);
 
     useEffect(() => {
-        if (producer !== 'none') getMuted() ? socket?.emit('pause', producer, true) : socket?.emit('pause', producer, false);
+        if (producer !== 'none') getMuted() ? voiceSocket?.emit('pause', producer, true) : voiceSocket?.emit('pause', producer, false);
 
-        if (producer === 'none' && getVoice() !== 'none') socket?.emit('ms_setup', voice, loadDevice);
+        if (producer === 'none' && getVoice() !== 'none') voiceSocket?.emit('setup', voice, loadDevice);
 
-        socket?.emit('update_voice_state', getVoice(), user._id, getMuted(), getDeafen(), (updatedChannel: channel) => {
-            updateChannel(updatedChannel);
-        });
+        if (getVoice() !== 'none')
+            socket?.emit('update_voice_state', getVoice(), user._id, getMuted(), getDeafen(), (updatedChannel: channel) => {
+                updateChannel(updatedChannel);
+            });
     }, [muted])
 
     useEffect(() => {
         muteConsumers();
 
-        socket?.emit('update_voice_state', getVoice(), user._id, getMuted(), getDeafen(), (updatedChannel: channel) => {
-            updateChannel(updatedChannel);
-        });
+        if (getVoice() !== 'none')
+            socket?.emit('update_voice_state', getVoice(), user._id, getMuted(), getDeafen(), (updatedChannel: channel) => {
+                updateChannel(updatedChannel);
+            });
     }, [deafen])
 
     useEffect(() => {
@@ -82,6 +85,8 @@ const Sockets: FC = () => {
                     guild: data.guild,
                     user: user._id
                 }, async (notif: notification) => {
+                    const settings = getSettings();
+
                     playSound('nfSound', false);
 
                     updateNotification(notif);
@@ -93,7 +98,7 @@ const Sockets: FC = () => {
                         permissionGranted = permission === 'granted';
                     }
 
-                    if (permissionGranted) {
+                    if (permissionGranted && settings?.nfPopup) {
                         if (!data.msg.author) return;
 
                         sendNotification({ title: data.msg.author.username, body: data.msg.content, icon: data.msg.author.avatar });
@@ -109,7 +114,7 @@ const Sockets: FC = () => {
             queryClient.setQueryData(["channel", channel], newCache);
         });
 
-        socket?.on('new_producer', (producerId, userId) => {
+        voiceSocket?.on('new_producer', (producerId, userId) => {
             createConsumer(producerId, userId);
         });
 

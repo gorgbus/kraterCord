@@ -1,7 +1,7 @@
 import { FC, useState } from "react";
 import { CloseIcon } from "../../components/ui/Icons";
 import { useSettings } from "../../store/settings";
-import AppSettings, { Notifications, System } from "./AppSettings";
+import AppSettings, { Notifications, System, VoiceAndVideo } from "./AppSettings";
 import UserSettings, { Profile, Requests } from "./UserSettings";
 
 const Settings: FC = () => {
@@ -37,6 +37,8 @@ const SettingsContent: FC<{ setting: string; }> = ({ setting }) => {
             return <Profile />;
         case 'zadosti':
             return <Requests />;
+        case 'hlas':
+            return <VoiceAndVideo />;
         case 'oznameni':
             return <Notifications />;
         case 'windows':

@@ -1,13 +1,34 @@
 import { Device } from "mediasoup-client";
 import { MediaKind, RtpCapabilities, RtpParameters, Transport, TransportOptions } from "mediasoup-client/lib/types";
+import { getSettings } from ".";
 import { useChannel } from "../store/channel";
 import { useSettings } from "../store/settings";
 import { useSocket } from "../store/socket";
 import { useUser } from "../store/user";
+import { io } from "socket.io-client";
+
+export const disconnecteSocket = () => {
+    const voiceSocket = useSocket.getState().voiceSocket;
+
+    voiceSocket?.disconnect();
+}
+
+export const connectToChannel = (id: string) => {
+    const setVoiceSocket = useSocket.getState().setVoiceSocket;
+    const user = useUser.getState().user;
+    const voiceSocket = io('http://localhost:3002');
+
+    setVoiceSocket(voiceSocket);
+
+    console.log(id);
+
+    voiceSocket.emit('setup', user._id, id, loadDevice);
+}
 
 export const loadDevice = async ({ rtpCapabilities }: { rtpCapabilities: RtpCapabilities }) => {
     try {
         const socket = useSocket.getState().socket;
+        const voiceSocket = useSocket.getState().voiceSocket;
         const getVoice = useChannel.getState().getVoice;
         const user = useUser.getState().user;
         const setDevice = useSettings.getState().setDevice;
@@ -27,13 +48,15 @@ export const loadDevice = async ({ rtpCapabilities }: { rtpCapabilities: RtpCapa
 
         const device = new Device()
 
+        console.log(rtpCapabilities);
+
         await device.load({ routerRtpCapabilities: rtpCapabilities });
 
         setDevice(device);
 
         if (!device) return;
 
-        socket?.emit('crt_trans', {
+        voiceSocket?.emit('crt_trans', {
             rtpCapabilities: device.rtpCapabilities,
             channel: getVoice(),
             consumer: false
@@ -48,11 +71,10 @@ export const loadDevice = async ({ rtpCapabilities }: { rtpCapabilities: RtpCapa
 }
 
 const getProducers = (channel: string) => {
-    const socket = useSocket.getState().socket;
+    const voiceSocket = useSocket.getState().voiceSocket;
 
-    socket?.emit('get_producers', (producerIds: { id: string; userId: string; }[]) => {
+    voiceSocket?.emit('get_producers', (producerIds: { id: string; userId: string; }[]) => {
         producerIds.forEach(({ id, userId }) => {
-            console.log(id, userId);
             createConsumer(id, userId);
         });
     });
@@ -62,7 +84,7 @@ const createProducer = async (data: TransportOptions) => {
     try {
         const device = useSettings.getState().device;
         const channel = useChannel.getState().voice;
-        const socket = useSocket.getState().socket;
+        const voiceSocket = useSocket.getState().voiceSocket;
         const user = useUser.getState().user;
         const muted = useSettings.getState().muted;
         const setProducer = useSettings.getState().setProducer;
@@ -70,11 +92,13 @@ const createProducer = async (data: TransportOptions) => {
         if (!device) return;
 
         const transport = device.createSendTransport(data);
+        const settings = getSettings();
 
         const stream = await navigator.mediaDevices.getUserMedia({
             audio: {
                 echoCancellation: true,
                 noiseSuppression: true,
+                deviceId: { exact: settings?.audioInput }
             },
             video: false
         });
@@ -87,7 +111,7 @@ const createProducer = async (data: TransportOptions) => {
 
         transport.on('connect', async ({ dtlsParameters }, callback, errback) => {
             try {
-                socket?.emit('con_trans', dtlsParameters, false);
+                voiceSocket?.emit('con_trans', dtlsParameters, false);
 
                 callback();
             } catch (err: any) {
@@ -97,12 +121,12 @@ const createProducer = async (data: TransportOptions) => {
 
         transport.on('produce', async ({ kind, rtpParameters }, callback, errback) => {
             try {
-                socket?.emit('produce', kind, rtpParameters, false, ({ id, producerExists }: { id: string, producerExists: boolean }) => {
+                voiceSocket?.emit('produce', kind, rtpParameters, false, ({ id, producerExists }: { id: string, producerExists: boolean }) => {
                     callback({ id });
 
                     setProducer(id);
 
-                    if (muted) socket.emit('pause', id, true);
+                    if (muted) voiceSocket.emit('pause', id, true);
 
                     if (producerExists) return getProducers(channel);
                 });
@@ -116,6 +140,8 @@ const createProducer = async (data: TransportOptions) => {
                 track.stop();
                 clearInterval(interval);
             }
+
+            
         });
 
         await transport.produce({ track });
@@ -127,15 +153,15 @@ const createProducer = async (data: TransportOptions) => {
 export const createConsumer = async (id: string, userId: string) => {
     try {
         const device = useSettings.getState().device;
-        const socket = useSocket.getState().socket;
+        const voiceSocket = useSocket.getState().voiceSocket;
 
         if (!device) return;
 
-        socket?.emit('crt_trans', { consumer: true }, (data: TransportOptions) => {
+        voiceSocket?.emit('crt_trans', { consumer: true }, (data: TransportOptions) => {
             const transport = device.createRecvTransport(data);
 
             transport.on('connect', ({ dtlsParameters }, callback, errback) => {
-                socket.emit("con_trans", dtlsParameters, true, data.id);
+                voiceSocket.emit("con_trans", dtlsParameters, true, data.id);
 
                 callback();
             });
@@ -150,13 +176,13 @@ export const createConsumer = async (id: string, userId: string) => {
 const consume = async (transport: Transport, producerId: string, transportId: string, userId: string) => {
     try {
         const device = useSettings.getState().device;
-        const socket = useSocket.getState().socket;
+        const voiceSocket = useSocket.getState().voiceSocket;
         const addConsumer = useSettings.getState().addConsumer;
         const removeConsumer = useSettings.getState().removeConsumer;
 
         if (!device) return;
         
-        socket?.emit('consume', device.rtpCapabilities, producerId, transportId, async ({ id, producerId, kind, rtpParameters }: { id: string; producerId: string; rtpParameters: RtpParameters; kind: MediaKind; }) => {
+        voiceSocket?.emit('consume', device.rtpCapabilities, producerId, transportId, async ({ id, producerId, kind, rtpParameters }: { id: string; producerId: string; rtpParameters: RtpParameters; kind: MediaKind; }) => {
             const consumer = await transport.consume({ id, producerId, kind, rtpParameters });
 
             const { track } = consumer;
@@ -178,7 +204,7 @@ const consume = async (transport: Transport, producerId: string, transportId: st
                 clearInterval(interval);
             });
 
-            socket.emit("resume", id);
+            voiceSocket.emit("resume", id);
         });
     } catch (err) {
         console.log(err);

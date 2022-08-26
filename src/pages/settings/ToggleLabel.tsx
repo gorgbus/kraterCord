@@ -24,8 +24,8 @@ export default ToggleLabel;
 
 const Toggle: FC<{ checked: boolean; name: string; }> = ({ checked, name }) => {
     const finalClass = 'relative w-12 h-6 flex select-none cursor-pointer';
-    const togglerClass = `h-6 w-6 border-2 absolute z-10 rounded-full bg-white transition-all duration-300 ease-in-out flex justify-center items-center ${checked ? "transform translate-x-full border-green-500" : "border-gray-400"}`;
-    const backgroundClass = `absolute left-0 top-0 h-full w-full transition-all duration-300 ease-in-out ${checked ? `bg-green-500` : `bg-gray-400`} rounded-full`;
+    const togglerClass = `h-6 w-6 border-2 absolute z-10 rounded-full bg-white transition-all duration-300 ease-in-out flex justify-center items-center ${checked ? "transform translate-x-full border-green-500" : "border-gray-500"}`;
+    const backgroundClass = `absolute left-0 top-0 h-full w-full transition-all duration-300 ease-in-out ${checked ? `bg-green-500` : `bg-gray-500`} rounded-full`;
 
     return (
         <div className="flex items-center">
@@ -34,7 +34,7 @@ const Toggle: FC<{ checked: boolean; name: string; }> = ({ checked, name }) => {
             <label className={finalClass} htmlFor={name}>
                 <span className={backgroundClass} />
                 <span className={togglerClass}>
-                    {checked ? <AcceptIcon size="14" color="green-500" /> : <CloseIcon size="12" color="gray-400" />}
+                    {checked ? <AcceptIcon size="14" color="text-green-500" /> : <CloseIcon size="12" color="gray-500" />}
                 </span>
             </label>
         </div>

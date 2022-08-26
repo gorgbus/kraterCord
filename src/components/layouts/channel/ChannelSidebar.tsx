@@ -10,7 +10,7 @@ import UserProfile from "../UserProfile";
 import { ChannelIcon, DeafenHeadphoneIcon, MutedMicIcon, VoiceChannelIcon } from "../../ui/Icons";
 import { useUser } from "../../../store/user";
 import { useSocket } from "../../../store/socket";
-import { loadDevice } from "../../../utils/vcLogic";
+import { connectToChannel } from "../../../utils/vcLogic";
 import Img from "react-cool-img";
 import { useSettings } from "../../../store/settings";
 
@@ -39,7 +39,7 @@ const ChannelSidebar: FC = () => {
         setVoiceGuild(guild._id);
         addUser(id, user._id, getMuted(), getDeafen());
 
-        socket?.emit('ms_setup', id, loadDevice);
+        connectToChannel(id);
     }
 
     return (
@@ -86,7 +86,7 @@ const ChannelSidebar: FC = () => {
                                                     return (
                                                         <li key={u.user} className='flex items-center justify-between p-1 ml-10 rounded-md group hover:bg-gray-600' >
                                                             <div className="flex items-center">
-                                                                <Img className='w-6 h-6 rounded-full' src={member?.avatar} />
+                                                                <Img className={`rounded-full ${u.talking ? 'border-2 border-green-500 w-7 h-7' : 'w-6 h-6 m-[2px]'}`} src={member?.avatar} />
                                                                 <span className='ml-2 text-sm text-gray-400 group-hover:text-gray-100'>{member?.username}</span>
                                                             </div>
 

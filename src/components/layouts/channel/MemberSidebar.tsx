@@ -32,7 +32,7 @@ const MemberSidebar: FC = () => {
                         users.filter(u => u.status !== "online").map((user, i) => {
                             return (
                                 <div key={i} className="grid p-1 rounded user w-52 opacity-30 hover:opacity-100 hover:bg-gray-600">
-                                    <Img className="rounded-full h-9 w-9" src={user.avatar} alt={`${user.username}:avatar`}></Img>
+                                    <Img className="w-8 h-8 rounded-full" src={user.avatar} alt={`${user.username}:avatar`}></Img>
                                     <span className="pt-1 text-sm font-bold text-gray-300">{user.username}</span>
                                 </div>
                             )

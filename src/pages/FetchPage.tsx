@@ -1,15 +1,15 @@
 import { FC, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useChannel } from "../../store/channel";
-import { useGuild } from "../../store/guild";
-import { useUser } from "../../store/user";
-import { fetchOnLoad } from "../../utils/api";
+import { useChannel } from "../store/channel";
+import { useGuild } from "../store/guild";
+import { useUser } from "../store/user";
+import { fetchOnLoad } from "../utils/api";
 import { io } from "socket.io-client";
-import { useSocket } from "../../store/socket";
-import { member } from "../../utils/types";
-import { useFriend } from "../../store/friend";
-import { useNotification } from "../../store/notification";
-import { checkSettings } from "../../utils";
+import { useSocket } from "../store/socket";
+import { member } from "../utils/types";
+import { useFriend } from "../store/friend";
+import { useNotification } from "../store/notification";
+import { checkSettings } from "../utils";
 
 const FetchPage: FC = () => {
     const navigate = useNavigate();

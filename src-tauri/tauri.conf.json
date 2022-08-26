@@ -68,6 +68,7 @@
         "minWidth": 940,
         "minHeight": 500,
         "theme": "Dark",
+        "url": "app",
         "visible": false,
         "center": true
       },

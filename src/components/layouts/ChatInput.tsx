@@ -45,7 +45,7 @@ const ChatInput: FC = () => {
                 cache,
             }
         },
-        onError: (_error, _data, context) => {
+        onError: (_error, _data, context: any) => {
             queryClient.setQueryData(['channel', channel], context?.cache);
         },
         onSettled: () => {

@@ -12,11 +12,12 @@ import GuildSidebar from './components/layouts/main/GuildSidebar';
 import FriendSidebar from './components/layouts/home/FriendSidebar';
 import ChannelSidebar from './components/layouts/channel/ChannelSidebar';
 import Channel from './pages/channel/Channel';
-import FetchPage from './pages/fetch/FetchPage';
+import FetchPage from './pages/FetchPage';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import SplashScreen from './pages/splashscreen/Splashscreen';
+import SplashScreen from './pages/Splashscreen';
 import TitleBar from './components/layouts/main/TitleBar';
-import Login from './pages/login/Login';
+import Login from './pages/Login';
+import NoAccess from './pages/NoAccess';
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 
@@ -31,6 +32,8 @@ root.render(
 
                     <Route path="/" element={<TitleBar />}>
                         <Route index element={<Login />} />
+
+                        <Route path='noaccess' element={<NoAccess />} />
 
                         <Route path="app" element={<FetchPage />} />
 

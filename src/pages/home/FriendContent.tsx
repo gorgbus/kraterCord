@@ -108,7 +108,7 @@ const User: FC<{ friend: user; req?: string }> = ({ friend, req }) => {
     }
 
     const openDM = async () => {
-        const dm = channels.find((ch => ch.users![0].user === friend._id || ch.users![1].user === friend._id))
+        const dm = channels.find((ch => ch.users?.length !== 0 && (ch.users![0].user === friend._id || ch.users![1].user === friend._id)));
 
         if (dm) {
             setChannel(dm._id);
@@ -147,7 +147,7 @@ const User: FC<{ friend: user; req?: string }> = ({ friend, req }) => {
             <div className="flex">
                 {
                     req === "in" && <div onClick={() => handleButton('accept')} className="flex items-center justify-center w-8 h-8 mr-2 bg-gray-800 bg-opacity-50 rounded-full hover:bg-opacity-100 group-icon">
-                        <AcceptIcon size={'20'} color={`gray-300 group-icon-hover:text-green-600`} />
+                        <AcceptIcon size={'20'} color={`text-gray-300 group-icon-hover:text-green-600`} />
                     </div>
                 }
 

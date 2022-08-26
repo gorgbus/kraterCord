@@ -3,27 +3,29 @@ import { user } from "../store/user";
 import { infQueryData, member, message, _data } from "./types";
 import { invoke } from "@tauri-apps/api/tauri";
 
-let API_URL: string = 'http://localhost:3001/api';
-
-// invoke("get_api_url").then((url) => API_URL = url as string);
-
-axios.defaults.baseURL = API_URL;
+invoke("get_api_url").then((url) => axios.defaults.baseURL = url as string);
 axios.defaults.withCredentials = true;
 
-export const isAuthenticated = async () => {
-    const res = await axios.get(`/auth/check`);
+axios.interceptors.response.use((res) => {
+    return res;
+}, (err: AxiosError) => {
+    if (err.response?.status !== 403 && err.response?.status !== 401) return Promise.reject(err);
 
-    if (res.data.msg === "Authorized") {
-        return true;
-    }
+    window.location.href = '/';
 
-    return false;
-};
+    return Promise.reject(err);
+});
 
 export const fetchOnLoad = async () => {
-    const res = await axios.get(`/auth/setup`);
+    try {
+        const res = await axios.get(`/auth/setup`);
 
-    return res.data;
+        return res.data;
+    } catch (err) {
+        console.error(err);
+
+        return undefined;
+    }
 }
 
 export const fetchMessages = async (id: string, page: number) => {
@@ -32,7 +34,7 @@ export const fetchMessages = async (id: string, page: number) => {
 
         return response.data;
     } catch (err) {
-        console.log(err);
+        console.error(err);
         return { messages: [], nextId: 0 };
     }
 }
@@ -50,7 +52,7 @@ export const createMessage = async (data: _data) => {
 
         return response.data;
     } catch (err) {
-        console.log(err);
+        console.error(err);
         return undefined;
     }
 }
@@ -65,7 +67,7 @@ export const sendFriendRequest = async (id: string, username: string, hash: stri
 
         return response;
     } catch (err: any) {
-        console.log(err);
+        console.error(err);
 
         if (err.name === "AxiosError") return err.response;
 
@@ -79,7 +81,7 @@ export const handleFriend = async (id: string, friendId: string, type: string) =
 
         return response;
     } catch (err: any) {
-        console.log(err);
+        console.error(err);
 
         if (err.name === "AxiosError") return err.response;
 
@@ -93,7 +95,7 @@ export const createChannel = async (users: { user: string; }[], type: string) =>
 
         return response;
     } catch (err: any) {
-        console.log(err);
+        console.error(err);
 
         if (err.name === "AxiosError") return err.response;
 
@@ -107,7 +109,7 @@ export const uploadFile = async (data: FormData) : Promise<string | undefined> =
 
         return response.data.url;
     } catch (err: any) {
-        console.log(err);
+        console.error(err);
 
         return undefined;
     }
@@ -123,7 +125,19 @@ export const updateUserApi = async (id: string, username: string, avatar: string
 
         return response.data.user;
     } catch(err) {
-        console.log(err);
+        console.error(err);
+
+        return undefined;
+    }
+}
+
+export const logout = async () => {
+    try {
+        const response = await axios.get('/auth/logout');
+
+        return response;
+    } catch(err) {
+        console.error(err);
 
         return undefined;
     }
