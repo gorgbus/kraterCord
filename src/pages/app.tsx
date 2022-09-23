@@ -1,68 +1,58 @@
-import { GetServerSidePropsContext, NextPage } from "next";
+import { FC, useEffect } from "react";
+import { Guild, Member, useUser } from "../store/user";
+import { fetchOnLoad } from "../utils/api";
+import { io } from "socket.io-client";
+import { useSocket } from "../store/socket";
+import { checkSettings } from "../utils";
 import { useRouter } from "next/router";
-import { useContext, useEffect } from "react";
-import { fetchOnStart } from "../utils/api";
-import { ChannelContext } from "../utils/contexts/ChannelContext";
-import { UserContext } from "../utils/contexts/UserContext";
-import { channel, guild, member, notif } from "../utils/types";
-import style from "./../styles/fetch.module.scss";
+import Image from "next/future/image";
+import { NextPage } from "next";
 
-interface Props {
-    guilds: guild[];
-    member: member;
-    channels: channel[];
-    dms: channel[];
-    notifs: notif[];
-    users: member[];
-}
+let version = process.env.NEXT_PUBLIC_VERSION;
 
-const FetchPage: NextPage<Props> = ({ guilds, member, channels, dms, notifs, users }) => {
-    const { setGuilds, setChannels } = useContext(ChannelContext);
-    const { setUser, setFriendReqs, setFriends, setDms, setNotifs, setUsers } = useContext(UserContext);
-
+const FetchPage: NextPage<{ refresh?: boolean }> = ({ refresh }) => {
     const router = useRouter();
 
+    const setUser = useUser(state => state.setUser);
+    const updateUser = useUser(state => state.updateUser);
+    const { setSocket, socket } = useSocket();
+
     useEffect(() => {
-        setGuilds(guilds);
-        member.status = "online";
-        setUser(member);
-        setFriendReqs(member.friendRequests);
-        setFriends(member.friends);
-        setDms(dms);
-        setChannels(channels);
-        setNotifs(notifs);
+        (async () => {
+            if (refresh) return;
 
-        let temp = users;
-        const index = temp.findIndex(u => u._id === member._id);
-        temp[index].status = "online";
+            const user = await fetchOnLoad();
 
-        setUsers(temp);
+            if (!user) return;
 
-        if (!localStorage.getItem("settings")) {
-            localStorage.setItem("settings", JSON.stringify({
-                notificationSound: true,
-            }));
-        }
+            setUser(user);
 
-        setTimeout(() => {
-            router.push("/channels/@me", "/channels/@me", { shallow: true });
-        }, 1000);
-        
+            if (!socket) {
+                const SOCKET = io("http://localhost:3001");
+
+                SOCKET.emit("setup", user.id, user.guilds.map((g: Guild) => g.id));
+
+                SOCKET.on("online", (user: Member, id: string) => {
+                    updateUser(user);
+
+                    if (id) SOCKET.emit("status", user, id);
+                });
+
+                setSocket(SOCKET);
+            }
+
+            checkSettings();
+
+            router.push("/channels/@me");
+        })();
     }, []);
 
     return (
-        <div className={style.page}>
-            <div className={style.loading}>
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
+        <div className="flex flex-col items-center justify-center w-full h-full font-semibold text-gray-100 bg-gray-800">
+            <Image width={128} height={128} className='rounded-md' src='/images/kratercord.png' alt="kratercord-logo" />
+            <span className='m-4 mt-2 text-xs text-gray-500'>KraterCord - v{version || 'idk'}</span>
         </div>
     )
-}
-
-export async function getServerSideProps(context: GetServerSidePropsContext) {
-    return fetchOnStart(context);
 }
 
 export default FetchPage;

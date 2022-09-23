@@ -1,150 +1,278 @@
-import axios from "axios";
-import { GetServerSidePropsContext } from "next";
-import { validateCookies } from "./helpers";
-import { channel, guild, infQueryData, member, message, notif } from "./types";
-import FormData from 'form-data';
-import { API_URl } from "./constants";
+import axios, { AxiosError, AxiosResponse } from "axios";
+import { Channel, ChannelType, Guild, Member, Message, Notification, User } from "../store/user";
 
-type data = {
-    id: string;
-    msg: {
-        content: string;
-        media: {
-            link: string;
-            type: string;
-        }
-        author: string;
-    };
-}
+axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL;
+axios.defaults.withCredentials = true;
 
-interface setup {
-    guilds: guild[];
-    channels: channel[];
-    member: member;
-    dms: channel[];
-    notifs: notif[];
-    users: member[];
-}
+axios.interceptors.response.use((res) => {
+    return res;
+}, (err: AxiosError) => {
+    if (err.response?.status !== 403 && err.response?.status !== 401) return Promise.reject(err);
 
-export const fetchGuildChannels = async (guildId: string) => {
-    if (!guildId) return [];
+    window.location.href = '/';
 
+    return Promise.reject(err);
+});
+
+type returnType<T> = Promise<T | undefined>;
+
+export const fetchOnLoad = async () : returnType<User> => {
     try {
-        const response = await axios.get(`${API_URl}/channels/${guildId}`, { withCredentials: true });
+        const res = await axios.get(`/auth/setup`);
 
-        return response.data;
+        return res.data.user;
     } catch (err) {
-        console.log(err);
-        return [];
-    }
-}
+        console.error(err);
 
-export const fetchOnStart = async (ctx: GetServerSidePropsContext) => {
-    const headers = validateCookies(ctx);
-
-    if (!headers) return { redirect: { destination: "/" } };
-
-    try {
-        const { data: { member, guilds, channels, dms, notifs, users } } = await axios.get<setup>(`${API_URl}/auth/setup`, { headers });
-        
-        return { props: { member, guilds, channels, dms, notifs, users } };
-    } catch (err) {
-        console.log(err);
-        return { redirect: { destination: "/" } };
-    }
-}
-
-export const fetchMessages = async (id: string, page: number) => {
-    try {
-        const response = await axios.get<infQueryData>(`${API_URl}/channels/messages/${id}?_skip=${20 * page}&_limit=20`, { withCredentials: true });
-
-        return response.data;
-    } catch (err) {
-        console.log(err);
-        return { messages: [], nextId: 0 };
-    }
-}
-
-export const createMessage = async (data: data) => {
-    const { id, msg } = data;
-    const { content, media, author } = msg;
-
-    try {
-        const response = await axios.post<message>(`${API_URl}/channels/${id}/message`, {
-            author,
-            content,
-            media
-        }, { withCredentials: true });
-
-        return response.data;
-    } catch (err) {
-        console.log(err);
         return undefined;
     }
 }
 
-export const uploadFile = async (data: FormData) => {
-    const response = await axios.post(`${API_URl}/upload`, data, { withCredentials: true });
-
-    return response.data.url;
-}
-
-export const sendFriendRequest = async (content: string, id: string) => {
-    if (content.length <= 5) return { status: 500 };
-
-    const username = content.slice(0, content.length - 5);
-    const hash = content.slice(content.length - 4, content.length);
-
+export const fetchMessages = async (id: string, cursor: string) : Promise<{ messages: Message[]; nextId: string }> => {
     try {
-        const response = await axios.post(`${API_URl}/user/friend_request`, { username, hash, id }, { withCredentials: true });
+        const response = await axios.get(`/channels/messages/${id}?cursor=${cursor}`);
 
-        return { status: response.status, data: response.data };
+        return response.data;
     } catch (err) {
-        console.log(err);
-        return { status: 500 };
+        console.error(err);
+
+        return { messages: [], nextId: 'undefined' };
     }
 }
 
-export const acceptFriendRequest = async (id: string, friendId: string) => {
+export const fetchChannels = async (guild: string) : returnType<Channel[]> => {
     try {
-        const response = await axios.post(`${API_URl}/user/friend_accept`, { id, friendId }, { withCredentials: true });
+        const response = await axios.get(`/channels/${guild}`);
 
-        return response;
+        return response.data.channels;
     } catch (err) {
-        console.log(err);
-        return { data: undefined };
+        console.error(err);
+
+        return undefined;
     }
 }
 
-export const rejectFriendRequest = async (id: string, friendId: string) => {
+export const fetchMembers = async (guild: string) : returnType<Member[]> => {
     try {
-        const response = await axios.post(`${API_URl}/user/friend_decline`, { id, friendId }, { withCredentials: true });
+        const response = await axios.get(`/guilds/${guild}/members`);
 
-        return response;
+        return response.data.members;
     } catch (err) {
-        console.log(err);
-        return { data: undefined };
+        console.error(err);
+
+        return undefined;
     }
 }
 
-export const removeFriend = async (id: string, friendId: string) => {
+export const getGuildInvite = async (guild: string) : returnType<string> => {
     try {
-        const response = await axios.post(`${API_URl}/user/friend_remove`, { id, friendId }, { withCredentials: true });
+        const response = await axios.get(`/guilds/${guild}/invite`);
 
-        return response;
+        return response.data.invite;
     } catch (err) {
-        console.log(err);
-        return { data: undefined };
+        console.error(err);
+
+        return undefined;
     }
 }
 
-export const createChannel = async (users: string[], type: string) => {
+export const createMessage = async ({ channelId, authorId, content } : { channelId: string; authorId: string; content: string }) : returnType<Message> => {
     try {
-        const response = await axios.post(`${API_URl}/channels/create/${type}`, { users }, { withCredentials: true });
+        const response = await axios.post(`/channels/${channelId}/message`, {
+            authorId,
+            content,
+        });
+
+        return response.data.message;
+    } catch (err) {
+        console.error(err);
+
+        return undefined;
+    }
+}
+
+export const sendFriendRequest = async (id: string, username: string, hash: string) : Promise<AxiosResponse | undefined> => {
+    try {
+        const response = await axios.post(`/user/friend/request`, {
+            username,
+            hash,
+            id
+        });
 
         return response;
     } catch (err) {
-        console.log(err);
-        return { data: undefined };
+        console.error(err);
+
+        return undefined;
+    }
+}
+
+export const declineFriend = async (requestId: string) : returnType<string | undefined> => {
+    try {
+        const response = await axios.post('/user/friend/decline', { id: requestId });
+
+        return response.data.requestId;
+    } catch (err) {
+        console.error(err);
+
+        return undefined;
+    }
+}
+
+export const removeFriendApi = async (userId: string, friendId: string) : returnType<string | undefined> => {
+    try {
+        const response = await axios.post('/user/friend/remove', { userId, friendId });
+
+        return response.data.friendId;
+    } catch (err) {
+        console.error(err);
+
+        return undefined;
+    }
+}
+
+export const acceptFriend = async (requestId: string, userId: string, friendId: string) : returnType<{ friend: User; requestId: string; } | undefined> => {
+    try {
+        const response = await axios.post('/user/friend/accept', { requestId, userId, friendId });
+
+        return response.data;
+    } catch (err) {
+        console.error(err);
+
+        return undefined;
+    }
+}
+
+export const createChannel = async (userIds: { id: string; }[], type: ChannelType, name: string) : returnType<Channel | undefined> => {
+    try {
+        const response = await axios.post(`/channels/create/${type}`, { userIds, name });
+
+        return response.data.channel;
+    } catch (err: any) {
+        console.error(err);
+
+        return undefined;
+    }
+}
+
+export const joinChannel = async ({ channelId, muted, deafen } : { channelId: string; muted: boolean; deafen: boolean; }) : returnType<Channel> => {
+    try {
+        const response = await axios.post(`/channels/${channelId}/join`, { muted, deafen });
+
+        return response.data.channel;
+    } catch (err) {
+        console.error(err);
+
+        return undefined;
+    }
+}
+
+export const updateVoiceState = async ({ muted, deafen } : { muted: boolean; deafen: boolean; }) : returnType<User> => {
+    try {
+        const response = await axios.post('/user/update/voice', { muted, deafen });
+
+        return response.data.user;
+    } catch (err) {
+        console.error(err);
+
+        return undefined;
+    }
+}
+
+export const leaveChannel = async (channelId: string) : returnType<Channel> => {
+    try {
+        const response = await axios.post(`/channels/${channelId}/leave`);
+
+        return response.data.channel;
+    } catch (err) {
+        console.error(err);
+
+        return undefined;
+    }
+}
+
+export const createGuild = async (formData: FormData) : returnType<Guild> => {
+    try {
+        const response = await axios.post('/guilds/create', formData);
+
+        return response.data.guild;
+    } catch (err) {
+        console.error(err);
+
+        return undefined
+    }
+}
+
+export const joinGuild = async (code: string, userId: string) : returnType<Guild> => {
+    try {
+        const response = await axios.post(`/guilds/join/${code}`, {
+            userId
+        });
+
+        return response.data.guild;
+    } catch (err) {
+        console.error(err);
+
+        return undefined
+    }
+}
+
+export const createNotfication = async (channelId: string, guildId?: string) : returnType<Notification> => {
+    try {
+        const response = await axios.post('/user/notification/create', { channelId, guildId });
+
+        return response.data;
+    } catch (err) {
+        console.error(err);
+
+        return undefined;
+    }
+}
+
+export const deleteNotification = async (id: string) : returnType<string> => {
+    try {
+        const response = await axios.delete(`/user/notification/${id}`);
+
+        return response.data.notificationId;
+    } catch (err) {
+        console.error(err);
+
+        return undefined;
+    }
+}
+
+export const uploadFile = async (data: FormData) : Promise<string | undefined> => {
+    try {
+        const response = await axios.post(`/upload`, data);
+
+        return response.data.url;
+    } catch (err: any) {
+        console.error(err);
+
+        return undefined;
+    }
+}
+
+export const updateUserApi = async (id: string, username: string, avatar: string) : Promise<User | undefined> => {
+    try {
+        const response = await axios.post('/user/update', { username, avatar, id });
+
+        return response.data.user;
+    } catch(err) {
+        console.error(err);
+
+        return undefined;
+    }
+}
+
+export const logout = async () => {
+    try {
+        const response = await axios.get('/auth/logout');
+
+        return response;
+    } catch(err) {
+        console.error(err);
+
+        return undefined;
     }
 }
