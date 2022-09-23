@@ -217,7 +217,7 @@ const consume = async (transport: Transport, producerId: string, transportId: st
     }
 }
 
-const voiceActivity = (stream: MediaStream, userId: string): number => {
+const voiceActivity = (stream: MediaStream, userId: string): NodeJS.Timer => {
     const addTalkingUser = useSettings.getState().addTalkingUser;
     const removeTalkingUser = useSettings.getState().removeTalkingUser;
 

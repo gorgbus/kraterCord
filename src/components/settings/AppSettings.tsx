@@ -50,18 +50,15 @@ const AppSettings: FC<{ set: Dispatch<SetStateAction<string>>; }> = ({ set }) =>
 export default AppSettings;
 
 export const VoiceAndVideo: FC = () => {
-    const settings = getSettings();
-
-    if (!settings) return <div></div>
-
     const producer = useSettings(state => state.producer);
     const voice = useSettings(state => state.voiceChannel);
-    const socket = useSocket(state => state.socket);
     const voiceSocket = useSocket(state => state.voiceSocket);
+
+    const settings = getSettings();
 
     const [dropDown, toggleDropDown] = useState(false);
     const [devices, setDevices] = useState<{ label: string; deviceId: string; }[]>([{ label: 'Default', deviceId: 'default' }]);
-    const [curDevice, setDevice] = useState(settings.audioInput);
+    const [curDevice, setDevice] = useState(settings!.audioInput);
     const [saving, setSaving] = useState(false);
 
     const save = () => {
@@ -99,6 +96,8 @@ export const VoiceAndVideo: FC = () => {
             }
         })();
     }, []);
+
+    if (!settings) return <div></div>
 
     return (
         <div className="relative w-[calc(100%-2rem)] h-[calc(100%-1rem)] m-4 mt-0">

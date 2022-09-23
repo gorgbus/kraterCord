@@ -11,8 +11,6 @@ import Sockets from "./Sockets";
 import LoadingScreen from "../../../pages/app";
 
 const GuildSidebar = ({ children }: { children: ReactNode }) => {
-    document.oncontextmenu = () => false;
-
     const [modal, setModal] = useState(false);
     const [saving, setSaving] = useState(false);
 
@@ -28,6 +26,10 @@ const GuildSidebar = ({ children }: { children: ReactNode }) => {
     const setUser = useUser(state => state.setUser);
 
     const { data, isLoading, isSuccess } = useQuery("main", fetchOnLoad, { refetchOnWindowFocus: false, refetchOnMount: false, enabled: userId === '123' });
+
+    useEffect(() => {
+        document.oncontextmenu = () => false;
+    }, []);
 
     if (isLoading) {
         if (socket) socket.disconnect();

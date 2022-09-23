@@ -30,7 +30,6 @@ const Sockets: FC = () => {
     const voiceGuild = useSettings(state => state.voiceGuild);
     const muteConsumers = useSettings(state => state.muteConsumers);
 
-    // const friendState = useFriend();
     const queryClient = useQueryClient();
 
     const { mutate: updateVoice } = useMutation(updateVoiceState, {
@@ -62,6 +61,123 @@ const Sockets: FC = () => {
         },
         onSettled: () => {
             queryClient.invalidateQueries(["channels", guildId]);
+        }
+    });
+
+    const { mutate: updateMessages } = useMutation(async (message: Message) => message, {
+        onMutate: async (message) => {
+            await queryClient.cancelQueries(["channel", message.channelId]);
+
+            const cache = queryClient.getQueryData<{ pages: { messages: Message[]; nextId: string }[]; pageParams: [] }>(["channel", message.channelId]);
+            const newCache = addMessage(message, cache);
+
+            if (!newCache) return;
+
+            queryClient.setQueryData(["channel", message.channelId], newCache);
+
+            return {
+                cache,
+            }
+        },
+        onError: (_error, data, context: any) => {
+            if (context) queryClient.setQueryData(["channel", data.channelId], context.cache);
+        },
+        onSettled: (data) => {
+            queryClient.invalidateQueries(["channel", data?.channelId]);
+        }
+    });
+
+    const { mutate: updateUser } = useMutation(async (data : { voiceGuild: string; channel: string; user: string; userMuted: boolean; userDeafen: boolean; }) => data, {
+        onMutate: async (channelData) => {
+            await queryClient.cancelQueries(["channels", channelData.voiceGuild]);
+
+            const cache = queryClient.getQueryData<Channel[]>(["channels", channelData.voiceGuild]);
+
+            if (!cache) return;
+
+            const newCache = cache;
+
+            const index = newCache.findIndex(ch => ch.id === channelData.channel);
+
+            if (index === -1) return;
+
+            newCache[index].users = newCache[index].users.map(usr => usr.id === channelData.user ? { ...usr, deafen: channelData.userDeafen, muted: channelData.userMuted } : usr);
+
+            queryClient.setQueryData(["channels", channelData.voiceGuild], newCache);
+
+            return {
+                cache,
+            }
+        },
+        onError: (_error, data, context: any) => {
+            if (context) queryClient.setQueryData(["channels", data.voiceGuild], context.cache);
+        },
+        onSettled: (data) => {
+            queryClient.invalidateQueries(["channels", data?.voiceGuild]);
+        }
+    });
+
+    const { mutate: joinChannel } = useMutation(async (channelData : { voiceGuild: string; channel: string; user: { id: string; username: string; avatar: string; muted: boolean; deafen: boolean } }) => channelData, {
+        onMutate: async (channelData) => {
+            await queryClient.cancelQueries(["channels", channelData.voiceGuild]);
+
+            const cache = queryClient.getQueryData<Channel[]>(["channels", channelData.voiceGuild]);
+
+            if (!cache) return;
+
+            const user = {
+                id: channelData.user.id,
+                username: channelData.user.username,
+                avatar: channelData.user.avatar,
+                muted: channelData.user.muted,
+                deafen: channelData.user.deafen,
+            }
+
+            const newCache = cache;
+
+            const index = newCache.findIndex(chnl => chnl.id === channelData.channel);
+
+            if (index === -1) return;
+
+            newCache[index].members = [...newCache[index].members, user as User];
+
+            queryClient.setQueryData(["channels", channelData.voiceGuild], newCache);
+
+            return { cache };
+        },
+        onError: (_error, data, context: any) => {
+            queryClient.setQueryData(["channels", data.voiceGuild], context?.cache);
+        },
+        onSettled: (data) => {
+            queryClient.invalidateQueries(["channels", data?.voiceGuild]);
+        }
+    });
+
+    const { mutate: removeUser } = useMutation(async (channelData : { voiceGuild: string; channel: string; user: string }) => channelData, {
+        onMutate: async (channelData) => {
+            await queryClient.cancelQueries(['channels', channelData.voiceGuild]);
+
+            const cache = queryClient.getQueryData<Channel[]>(["channels", channelData.voiceGuild]);
+
+            if (!cache) return;
+
+            const newCache = cache;
+
+            const index = newCache.findIndex(c => c.id === channelData.channel);
+
+            if (index === -1) return;
+
+            newCache[index].members = newCache[index].members.filter(u => u.id !== channelData.user);
+
+            queryClient.setQueryData(["channels", channelData.voiceGuild], newCache);
+
+            return { cache };
+        },
+        onError: (_error, data, context: any) => {
+            queryClient.setQueryData(["channels", data.voiceGuild], context?.cache);
+        },
+        onSettled: (data) => {
+            queryClient.invalidateQueries(['channels', data?.voiceGuild]);
         }
     });
 
@@ -113,30 +229,6 @@ const Sockets: FC = () => {
                 upsertNotification(notification);
             }
 
-            const { mutate: updateMessages } = useMutation(async (message) => message, {
-                onMutate: async (message) => {
-                    await queryClient.cancelQueries(["channel", data.id]);
-
-                    const cache = queryClient.getQueryData<{ pages: { messages: Message[]; nextId: string }[]; pageParams: [] }>(["channel", data.id]);
-
-                    const newCache = addMessage(message, cache);
-
-                    if (!newCache) return;
-
-                    queryClient.setQueryData(["channel", data.id], newCache);
-
-                    return {
-                        cache,
-                    }
-                },
-                onError: (_error, _data, context: any) => {
-                    if (context) queryClient.setQueryData(["channel", data.id], context.cache);
-                },
-                onSettled: () => {
-                    queryClient.invalidateQueries(["channel", data.id]);
-                }
-            });
-
             updateMessages(data.msg);
         });
 
@@ -145,108 +237,14 @@ const Sockets: FC = () => {
         });
 
         socket?.on('updated_voice_state', (voiceGuild: string, channel: string, user: string, userMuted: boolean, userDeafen: boolean) => {
-            const { mutate: updateUser } = useMutation(async (data : { voiceGuild: string; channel: string; user: string; userMuted: boolean; userDeafen: boolean; }) => data, {
-                onMutate: async ({ voiceGuild, channel, user, userDeafen, userMuted }) => {
-                    await queryClient.cancelQueries(["channels", voiceGuild]);
-
-                    const cache = queryClient.getQueryData<Channel[]>(["channels", voiceGuild]);
-
-                    if (!cache) return;
-
-                    const newCache = cache;
-
-                    const index = newCache.findIndex(ch => ch.id === channel);
-
-                    if (index === -1) return;
-
-                    newCache[index].users = newCache[index].users.map(usr => usr.id === user ? { ...usr, userDeafen, userMuted } : usr);
-
-                    queryClient.setQueryData(["channels", voiceGuild], newCache);
-
-                    return {
-                        cache,
-                    }
-                },
-                onError: (_error, _data, context: any) => {
-                    if (context) queryClient.setQueryData(["channels", voiceGuild], context.cache);
-                },
-                onSettled: () => {
-                    queryClient.invalidateQueries(["channels", voiceGuild]);
-                }
-            });
-
             updateUser({ voiceGuild, channel, user, userMuted, userDeafen });
         });
 
         socket?.on('joined_channel', (data) => {
-            const { mutate: joinChannel } = useMutation(async (channelData : { voiceGuild: string; channel: string; user: { id: string; username: string; avatar: string; muted: boolean; deafen: boolean } }) => data, {
-                onMutate: async (channelData) => {
-                    await queryClient.cancelQueries(["channels", channelData.voiceGuild]);
-
-                    const cache = queryClient.getQueryData<Channel[]>(["channels", channelData.voiceGuild]);
-
-                    if (!cache) return;
-
-                    const user = {
-                        id: channelData.user.id,
-                        username: channelData.user.username,
-                        avatar: channelData.user.avatar,
-                        muted: channelData.user.muted,
-                        deafen: channelData.user.deafen,
-                    }
-
-                    const newCache = cache;
-
-                    const index = newCache.findIndex(chnl => chnl.id === channelData.channel);
-
-                    if (index === -1) return;
-
-                    newCache[index].members = [...newCache[index].members, user as User];
-
-                    queryClient.setQueryData(["channels", channelData.voiceGuild], newCache);
-
-                    return { cache };
-                },
-                onError: (_error, _data, context: any) => {
-                    queryClient.setQueryData(["channels", data.voiceGuild], context?.cache);
-                },
-                onSettled: () => {
-                    queryClient.invalidateQueries(["channels", data.voiceGuild]);
-                }
-            });
-
             joinChannel(data);
         });
 
         socket?.on('user_disconnected', (voiceGuild: string, channel: string, user: string) => {
-            const { mutate: removeUser } = useMutation(async (channelData : { voiceGuild: string; channel: string; user: string }) => channelData, {
-                onMutate: async (channelData) => {
-                    await queryClient.cancelQueries(['channels', channelData.voiceGuild]);
-
-                    const cache = queryClient.getQueryData<Channel[]>(["channels", channelData.voiceGuild]);
-
-                    if (!cache) return;
-
-                    const newCache = cache;
-
-                    const index = newCache.findIndex(c => c.id === channelData.channel);
-
-                    if (index === -1) return;
-
-                    newCache[index].members = newCache[index].members.filter(u => u.id !== channelData.user);
-
-                    queryClient.setQueryData(["channels", channelData.voiceGuild], newCache);
-
-                    return { cache };
-                },
-                onError: (_error, _data, context: any) => {
-                    queryClient.setQueryData(["channels", voiceGuild], context?.cache);
-                },
-                onSettled: () => {
-                    queryClient.invalidateQueries(['channels', voiceGuild]);
-                }
-            });
-
             removeUser({ voiceGuild, channel, user });
         });
 
