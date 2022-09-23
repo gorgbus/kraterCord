@@ -1,18 +1,18 @@
-import { infQuery, message, _data } from "./types";
-import { State as FriendState } from '../store/friend';
+import { AxiosResponse } from "axios";
+import { Message, useUser } from "../store/user";
 
 type group = {
-    nextId: number;
-    messages: message[];
+    nextId: string;
+    messages: Message[];
 }
 
-export const isCompact = (pages: group[], group: group, msg: message, i: number) => {
+export const isCompact = (pages: group[], group: group, msg: Message, i: number) => {
     if (pages[pages.length - 1] === group && group.messages[group.messages.length - 1] === msg) {
         return false;
     }
 
     if (group.messages[group.messages.length - 1] !== msg) {
-        if (msg.author._id !== group.messages[i + 1].author._id) return false;
+        if (msg.author.id !== group.messages[i + 1].author.id) return false;
 
         if ((Number(new Date(msg.createdAt)) - Number(new Date(group.messages[i + 1].createdAt))) <= 1000 * 60) {
             return true;
@@ -24,7 +24,7 @@ export const isCompact = (pages: group[], group: group, msg: message, i: number)
     i = pages.indexOf(group);
 
     if (group.messages[group.messages.length - 1] === msg) {
-        if (msg.author._id !== pages[i + 1].messages[0].author._id) return false;
+        if (msg.author.id !== pages[i + 1].messages[0].author.id) return false;
 
         if ((Number(new Date(msg.createdAt)) - Number(new Date(pages[i + 1].messages[0].createdAt))) <= 1000 * 60) {
             return true;
@@ -36,13 +36,13 @@ export const isCompact = (pages: group[], group: group, msg: message, i: number)
     return false;
 }
 
-export const isLast = (pages: group[], group: group, msg: message, i: number) => {
+export const isLast = (pages: group[], group: group, msg: Message, i: number) => {
     if (pages[0].messages[0] === msg) {
         return true;
     }
 
     if (group.messages[0] !== msg) {
-        if (msg.author._id !== group.messages[i - 1].author._id) return false;
+        if (msg.author.id !== group.messages[i - 1].author.id) return false;
 
         if ((Number(new Date(msg.createdAt)) - Number(new Date(group.messages[i - 1].createdAt))) <= 1000 * 60) {
             return false;
@@ -54,7 +54,7 @@ export const isLast = (pages: group[], group: group, msg: message, i: number) =>
     i = pages.indexOf(group);
 
     if (group.messages[0] === msg) {
-        if (msg.author._id !== pages[i - 1].messages[0].author._id) return false;
+        if (msg.author.id !== pages[i - 1].messages[0].author.id) return false;
 
         if ((Number(new Date(msg.createdAt)) - Number(new Date(pages[i - 1].messages[0].createdAt))) <= 1000 * 60) {
             return false;
@@ -66,7 +66,7 @@ export const isLast = (pages: group[], group: group, msg: message, i: number) =>
     return true;
 }
 
-export const addMessage = (data: any, cache?: infQuery) => {
+export const addMessage = (data: any, cache?: { pages: { messages: Message[]; nextId: string }[]; pageParams: [] }) => {
     if (cache && data) {
         const messages = cache.pages[0].messages;
         if (messages.length < 20) {
@@ -101,25 +101,25 @@ export const addMessage = (data: any, cache?: infQuery) => {
     return false;
 }
 
-export const updateFriends = (type: string, id: string, state: FriendState) => {
-    const { addFriend, addReq, removeFriend, removeReq } = state;
+export const updateFriends = (response: AxiosResponse, type: string) => {
+    const { addFriend, addRequest, removeFriend, removeRequest } = useUser.getState();
 
     switch(type) {
         case 'req':
-            addReq({ friend: id, type: 'in' });
+            addRequest(response.data.request);
 
             break;
         case 'accept':
-            addFriend(id);
-            removeReq(id);
+            addFriend(response.data.friend);
+            removeRequest(response.data.requestId);
 
             break;
         case 'decline':
-            removeReq(id);
+            removeRequest(response.data.requesterId);
 
             break;
         case 'remove':
-            removeFriend(id);
+            removeFriend(response.data.friendId);
 
             break;
     }

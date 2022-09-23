@@ -1,5 +1,5 @@
 import ReactDOM from 'react-dom/client';
-import './assets/index.css';
+import './styles/index.css';
 
 import {
   BrowserRouter,
@@ -21,7 +21,16 @@ import NoAccess from './pages/NoAccess';
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 
-const queryClient = new QueryClient();
+export const queryClient = new QueryClient();
+
+document.onkeydown = (e) => {
+    if (e.key === "F5") {
+        e.preventDefault();
+        return false;
+    }
+}
+
+document.oncontextmenu = (e) => false;
 
 root.render(
     <div className="w-screen bg-gray-900">
@@ -40,11 +49,11 @@ root.render(
                         <Route path="channels" element={<GuildSidebar />} >
                             <Route path="@me" element={<FriendSidebar />} >
                                 <Route index element={<HomePage />} />
-                                <Route path=":channel" element={<Channel dm={true} />} />
+                                <Route path=":channelId" element={<Channel dm={true} />} />
                             </Route>
                             
-                            <Route path=":guild">
-                                <Route path=":channel" element={<ChannelSidebar />} >
+                            <Route path=":guildId">
+                                <Route path=":channelId" element={<ChannelSidebar />} >
                                     <Route index element={<Channel />} />
                                 </Route>
                             </Route>

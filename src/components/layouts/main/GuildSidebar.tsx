@@ -1,77 +1,83 @@
-import { FC } from "react";
+import { ChangeEvent, FC, MutableRefObject, useEffect, useRef, useState } from "react";
 import Img from "react-cool-img";
-import { Link, Outlet } from "react-router-dom";
-import { useChannel } from "../../../store/channel";
-import { useGuild } from "../../../store/guild";
-import { useNotification } from "../../../store/notification";
+import { Link, Outlet, useNavigate, useParams } from "react-router-dom";
+import { useSettings } from "../../../store/settings";
+import { useSocket } from "../../../store/socket";
 import { useUser } from "../../../store/user";
+import { createGuild, joinGuild } from "../../../utils/api";
+import { AddIcon, DropDownIcon } from "../../ui/Icons";
+import Modal from "../../ui/Modal";
 import Sockets from "./Sockets";
 
 const GuildSidebar: FC = () => {
-    const { guilds, setGuild, guild } = useGuild();
-    const setChannel = useChannel(state => state.setChannel);
-    const channels = useChannel(state => state.channels);
-    const notifications = useNotification(state => state.notifications);
-    const user = useUser(state => state.user);
-    const users = useUser(state => state.users);
+    const [modal, setModal] = useState(false);
+    const [saving, setSaving] = useState(false);
 
+    const { guildId } = useParams();
+
+    const dms = useUser(state => state.user.dms);
+    const userId = useUser(state => state.user.id);
+    const guilds = useUser(state => state.user.guilds);
+    const notifications = useUser(state => state.user.notifications);
+    const setSocket = useSocket(state => state.setSocket);
+    const socket = useSocket(state => state.socket);
+
+    useEffect(() => {
+        return () => {
+            socket?.disconnect();
+            setSocket(undefined!);
+        }
+    }, []);
+    
     return (
         <div className="flex w-full h-full overflow-hidden">
             <Sockets />
 
-            <div className="flex flex-col items-center w-[76px] h-full bg-gray-900">
-                <Link onClick={() => {
-                    setChannel('none');
-                    setGuild({
-                        name: "none",
-                        _id: "none",
-                        avatar: "none",
-                        firstChannel: "none",
-                    });
-                }} to="/channels/@me" className={`transition-all m-1 relative cursor-pointer rounded-[50%] group duration-300 h-14 w-14 hover:bg-blue-500 hover:rounded-2xl ${guild._id === 'none' ? `rounded-2xl bg-blue-500` : `bg-slate-800`}`} >
-                    <span className={`absolute transition-all duration-300 -translate-y-1/2 bg-white rounded-lg -left-[34px] scale-0 group-hover:scale-100 w-7 top-1/2 ${guild._id === 'none' ? `scale-100 h-10` : `h-6`}`}></span>
-                </Link>
+            <div className="flex flex-col items-center w-[76px] h-full bg-gray-900 relative">
+                <div className="flex flex-col items-center w-full h-[calc(100%-4rem)]">
+                    <Link to="/channels/@me" className={`transition-all m-1 relative cursor-pointer rounded-[50%] group duration-300 h-14 w-14 hover:bg-blue-500 hover:rounded-2xl ${!guildId ? `rounded-2xl bg-blue-500` : `bg-slate-800`}`} >
+                        <span className={`absolute transition-all duration-300 -translate-y-1/2 bg-white rounded-lg -left-[34px] scale-0 group-hover:scale-100 w-7 top-1/2 ${!guildId ? `scale-100 h-10` : `h-6`}`}></span>
+                    </Link>
+
+                    {
+                        notifications.filter(n => !n.guildId).map((n, i) => {
+                            const channelId = n.channelId;
+                            const dm = dms.find(dm => dm.id === channelId);
+                            const friend = dm?.users[0].id === userId ? dm.users[1] : dm?.users[0]
+
+                            return (
+                                <Link key={i} className={`relative w-14 h-14 m-1 group`} to={`/channels/@me/${n.channelId}`}>
+                                    <Img className={`mb-2 transition-all duration-300 rounded-[50%] hover:rounded-2xl h-14 w-14`} src={friend?.avatar} />
+                                    <span className={`absolute transition-all duration-300 -translate-y-1/2 bg-white rounded-lg -left-[34px] scale-100 group-hover:h-6 w-7 top-1/2 h-2`}></span>
+                                    
+                                    <span className="absolute right-0 flex items-center justify-center w-6 h-6 text-xs font-semibold text-gray-100 bg-red-600 border-4 border-gray-900 rounded-full -bottom-1">{n.count}</span>
+                                </Link>
+                            )
+                        })
+                    }
+
+                    <div className="bg-gray-700 m-1 w-8 h-[0.1rem]"></div>
+                    {
+                        guilds.map((gld, i) => {
+                            const notification = notifications.find(n => n.guildId === gld.id);
+
+                            return (
+                                <Link className="relative m-1 w-14 h-14 group" key={i} to={`/channels/${gld.id}/${gld.redirectId}`} >
+                                    <Img className={`mb-2 transition-all duration-300 rounded-[50%] hover:rounded-2xl h-14 w-14 ${guildId === gld.id && `rounded-2xl`}`} src={gld.avatar} />
+                                    <span className={`absolute transition-all duration-300 -translate-y-1/2 bg-white rounded-lg -left-[34px] scale-0 group-hover:scale-100 w-7 top-1/2 ${guildId === gld.id ? `scale-100 h-10` : notification ? `scale-100 h-2 group-hover:h-6` : `h-6`} `}></span>
+                                </Link>
+                            )
+                        })
+                    }
+                </div>
+
+                <div onClick={() => setModal(true)} className={`transition-all flex items-center justify-center relative cursor-pointer rounded-[50%] group duration-300 h-14 w-14 group hover:bg-green-500 hover:rounded-2xl bg-slate-800`}>
+                    <AddIcon size="20" color="text-green-400 group-hover:text-gray-100 transition-all" />
+                </div>
 
                 {
-                    notifications.filter(n => n.guild === 'none').map((n, i) => {
-                        const channel = channels.find(ch => ch._id === n.channel);
-                        const friendId = channel?.users?.find(u => u.user !== user._id);
-                        const friend = users.find(u => u._id === friendId?.user);
-
-                        return (
-                            <Link key={i} onClick={() => {
-                                setChannel(n.channel);
-                                setGuild({
-                                    name: "none",
-                                    _id: "none",
-                                    avatar: "none",
-                                    firstChannel: "none",
-                                });
-                            }} className={`relative w-14 h-14 m-1 group`} to={`/channels/@me/${n.channel}`}>
-                                <Img className={`mb-2 transition-all duration-300 rounded-[50%] hover:rounded-2xl h-14 w-14`} src={friend?.avatar} />
-                                <span className={`absolute transition-all duration-300 -translate-y-1/2 bg-white rounded-lg -left-[34px] scale-100 group-hover:h-6 w-7 top-1/2 h-2`}></span>
-                                
-                                <span className="absolute right-0 flex items-center justify-center w-6 h-6 text-xs font-semibold text-gray-100 bg-red-600 border-4 border-gray-900 rounded-full -bottom-1">{n.count}</span>
-                            </Link>
-                        )
-                    })
-                }
-
-                <div className="bg-gray-700 m-1 w-8 h-[0.1rem]"></div>
-                {
-                    guilds.map((gl, i) => {
-                        const notification = notifications.find(n => n.guild === gl._id);
-
-                        return (
-                            <Link className="relative m-1 w-14 h-14 group" key={i} onClick={() => {
-                                setGuild(gl)
-                                setChannel(gl.firstChannel)
-                            }} to={`/channels/${gl._id}/${gl.firstChannel}`} >
-                                <Img className={`mb-2 transition-all duration-300 rounded-[50%] hover:rounded-2xl h-14 w-14 ${guild._id === gl._id && `rounded-2xl`}`} src={gl.avatar} />
-                                <span className={`absolute transition-all duration-300 -translate-y-1/2 bg-white rounded-lg -left-[34px] scale-0 group-hover:scale-100 w-7 top-1/2 ${guild._id === gl._id ? `scale-100 h-10` : notification ? `scale-100 h-2 group-hover:h-6` : `h-6`} `}></span>
-                            </Link>
-                        )
-                    })
+                    modal &&
+                        <Modal saving={saving} addtionalClassName="bg-gray-200" size="h-1/3 w-[30%]" close={() => setModal(false)} content={<AddGuildModal set={(bol: boolean) => setSaving(bol)} close={() => setModal(false)} />} />
                 }
             </div>
 
@@ -83,3 +89,127 @@ const GuildSidebar: FC = () => {
 }
 
 export default GuildSidebar;
+
+const AddGuildModal: FC<{ close: () => void; set: (bol: boolean) => void; }> = ({ close, set }) => {
+    const userName = useUser(state => state.user.username);
+    const userId = useUser(state => state.user.id);
+    const addGuild = useUser(state => state.addGuild);
+
+    const navigate = useNavigate();
+
+    const [stage, setStage] = useState('main');
+    const [invite, setInvite] = useState('');
+    const [serverName, setName] = useState(`Server uživatele ${userName}`);
+    const [avatar, setAvatar] = useState<File>();
+    const [saving, setSaving] = useState(false);
+    const [error, toggleError] = useState(false);
+
+    const uploadRef = useRef() as MutableRefObject<HTMLInputElement>;
+
+    const url = avatar && URL.createObjectURL(avatar);
+
+    const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        e.preventDefault();
+
+        if (!e.target.files) return;
+
+        if (e.target.files[0].size > 1024 * 1024 * 20) return alert('Soubor je vetší než 20MB');
+
+        setAvatar(e.target.files[0]);
+    }
+
+    const save = async () => {
+        setSaving(true);
+        set(true);
+
+        const formData = new FormData();
+
+        if (avatar) formData.append('file', avatar);
+        formData.append('serverName', serverName);
+        formData.append('userId', userId);
+        
+        const guild = stage === 'create' ? await createGuild(formData) : await joinGuild(invite.replace('https://krater-cord.tech/invite/', ''), userId);
+
+        if (!guild) {
+            toggleError(true);
+            setSaving(false);
+            set(false);
+
+            return;
+        }
+
+        addGuild(guild);
+        navigate(`/channels/${guild.id}/${guild.redirectId}`);
+
+        close();
+        set(false);
+    }
+
+    return (
+        <div className="flex flex-col items-center justify-between w-full h-full font-semibold text-gray-800">
+            <div className="w-full h-[calc(100%-3.5rem)] flex items-center flex-col justify-center">
+                {
+                    stage === 'main' &&
+                        <div onClick={() => setStage('create')} className="flex items-center justify-between w-4/5 p-2 pl-4 pr-4 transition-all border-2 border-gray-300 rounded-md cursor-pointer hover:bg-gray-300 hover:border-gray-400">
+                            <span>Vytvoř si server</span>
+                            <DropDownIcon size="20" color="text-gray-800 -rotate-90" />
+                        </div>
+                }
+
+                {
+                    stage === 'invite' &&
+                        <div className="flex flex-col items-start justify-center w-4/5">
+                            <h3 className="mb-2 text-xs font-semibold text-gray-500 uppercase">zvací odkaz *</h3>
+                            <input disabled={saving} value={invite} onChange={(e) => setInvite(e.target.value)} placeholder="https://krater-cord.tech/invite/nEgrIdk" className="w-full p-2 pl-4 pr-4 text-sm bg-gray-300 rounded-md placeholder:text-sm focus:outline-none" />
+                        
+                            {error && <h3 className="mt-2 text-xs text-red-500 uppercase">něco se pokazilo. zkuste to znovu</h3>}
+                        </div>
+                }
+
+                {
+                    stage === 'create' &&
+                        <div className="flex flex-col items-center justify-center w-4/5">
+                            <input disabled={saving} type="file" className="hidden" accept="image/png,image/gif,image/jpeg" ref={uploadRef} onChange={onFileChange} />
+
+                            {
+                                !avatar ?
+                                    <div onClick={() => uploadRef.current.click()} className="relative flex items-center justify-center w-16 h-16 text-xs text-gray-700 uppercase border-2 border-gray-600 border-dashed rounded-full cursor-pointer">
+                                        <span className="absolute top-0 right-0 flex items-center justify-center w-5 h-5 bg-blue-500 rounded-full">
+                                            <AddIcon size="16" color="text-gray-100" />
+                                        </span>
+                                        
+                                        ikona
+                                    </div>
+                                :
+                                    <Img onClick={() => uploadRef.current.click()} className="w-16 h-16 rounded-full" src={url} />
+                            }
+
+                            <div className="flex flex-col items-start justify-center w-full">
+                                <h3 className="mb-2 text-xs font-semibold text-gray-500 uppercase">název serveru</h3>
+                                <input disabled={saving} value={serverName} onChange={(e) => setName(e.target.value)} className="w-full p-2 pl-4 pr-4 text-sm bg-gray-300 rounded-md placeholder:text-sm focus:outline-none" />
+                                {error && <h3 className="mt-2 text-xs text-red-500 uppercase">něco se pokazilo. zkuste to znovu</h3>}
+                            </div>
+                        </div>
+                }
+            </div>
+
+            <div className={`flex items-center justify-center w-full bg-gray-300 h-14 rounded-b-md`}>
+                {stage === 'main' && <button onClick={() => setStage('invite')} className="w-4/5 p-2 text-gray-100 transition-all bg-gray-400 rounded hover:bg-gray-500">Připojit se k serveru</button>}
+
+                {
+                    stage !== 'main' &&
+                        <div className="flex items-center justify-between w-4/5 h-full">
+                            <button disabled={saving} className="font-normal text-gray-400 hover:underline" onClick={() => {
+                                setStage('main');
+                                setName(`Server uživatele ${userName}`);
+                                setAvatar(undefined!);
+                                setInvite('');
+                            }} >Zpět</button>
+
+                            <button onClick={save} disabled={saving} className="p-2 text-gray-100 bg-blue-500 rounded hover:bg-blue-600">{stage === 'create' ? 'Vytvořit' : 'Přidat se k serveru'}</button>
+                        </div>
+                }              
+            </div>
+        </div>
+    )
+}

@@ -1,30 +1,34 @@
-import { FC } from "react"
-import { useChannel } from "../../../store/channel"
-import { useUser } from "../../../store/user";
+import { FC } from "react";
+import { useQueryClient } from "react-query";
+import { useParams } from "react-router-dom";
+import { useSettings } from "../../../store/settings";
+import { Channel, useUser } from "../../../store/user";
 import { ChannelIcon } from "../../ui/Icons";
 
 const ChannelBar: FC = () => {
-    const { channel, channels } = useChannel(state => state);
-    const user = useUser(state => state.user);
-    const users = useUser(state => state.users);
+    const { guildId, channelId } = useParams();
 
-    const dm = channels.find(ch => ch._id === channel);
+    const dms = useUser(state => state.user.dms);
+    const userId = useUser(state => state.user.id);
 
-    const friendId = dm?.users?.find(u => u.user !== user._id);
-    const friend = users.find(u => u._id === friendId?.user);
+    const dm = dms.find(dm => dm.id === channelId);
+
+    const friend = dm?.users[0].id === userId ? dm.users[1] : dm?.users[0]
+
+    const queryClient = useQueryClient();
+
+    const channels = queryClient.getQueryData<Channel[]>(["channels", guildId]);
+    const channel = channels?.find(ch => ch.id === channelId);
 
     return (
         <div>   
             {
-                dm?.type !== 'dm' &&
+                !dm ?
                     <div className="font-bold text-white h-12 w-full ml-56 fixed flex items-center bg-gray-700 border-b-[1px] border-gray-900">
                         <ChannelIcon size="20" color="text-gray-300 ml-2" />
-                        <span className="ml-1">{dm?.name}</span>
+                        <span className="ml-1">{channel?.name}</span>
                     </div>
-            }
-
-            {
-                dm?.type === 'dm' &&
+                :
                     <div className="font-bold text-white h-12 w-full ml-56 fixed flex items-center bg-gray-700 border-b-[1px] border-gray-900">
                         <span className="ml-2 text-xl font-bold text-gray-400 uppercase">@</span>
                         <span className="ml-1">{friend?.username}</span>

@@ -1,7 +1,6 @@
 import { Dispatch, FC, SetStateAction, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AcceptIcon, DropDownIcon } from "../../components/ui/Icons";
-import { useChannel } from "../../store/channel";
 import { useSettings } from "../../store/settings";
 import { useSocket } from "../../store/socket";
 import { getSettings, setSetting } from "../../utils";
@@ -13,12 +12,18 @@ import UnsavedWarning from "./UnsavedWarning";
 const AppSettings: FC<{ set: Dispatch<SetStateAction<string>>; }> = ({ set }) => {
     const navigate = useNavigate();
     const closeSettings = useSettings(state => state.closeSettings);
+    const socket = useSocket(state => state.socket);
+    const setSocket = useSocket(state => state.setSocket);
 
     const handleLogout = async () => {
         const logedOut = await logout();
 
         if (logedOut) {
             navigate('/');
+
+            socket?.disconnect();
+            setSocket(undefined!);
+
             closeSettings();
         } else {
             alert('Něco se nepovedlo');
@@ -50,7 +55,7 @@ export const VoiceAndVideo: FC = () => {
     if (!settings) return <div></div>
 
     const producer = useSettings(state => state.producer);
-    const voice = useChannel(state => state.voice);
+    const voice = useSettings(state => state.voiceChannel);
     const socket = useSocket(state => state.socket);
     const voiceSocket = useSocket(state => state.voiceSocket);
 

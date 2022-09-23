@@ -32,14 +32,14 @@ const SplashScreen: FC = () => {
                     invoke('close_splashscreen');
                 }, 1000);
             } catch (error) {
-                console.log(error)
+                console.error(error)
             }
         })();
     }, []);
 
     return (
         <div className='flex flex-col items-center justify-center h-screen font-semibold text-gray-100 bg-gray-800'>
-            <Img className='w-32 h-32 rounded-md' src='https://cdn.discordapp.com/attachments/805393975900110852/994567421149069362/unknown.png' />
+            <Img className='w-32 h-32 rounded-md' src='/images/kratercord.png' />
             <span className='m-4 mt-2 text-xs text-gray-500'>KraterCord - v{version || 'idk'}</span>
             {update}
         </div>

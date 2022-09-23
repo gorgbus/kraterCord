@@ -1,41 +1,45 @@
 import { Device } from "mediasoup-client";
 import { MediaKind, RtpCapabilities, RtpParameters, Transport, TransportOptions } from "mediasoup-client/lib/types";
 import { getSettings } from ".";
-import { useChannel } from "../store/channel";
 import { useSettings } from "../store/settings";
 import { useSocket } from "../store/socket";
 import { useUser } from "../store/user";
 import { io } from "socket.io-client";
 
-export const disconnecteSocket = () => {
+export const disconnectSocket = () => {
     const voiceSocket = useSocket.getState().voiceSocket;
+    const setVoiceSocket = useSocket.getState().setVoiceSocket;
 
     voiceSocket?.disconnect();
+    setVoiceSocket(undefined!);
 }
 
 export const connectToChannel = (id: string) => {
     const setVoiceSocket = useSocket.getState().setVoiceSocket;
-    const user = useUser.getState().user;
+    const userId = useUser.getState().user.id;
     const voiceSocket = io('http://localhost:3002');
 
     setVoiceSocket(voiceSocket);
 
-    console.log(id);
+    console.log('connected to voice channel');
 
-    voiceSocket.emit('setup', user._id, id, loadDevice);
+    voiceSocket.emit('setup', userId, id, loadDevice);
 }
 
 export const loadDevice = async ({ rtpCapabilities }: { rtpCapabilities: RtpCapabilities }) => {
     try {
         const socket = useSocket.getState().socket;
         const voiceSocket = useSocket.getState().voiceSocket;
-        const getVoice = useChannel.getState().getVoice;
-        const user = useUser.getState().user;
+        const getVoice = useSettings.getState().getVoiceChannel;
+        const getVoiceGuild = useSettings.getState().getVoiceGuild;
+        const userId = useUser.getState().user.id;
+        const username = useUser.getState().user.username;
+        const avatar = useUser.getState().user.avatar;
         const setDevice = useSettings.getState().setDevice;
         const getMuted = useSettings.getState().getMuted;
         const getDeafen = useSettings.getState().getDeafen;
 
-        socket?.emit('user_join', getVoice(), user._id, getMuted(), getDeafen());
+        socket?.emit('user_join', { voiceGuild: getVoiceGuild(), channel: getVoice(), user: { id: userId, username, avatar, muted: getMuted(), deafen: getDeafen() } });
 
         const stream = await navigator.mediaDevices.getUserMedia({
             audio: true,
@@ -47,8 +51,6 @@ export const loadDevice = async ({ rtpCapabilities }: { rtpCapabilities: RtpCapa
         stream.getAudioTracks().forEach(track => track.stop());
 
         const device = new Device()
-
-        console.log(rtpCapabilities);
 
         await device.load({ routerRtpCapabilities: rtpCapabilities });
 
@@ -62,7 +64,7 @@ export const loadDevice = async ({ rtpCapabilities }: { rtpCapabilities: RtpCapa
             consumer: false
         }, createProducer)
     } catch (err: any) {
-        console.log(err);
+        console.error(err);
 
         if (err.name === "NotSupportedError") {
             alert("Your browser does not support WebRTC.");
@@ -83,11 +85,13 @@ const getProducers = (channel: string) => {
 const createProducer = async (data: TransportOptions) => {
     try {
         const device = useSettings.getState().device;
-        const channel = useChannel.getState().voice;
+        const channel = useSettings.getState().voiceChannel;
         const voiceSocket = useSocket.getState().voiceSocket;
-        const user = useUser.getState().user;
+        const userId = useUser.getState().user.id;
         const muted = useSettings.getState().muted;
         const setProducer = useSettings.getState().setProducer;
+        const setVoiceStatus = useSettings.getState().setVoiceStatus;
+        const setTrack = useSettings.getState().setTrack;
 
         if (!device) return;
 
@@ -105,9 +109,10 @@ const createProducer = async (data: TransportOptions) => {
 
         if (!stream) return;
 
-        const interval = voiceActivity(stream, user._id);
+        const interval = voiceActivity(stream, userId);
 
         const track = stream.getAudioTracks()[0];
+        setTrack(track);
 
         transport.on('connect', async ({ dtlsParameters }, callback, errback) => {
             try {
@@ -131,6 +136,7 @@ const createProducer = async (data: TransportOptions) => {
                     if (producerExists) return getProducers(channel);
                 });
             } catch (err: any) {
+                console.error(err);
                 errback(err);
             }
         });
@@ -141,12 +147,12 @@ const createProducer = async (data: TransportOptions) => {
                 clearInterval(interval);
             }
 
-            
+            if (state !== 'new') setVoiceStatus(state);
         });
 
         await transport.produce({ track });
     } catch (err) {
-        console.log(err);
+        console.error(err);
     }
 }
 
@@ -169,7 +175,7 @@ export const createConsumer = async (id: string, userId: string) => {
             consume(transport, id, data.id, userId);
         });
     } catch (err) {
-        console.log(err);
+        console.error(err);
     }
 }
 
@@ -207,13 +213,13 @@ const consume = async (transport: Transport, producerId: string, transportId: st
             voiceSocket.emit("resume", id);
         });
     } catch (err) {
-        console.log(err);
+        console.error(err);
     }
 }
 
 const voiceActivity = (stream: MediaStream, userId: string): number => {
-    const updateUser = useChannel.getState().updateUser;
-    const channel = useChannel.getState().voice;
+    const addTalkingUser = useSettings.getState().addTalkingUser;
+    const removeTalkingUser = useSettings.getState().removeTalkingUser;
 
     const audioContext = new AudioContext();
     const audioSource = audioContext.createMediaStreamSource(stream);
@@ -238,9 +244,9 @@ const voiceActivity = (stream: MediaStream, userId: string): number => {
         const averageVolume = volumeSum / volumes.length;
 
         if (averageVolume > 0) {
-            updateUser(channel, userId, true, undefined!, undefined!);
+            addTalkingUser(userId);
         } else {
-            updateUser(channel, userId, false, undefined!, undefined!);
+            removeTalkingUser(userId);
         }
     }, 100);
 

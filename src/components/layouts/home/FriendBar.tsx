@@ -1,9 +1,10 @@
 import { FC } from "react";
-import { useFriend } from "../../../store/friend";
+import { useSettings } from "../../../store/settings";
 import { FriendIcon } from "../../ui/Icons";
 
 const FriendBar: FC = () => {
-    const { page, setPage } = useFriend(state => state);
+    const page = useSettings(state => state.page);
+    const setPage = useSettings(state => state.setPage);
 
     return <div className="font-bold text-white h-12 w-full ml-56 fixed flex items-center bg-gray-700 border-b-[1px] border-gray-900">
         <div className="m-2">
@@ -27,7 +28,8 @@ const FriendBar: FC = () => {
 }
 
 const Button: FC<{ content: string }> = ({ content }) => {
-    const { setPage, page } = useFriend(state => state);
+    const page = useSettings(state => state.page);
+    const setPage = useSettings(state => state.setPage);
 
     return <div className={`${content === page && `bg-gray-600 text-gray-50`} p-1 m-2 text-sm text-gray-300 rounded-md cursor-pointer hover:bg-gray-600 hover:bg-opacity-50`} onClick={() => setPage(content)}>
         {content}

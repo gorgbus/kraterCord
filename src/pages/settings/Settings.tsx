@@ -23,7 +23,7 @@ const Settings: FC = () => {
             </div>
 
             <div onClick={closeSettings} className="relative flex items-center justify-center w-8 h-8 mt-12 border-2 border-gray-400 rounded-full cursor-pointer group hover:border-gray-100">
-                <CloseIcon size="20" color="gray-400 group-hover:text-gray-100 absolute" />
+                <CloseIcon size="20" color="text-gray-400 group-hover:text-gray-100 absolute" />
             </div>
         </div>
     )

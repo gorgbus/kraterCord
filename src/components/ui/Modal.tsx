@@ -3,21 +3,26 @@ import { FC, MutableRefObject, ReactNode, useEffect, useRef } from "react";
 interface Props {
     size?: string;
     addtionalClassName?: string;
+    saving?: boolean;
     content: ReactNode;
     close: () => void;
 }
 
-const Modal: FC<Props> = ({ size = 'h-2/5 w-[30%]', content, addtionalClassName, close }) => {
+const Modal: FC<Props> = ({ size = 'h-2/5 w-[30%]', content, addtionalClassName, close, saving }) => {
     const modalRef = useRef() as MutableRefObject<HTMLDivElement>;
 
     const closeModal = (e: any) => {
-        if (modalRef.current && !modalRef.current.contains(e.target)) {
+        if (modalRef.current && !modalRef.current.contains(e.target) && e.target.id !== "title-bar" && !saving) {
             close();
         }
     }
 
     useEffect(() => {
         document.addEventListener('mousedown', closeModal);
+
+        return () => {
+            document.removeEventListener('mousedown', closeModal);
+        }
     }, []);
 
     return (

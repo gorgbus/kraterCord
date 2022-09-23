@@ -3,21 +3,21 @@ import { useInfiniteQuery } from "react-query";
 import Message from "./Message";
 import { fetchMessages } from "../../utils/api";
 import { isCompact, isLast } from "../../utils";
-import { useChannel } from "../../store/channel";
+import { useSettings } from "../../store/settings";
+import { useParams } from "react-router-dom";
 
 const Channel: FC<{ dm?: boolean }> = ({ dm }) => {
-    const channel = useChannel(state => state.channel);
+    const { channelId } = useParams();
 
     const { data, isLoading, isError, error, fetchNextPage, hasNextPage, isSuccess } = useInfiniteQuery(
-        ["channel", channel],
-        ({ pageParam = 0 }) => fetchMessages(channel, pageParam),
+        ["channel", channelId],
+        ({ pageParam = 'first' }) => fetchMessages(channelId as string, pageParam),
         {
             getNextPageParam: (lastPage, pages) => {
-                if (pages.length < lastPage.nextId) {
-                    return pages.length;
-                } else {
+                if (lastPage.nextId === 'undefined') 
                     return undefined;
-                }
+                
+                return lastPage.nextId;
             }
         }
     );
@@ -43,12 +43,12 @@ const Channel: FC<{ dm?: boolean }> = ({ dm }) => {
             <div onScroll={onScroll} onLoad={fetchMore} className="flex flex-col-reverse h-full overflow-scroll overflow-x-hidden scrollbar" >
                 {
                     isSuccess && data.pages.map((group, i) => {
-                        
-
                         return (
-                            <Fragment key={i}>
+                            group && <Fragment key={i}>
                                 {
                                     group.messages.map((msg, i) => {
+                                        if (!data.pages) return;
+
                                         const compact = isCompact(data.pages, group, msg, i);
                                         const last = isLast(data.pages, group, msg, i);
                                             

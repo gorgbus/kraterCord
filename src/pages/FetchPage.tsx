@@ -1,53 +1,40 @@
 import { FC, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useChannel } from "../store/channel";
-import { useGuild } from "../store/guild";
-import { useUser } from "../store/user";
+import { Guild, Member, useUser } from "../store/user";
 import { fetchOnLoad } from "../utils/api";
 import { io } from "socket.io-client";
 import { useSocket } from "../store/socket";
-import { member } from "../utils/types";
-import { useFriend } from "../store/friend";
-import { useNotification } from "../store/notification";
 import { checkSettings } from "../utils";
+import { getVersion } from '@tauri-apps/api/app';
+
+let version: string;
 
 const FetchPage: FC = () => {
     const navigate = useNavigate();
 
-    const { setGuilds, setGuild } = useGuild();
-    const { setChannels, addChannels } = useChannel();
-    const { setUser, setUsers, updateUser } = useUser();
+    const setUser = useUser(state => state.setUser);
+    const updateUser = useUser(state => state.updateUser);
     const { setSocket, socket } = useSocket();
-    const { setFriends, setReqs } = useFriend();
-    const { setNotifications } = useNotification();
 
     useEffect(() => {
-        const fetchData = async () => {
-            const { member, guilds, channels, dms, notifs, users } = await fetchOnLoad();
+        (async () => {
+            version = await getVersion();
 
-            setGuilds(guilds);
+            const user = await fetchOnLoad();
 
-            setChannels(channels);
-            addChannels(dms);
+            if (!user) return;
 
-            setUser(member);
-            setUsers(users);
-            updateUser(member);
-
-            setReqs(member.friendRequests);
-            setFriends(member.friends);
-
-            setNotifications(notifs);
+            setUser(user);
 
             if (!socket) {
                 const SOCKET = io("http://localhost:3001");
 
-                SOCKET.emit("setup", member._id, member);
+                SOCKET.emit("setup", user.id, user.guilds.map((g: Guild) => g.id));
 
-                SOCKET.on("online", (user: member, id: string) => {
+                SOCKET.on("online", (user: Member, id: string) => {
                     updateUser(user);
 
-                    if (id) SOCKET.emit("status", member, id);
+                    if (id) SOCKET.emit("status", user, id);
                 });
 
                 setSocket(SOCKET);
@@ -56,13 +43,13 @@ const FetchPage: FC = () => {
             checkSettings();
 
             navigate("/channels/@me");
-        }
-
-        fetchData();
+        })();
     }, []);
 
     return (
-        <div>
+        <div className="flex flex-col items-center justify-center w-full h-full font-semibold text-gray-100 bg-gray-800">
+            <img className='w-32 h-32 rounded-md' src='/images/kratercord.png' />
+            <span className='m-4 mt-2 text-xs text-gray-500'>KraterCord - v{version || 'idk'}</span>
         </div>
     )
 }

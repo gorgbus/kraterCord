@@ -23,14 +23,17 @@ const UserSettings: FC<{ set: Dispatch<SetStateAction<string>>; }> = ({ set }) =
 export default UserSettings;
 
 export const Profile: FC = () => {
-    const user = useUser(state => state.user);
-    const setUser = useUser(state => state.setUser);
+    const userId = useUser(state => state.user.id);
+    const username = useUser(state => state.user.username);
+    const avatar = useUser(state => state.user.avatar);
+    const hash = useUser(state => state.user.hash);
+    const setUser = useUser(state => state.updateUser);
     const updateUser = useUser(state => state.updateUser);
     const socket = useSocket(state => state.socket);
 
     const [image, setImage] = useState<File>();
     const [saving, setSaving] = useState(false);
-    const [name, setName] = useState(user.username);
+    const [name, setName] = useState(username);
     const [visModal, setVisibility] = useState(false);
 
     const uploadRef = useRef() as MutableRefObject<HTMLInputElement>;
@@ -51,7 +54,7 @@ export const Profile: FC = () => {
         uploadRef.current.value = "";
         setImage(undefined);
         setVisibility(false);
-        setName(user.username);
+        setName(username);
     }
 
     const save = async () => {
@@ -67,7 +70,7 @@ export const Profile: FC = () => {
             if (link) avatar = link;
         }
 
-        const updatedUser = await updateUserApi(user._id, undefined!, avatar!);
+        const updatedUser = await updateUserApi(userId, undefined!, avatar!);
 
         if (!updatedUser) return;
 
@@ -83,9 +86,9 @@ export const Profile: FC = () => {
     const updateName = async () => {
         setSaving(true);
 
-        if (name === user.username) return setVisibility(false);
+        if (name === username) return setVisibility(false);
 
-        const updatedUser = await updateUserApi(user._id, name, undefined!);
+        const updatedUser = await updateUserApi(userId, name, undefined!);
 
         if (!updatedUser) return setVisibility(false);
 
@@ -107,13 +110,13 @@ export const Profile: FC = () => {
                         <input disabled={saving} type="file" className="hidden" accept="image/*" ref={uploadRef} onChange={onFileChange} />
 
                         <div className="relative ml-2 -mt-4 cursor-pointer group">
-                            <Img className="w-[calc(4rem+4px)] h-[calc(4rem+4px)] border-4 border-gray-900 rounded-full" src={url || user.avatar} />
+                            <Img className="w-[calc(4rem+4px)] h-[calc(4rem+4px)] border-4 border-gray-900 rounded-full" src={url || avatar} />
                             <span onClick={() => uploadRef.current.click()} className="absolute items-center justify-center hidden w-[calc(4rem-4px)] h-[calc(4rem-4px)] text-[0.6rem] font-bold text-center text-gray-100 uppercase -translate-x-1/2 -translate-y-1/2 bg-black rounded-full group-hover:flex left-1/2 top-1/2 bg-opacity-70">změnit<br />avatar</span>
                         </div>
 
                         <div className="mt-2 ml-2">
-                            <span className="font-semibold text-gray-100">{user.username}</span>
-                            <span className="font-semibold text-gray-400">#{user.hash}</span>
+                            <span className="font-semibold text-gray-100">{username}</span>
+                            <span className="font-semibold text-gray-400">#{hash}</span>
                         </div>
                     </div>
 
@@ -123,8 +126,8 @@ export const Profile: FC = () => {
                                 <span className="text-[0.6rem] font-bold text-gray-400 uppercase">Uživatelské jméno</span>
 
                                 <div>
-                                    <span className="text-xs font-semibold text-gray-100">{user.username}</span>
-                                    <span className="text-xs font-semibold text-gray-400">#{user.hash}</span>
+                                    <span className="text-xs font-semibold text-gray-100">{username}</span>
+                                    <span className="text-xs font-semibold text-gray-400">#{hash}</span>
                                 </div>
                             </div>
 

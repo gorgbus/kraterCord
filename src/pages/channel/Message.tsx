@@ -1,14 +1,15 @@
-import { FC, MutableRefObject, useEffect, useRef } from "react";
+import { FC } from "react";
 import Img from "react-cool-img";
-import { message } from "../../utils/types";
+import ReactMarkdown from 'react-markdown'
+import { Message } from "../../store/user";
 
 interface Props {
-    msg: message;
+    msg: Message;
     compact: boolean;
     last: boolean;
 }
 
-const Message: FC<Props> = ({ msg, compact, last }) => {
+const MessageComponent: FC<Props> = ({ msg, compact, last }) => {
     const formatDate = (timestamp: any) => {
         let dt = new Date(timestamp),
             date = dt.getDate(),
@@ -18,7 +19,7 @@ const Message: FC<Props> = ({ msg, compact, last }) => {
 
         if (diffYears === 0 && diffDays === 0 && diffMonths === 0){
             return `dnes ${dt.toLocaleTimeString().slice(0, -3)}`;
-        } else if(diffYears === 0 && diffDays === 1) {
+        } else if (diffYears === 0 && diffDays === 1) {
             return `včera ${dt.toLocaleTimeString().slice(0, -3)}`;
         }
 
@@ -39,7 +40,7 @@ const Message: FC<Props> = ({ msg, compact, last }) => {
                                     <span className="text-xs font-semibold text-gray-300">{formatDate(msg.createdAt)}</span>
                                 </div>
                             
-                                <span className="text-gray-200">{msg.content}</span>
+                                <StyledContent content={msg.content} />
                             </div>
                         </div>
                     )
@@ -59,4 +60,14 @@ const Message: FC<Props> = ({ msg, compact, last }) => {
     )
 }
 
-export default Message;
+export default MessageComponent;
+
+const StyledContent: FC<{ content: string }> = ({ content }) => {
+    return (
+        <>
+            <span className="text-gray-200">
+                <ReactMarkdown disallowedElements={[""]} >{content}</ReactMarkdown>
+            </span>
+        </>
+    )
+}
