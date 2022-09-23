@@ -9,7 +9,7 @@ const router = Router();
 
 router.use("/auth", authRouter);
 
-router.use("/", channelRouter);
+router.use("/channels", channelRouter);
 
 router.use("/upload", uploadRouter);
 

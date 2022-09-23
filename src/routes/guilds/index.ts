@@ -1,9 +1,16 @@
 import { Router } from "express";
-import { geGuildsController } from "../../controllers/guilds";
+import { createGuildController, joinGuildController, getGuildMembersController, getGuildInviteCOntroller } from "../../controllers/guilds";
+import { multer } from "../../controllers/upload";
 import { isAuthenticated } from "../../utils/middlewares";
 
 const router = Router();
 
-router.get("/", isAuthenticated, geGuildsController);
+router.post('/create', isAuthenticated, multer, createGuildController);
+
+router.post('/join/:id', isAuthenticated, joinGuildController);
+
+router.get('/:id/members', isAuthenticated, getGuildMembersController);
+
+router.get('/:id/invite', isAuthenticated, getGuildInviteCOntroller);
 
 export default router;

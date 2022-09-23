@@ -21,13 +21,14 @@ export const multer = Multer({
     }
 }).single("file");
 
-export async function uploadController(req: Request, res: Response) {
+export const uploadController = async (req: Request, res: Response) => {
     const newFileName = `${Date.now()}-${req.file?.originalname}`;
     const blob = bucket.file(newFileName);
     const blobStream = blob.createWriteStream()
 
     blobStream.on("error", err => {
-        console.log(err)
+        console.error(err);
+
         res.status(500).json(err);
     });
 

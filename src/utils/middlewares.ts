@@ -15,17 +15,23 @@ export const isAuthenticated = (req: Request, res: Response, next: NextFunction)
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!, async (err: any, user: any) => {
         if (err) return res.status(403).send({ msg: "Unauthorized" });
 
-        const tokens = await prisma.token.findUnique({
-            where: {
-                id: user.id
-            }
-        });
+        try {
+            const tokens = await prisma.token.findUnique({
+                where: {
+                    discordId: user.discordId
+                }
+            });
 
-        if (!tokens) return res.status(403).send({ msg: "Unauthorized" });
+            if (!tokens) return res.status(403).send({ msg: "Unauthorized" });
 
-        if (decrypt(tokens.accessToken) !== token) return res.status(403).send({ msg: "Unauthorized" });
+            if (decrypt(tokens.accessToken) !== token) return res.status(403).send({ msg: "Unauthorized" });
 
-        req.user = user;
-        next();
+            req.user = user;
+            next();
+        } catch (err) {
+            console.error(err);
+
+            return res.status(500);
+        }
     });
 }

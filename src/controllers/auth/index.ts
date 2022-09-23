@@ -55,13 +55,13 @@ export const authLoginController = async (req: tokenType, res: Response) => {
 
             const tokens = await prisma.token.findUnique({
                 where: {
-                    discordId: user.discordId
+                    discordId: user.discordId,
                 }
             });
 
             if (!tokens) {
-                const access = generateAccessToken({ id: user?.discordId });
-                const refresh = jwt.sign({ id: user?.discordId }, process.env.REFRESH_TOKEN_SECRET!);
+                const access = generateAccessToken({ discordId: user?.discordId, id: member ? member.id : newMember?.id });
+                const refresh = jwt.sign({ discordId: user?.discordId, id: member ? member.id : newMember?.id }, process.env.REFRESH_TOKEN_SECRET!);
 
                 await prisma.token.create({
                     data: {
@@ -100,14 +100,14 @@ export const getSetupController = async (req: Request, res: Response) => {
     try {
         const user = await prisma.user.findUnique({
             where: {
-                discordId: id
+                id
             },
             include: {
                 guilds: true,
-                dms: true,
+                dms: { include: { users: true } },
                 friends: true,
-                incomingFriendReqs: true,
-                outgoingFriendReqs: true,
+                incomingFriendReqs: { include: { requester: true } },
+                outgoingFriendReqs: { include: { user: true } },
                 notifications: true
             }
         });
@@ -116,7 +116,7 @@ export const getSetupController = async (req: Request, res: Response) => {
 
         const token: string = req.cookies.JWT;
 
-        return res.status(200).cookie("JWT", token, { httpOnly: true, secure: true, sameSite: "none", maxAge: 1000 * 60 * 60 * 24 * 7 }).send(user);
+        return res.status(200).cookie("JWT", token, { httpOnly: true, secure: true, sameSite: "none", maxAge: 1000 * 60 * 60 * 24 * 7 }).send({ user });
     } catch (err) {
         console.error(err);
         return res.status(500)

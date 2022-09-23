@@ -36,8 +36,10 @@ model User {
     incomingFriendReqs  FriendsRequest[]    @relation("user")
     outgoingFriendReqs  FriendsRequest[]    @relation("requester")
     notifications       Notification[]
-    guilds              Guild[]
-    dms                 Channel[]
+    guilds              Guild[]             @relation("members")
+    ownedGuilds         Guild[]             @relation("owned")
+    dms                 Channel[]           @relation("dms")
+    voiceChannels       Channel[]           @relation("voice")
     members             Member[]
     messages            Message[]
 
@@ -58,20 +60,37 @@ model Guild {
     id                  String              @id @default(uuid())
     name                String
     avatar              String
-    owner               User                @relation(fields: [ownerId], references: [id])
+    users               User[]              @relation("members")
+    owner               User                @relation("owned",fields: [ownerId], references: [id])
     ownerId             String
     members             Member[]
-    channels            Channel[]
+    redirectChannel     Channel?            @relation("redirect", fields: [redirectId], references: [id])
+    redirectId          String?             @unique
+    channels            Channel[]           @relation("channels")
     notifications       Notification[]
+    invites             Invite[]
+}
+
+model Invite {
+    id                  String              @id @default(uuid())
+    code                String              @unique
+    limit               Int?
+    valid               DateTime
+    guild               Guild               @relation(fields: [guildId], references: [id])
+    guildId             String
+
+    @@unique([guildId, code])
 }
 
 model Channel {
     id                  String              @id @default(uuid())
     name                String
     type                ChannelType
-    guild               Guild?              @relation(fields: [guildId], references: [id])
+    guild               Guild?              @relation("channels", fields: [guildId], references: [id])
     guildId             String?
-    users               User[]
+    redirectGuild       Guild?              @relation("redirect")
+    users               User[]              @relation("dms")
+    members             User[]              @relation("voice")
     messages            Message[]
     notifications       Notification[]
 }

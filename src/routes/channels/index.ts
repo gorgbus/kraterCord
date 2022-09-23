@@ -1,17 +1,19 @@
 import { Router } from "express";
-import { createChannelController, createMessageController, geChannelsController, getDMController, getMessagesController } from "../../controllers/channels";
+import { createChannelController, createMessageController, getChannelsController, getMessagesController, joinChannelController, leaveChannelController } from "../../controllers/channels";
 import { isAuthenticated } from "../../utils/middlewares";
 
 const router = Router();
 
-router.get("/channels/:guild", isAuthenticated, geChannelsController);
+router.get("/:guild", isAuthenticated, getChannelsController);
 
-router.get("/dms", isAuthenticated, getDMController);
+router.get("/messages/:id", isAuthenticated, getMessagesController);
 
-router.get("/channels/messages/:id", isAuthenticated, getMessagesController);
+router.post("/:id/message", isAuthenticated, createMessageController);
 
-router.post("/channels/:id/message", isAuthenticated, createMessageController);
+router.post("/create/:type", isAuthenticated, createChannelController);
 
-router.post("/channels/create/:type", isAuthenticated, createChannelController);
+router.post("/:id/join", isAuthenticated, joinChannelController);
+
+router.post("/:id/leave", isAuthenticated, leaveChannelController);
 
 export default router;

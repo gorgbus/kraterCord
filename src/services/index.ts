@@ -1,5 +1,4 @@
 import axios from "axios";
-import { DISCORD_API_URL } from "../utils/constants";
 
 type Member = {
   user: {};
@@ -12,7 +11,7 @@ type Member = {
 }
 
 export async function authLogin(token: string) {
-    return axios.get<Member>(`${DISCORD_API_URL}/users/@me/guilds/456060911573008385/member`, {
+    return axios.get<Member>(`https://discord.com/api/v9/users/@me/guilds/456060911573008385/member`, {
         headers: { Authorization: `Bearer ${token}` }
     })
 }

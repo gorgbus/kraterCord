@@ -2,7 +2,7 @@ import { ChannelType } from "@prisma/client";
 import { Request, Response } from "express";
 import { prisma } from "../../prisma";
 
-export async function geChannelsController(req: Request, res: Response) {
+export const getChannelsController = async (req: Request, res: Response) => {
     const { guild } = req.params;
 
     if (!guild) return res.status(500);
@@ -13,36 +13,42 @@ export async function geChannelsController(req: Request, res: Response) {
                 guildId: guild
             },
             include: {
-                users: true
+                members: true
             }
         });
 
         if (!channels) return res.status(500).send({ msg: 'Channels not found' });
 
-        return res.status(200).send(channels);
+        return res.status(200).send({ channels });
     } catch(err) {
         console.error(err);
         return res.status(500);
     }
 }
 
-export async function getMessagesController(req: Request, res: Response) {
+export const getMessagesController = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { cursor } = req.query;
     
-    if (!id || !cursor) return res.send(500);
+    if (!id || !cursor) return res.status(500);
 
     try {
         const take = 20;
-        const cursorObj = cursor === '' ? undefined : { id: cursor as string };
+        const cursorObj = cursor === 'first' ? undefined : { id: cursor as string };
 
         const messages = await prisma.message.findMany({
+            orderBy: {
+                createdAt: 'desc'
+            },
             where: {
                 channelId: id
             },
             take,
             cursor: cursorObj,
-            skip: cursor === '' ? 0 : 1
+            skip: cursor === 'first' ? 0 : 1,
+            include: {
+                author: true
+            }
         });
 
         const nextId = messages.length === take ? messages[messages.length - 1].id : undefined;
@@ -50,35 +56,39 @@ export async function getMessagesController(req: Request, res: Response) {
         return res.status(200).send({ messages, nextId });
     } catch (err) {
         console.error(err);
-        return res.status(200).send({ messages: [], nextId: 0 });
+
+        return res.status(500);
     }
 }
 
-export async function createMessageController(req: Request, res: Response) {
+export const createMessageController = async (req: Request, res: Response) => {
+    const { id: authorId } = req.user as { id: string };
     const { id } = req.params;
-    const { content, media, author } = req.body;
+    const { content } = req.body;
 
-    if (!id || !author) return res.status(500);
+    if (!id) return res.status(500);
 
     try {
         const message = await prisma.message.create({
             data: {
-                author: { connect: { id: author } },
+                author: { connect: { id: authorId } },
                 channel: { connect: { id } },
                 content,
             }
         });
 
-        return res.status(200).send(message);
+        if (!message) return res.status(500).send({ msg: 'Failed to create message' });
+
+        return res.status(200).send({ message });
     } catch (err) {
         console.error(err);
         return res.status(500);
     }
 }
 
-export async function createChannelController(req: Request, res: Response) {
+export const createChannelController = async (req: Request, res: Response) => {
     const { type } = req.params;
-    const { user, name, guild } = req.body;
+    const { userIds, name, guild } = req.body;
 
     if (!type || !name) return res.status(500);
 
@@ -88,12 +98,100 @@ export async function createChannelController(req: Request, res: Response) {
                 name,
                 type: type as ChannelType,
                 users: {
-                    connect: user.map((usr: string) => { id: usr })
+                    connect: userIds
+                }
+            },
+            include: {
+                users: true
+            }
+        });
+
+        return res.status(200).send({ channel });
+    } catch (err) {
+        console.error(err);
+        return res.status(500);
+    }
+}
+
+export const joinChannelController = async (req: Request, res: Response) => {
+    const { id: userId } = req.user as { id: string };
+    const { id } = req.params;
+    const { muted, deafen } = req.body;
+
+    if (!userId || !id || typeof(muted) === 'undefined' || typeof(deafen) === 'undefined') return res.status(500);
+
+    try {
+        const user = await prisma.user.update({
+            where: {
+                id: userId
+            },
+            data: {
+                muted,
+                deafen,
+            }
+        });
+
+        if (!user) return res.status(500).send({ msg: 'User not found' });
+
+        const channel = await prisma.channel.findUnique({
+            where: {
+                id
+            },
+            include: {
+                members: { select: { id: true } }
+            }
+        });
+
+        if (!channel) return res.status(500).send({ msg: 'Channel not found' });
+
+        await prisma.channel.update({
+            where: {
+                id
+            },
+            data: {
+                members: {
+                    set: [...channel.members, { id: userId }]
                 }
             }
         });
 
-        return res.status(200).send(channel);
+        return res.status(200).send({ channel });
+    } catch (err) {
+        console.error(err);
+        return res.status(500);
+    }
+}
+
+export const leaveChannelController = async (req: Request, res: Response) => {
+    const { id: userId } = req.user as { id: string };
+    const { id } = req.params;
+
+    if (!userId || !id) return res.status(500);
+
+    try {
+        const channel = await prisma.channel.findUnique({
+            where: {
+                id
+            },
+            include: {
+                members: { select: { id: true } }
+            }
+        });
+
+        if (!channel) return res.status(500).send({ msg: 'Channel not found' });
+
+        await prisma.channel.update({
+            where: {
+                id
+            },
+            data: {
+                members: {
+                    set: channel.members.filter(user => user.id !== userId)
+                }
+            }
+        });
+
+        return res.status(200).send({ channel });
     } catch (err) {
         console.error(err);
         return res.status(500);

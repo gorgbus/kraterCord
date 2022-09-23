@@ -22,7 +22,6 @@ function createApp(): Express {
     }));
 
     app.use(passport.initialize());
-
     app.use(cookie());
 
     app.use("/api", routes);

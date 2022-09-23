@@ -2,7 +2,8 @@ import { Request, Response } from "express";
 import { prisma } from "../../prisma";
 
 export const friendReqController = async (req: Request, res: Response) => {
-    const { username, hash, id } = req.body;
+    const { id } = req.user as { id: string };
+    const { username, hash } = req.body;
 
     if (!username || !hash || !id) return res.status(500).send({ msg: "Chybějící jméno, hash nebo id" });
 
@@ -29,7 +30,7 @@ export const friendReqController = async (req: Request, res: Response) => {
         const hasRequested = user.incomingFriendReqs.find(friend => friend.requester.hash === hash && friend.requester.username === username);
 
         if (hasRequested) {
-            await prisma.friendsRequest.delete({
+            const request = await prisma.friendsRequest.delete({
                 where: {
                     id: hasRequested.id
                 }
@@ -48,7 +49,7 @@ export const friendReqController = async (req: Request, res: Response) => {
                 }
             });
 
-            return res.status(200).send({ msg: 'Added as friend', friend: hasRequested.requester });
+            return res.status(200).send({ msg: 'Added as friend', friend: hasRequested.requester, requestId: request.id });
         }
 
         const friend = await prisma.user.findUnique({
@@ -62,14 +63,18 @@ export const friendReqController = async (req: Request, res: Response) => {
 
         if (!friend) return res.status(500).send({ msg: "Friend not found" });
         
-        await prisma.friendsRequest.create({
+        const request = await prisma.friendsRequest.create({
             data: {
                 requester: { connect: { id: user.id } },
                 user: { connect: { id: friend.id } }
+            },
+            include: {
+                requester: true,
+                user: true
             }
         })
 
-        return res.status(200).send({ msg: `Friend request sent`, friend });
+        return res.status(200).send({ msg: `Friend request sent`, request });
     } catch (err) {
         console.error(err);
         return res.status(500).send({ msg: "Něco se nepovedlo" });
@@ -77,21 +82,18 @@ export const friendReqController = async (req: Request, res: Response) => {
 }
 
 export const friendDeclineController = async (req: Request, res: Response) => {
-    const { id, friendId } = req.body;
+    const { id } = req.body;
 
-    if (!id || !friendId) return res.status(500).send({ msg: "Chybějící id" });
+    if (!id) return res.status(500).send({ msg: "Chybějící id" });
 
     try {
-        const req = await prisma.friendsRequest.delete({
+        const request = await prisma.friendsRequest.delete({
             where: {
-                userId_requesterId: {
-                    requesterId: friendId,
-                    userId: id
-                }
+                id
             }
         });
 
-        if (req) return res.status(200).send({ msg: "Success" });
+        if (request) return res.status(200).send({ msg: "Success", requestId: request.id });
 
         return res.status(203).send({ msg: "Request not found" });
     } catch (err) {
@@ -101,23 +103,21 @@ export const friendDeclineController = async (req: Request, res: Response) => {
 }
 
 export const friendAcceptController = async (req: Request, res: Response) => {
-    const { id, friendId } = req.body;
+    const { id: userId } = req.user as { id: string };
+    const { requestId, friendId } = req.body;
 
-    if (!id || !friendId) return res.status(500);
+    if (!requestId || !userId || !friendId) return res.status(500);
 
     try {
-        await prisma.friendsRequest.delete({
+        const request = await prisma.friendsRequest.delete({
             where: {
-                userId_requesterId: {
-                    requesterId: friendId,
-                    userId: id
-                }
+                id: requestId
             }
         });
 
         const user = await prisma.user.findUnique({
             where: {
-                id
+                id: userId
             },
             include: {
                 friends: { select: { id: true } }
@@ -127,6 +127,9 @@ export const friendAcceptController = async (req: Request, res: Response) => {
         const friend = await prisma.user.findUnique({
             where: {
                 id: friendId
+            },
+            include: {
+                friends: { select: { id: true } }
             }
         })
 
@@ -134,16 +137,27 @@ export const friendAcceptController = async (req: Request, res: Response) => {
 
         await prisma.user.update({
             where: {
-                id
+                id: userId
             },
             data: {
                 friends: {
                     set: [...user.friends, { id: friendId }]
                 }
             }
-        })
+        });
 
-        return res.status(200).send({ friend });
+        await prisma.user.update({
+            where: {
+                id: friendId
+            },
+            data: {
+                friends: {
+                    set: [...friend.friends, { id: userId }]
+                }
+            }
+        });
+
+        return res.status(200).send({ friend, requestId: request.id });
     } catch (err) {
         console.error(err);
         return res.status(500);
@@ -151,32 +165,55 @@ export const friendAcceptController = async (req: Request, res: Response) => {
 }
 
 export const friendRemoveController = async (req: Request, res: Response) => {
-    const { id, friendId } = req.body;
+    const { id: userId } = req.user as { id: string };
+    const { friendId } = req.body;
 
-    if (!id || !friendId) return res.status(500);
+    if (!userId || !friendId) return res.status(500);
 
     try {
         const user = await prisma.user.findUnique({
             where: {
-                id
+                id: userId
             },
             include: {
-                friends: { select: { id } }
+                friends: { select: { id: true } }
             }
         });
 
         if (!user) return res.status(500).send({ msg: 'User not found' });
 
+        const friend = await prisma.user.findUnique({
+            where: {
+                id: friendId
+            },
+            include: {
+                friends: { select: { id: true } }
+            }
+        });
+
+        if (!friend) return res.status(500).send({ msg: 'Friend not found' });
+
         await prisma.user.update({
             where: {
-                id
+                id: userId
             },
             data: {
                 friends: {
                     set: user.friends.filter(friend => friend.id !== friendId)
                 }
             }
-        })
+        });
+
+        await prisma.user.update({
+            where: {
+                id: friendId
+            },
+            data: {
+                friends: {
+                    set: friend.friends.filter(friend => friend.id !== userId)
+                }
+            }
+        });
 
         return res.status(200).send({ friendId });
     } catch (err) {
@@ -186,7 +223,8 @@ export const friendRemoveController = async (req: Request, res: Response) => {
 }
 
 export const userUpdateController = async (req: Request, res: Response) => {
-    const { avatar, username, id } = req.body;
+    const { id } = req.user as { id: string };
+    const { avatar, username } = req.body;
 
     if (!id) return res.status(500);
     if (!avatar && !username) return res.status(500);
@@ -204,6 +242,89 @@ export const userUpdateController = async (req: Request, res: Response) => {
         if (!user) return res.status(500);
 
         return res.status(200).send({ user });
+    } catch (err) {
+        console.error(err);
+        return res.status(500);
+    }
+}
+
+export const userUpdateVoiceController = async (req: Request, res: Response) => {
+    const { id } = req.user as { id: string };
+    const { muted, deafen } = req.body;
+
+    if (!id || typeof(muted) === 'undefined' || typeof(deafen) === 'undefined') return res.status(500);
+
+    try {
+        const user = await prisma.user.update({
+            where: {
+                id
+            },
+            data: {
+                muted,
+                deafen
+            }
+        });
+
+        if (!user) return res.status(500);
+
+        return res.status(200).send({ user });
+    } catch (err) {
+        console.error(err);
+        return res.status(500);
+    }
+}
+
+export const userCreateNotificationController = async (req: Request, res: Response) => {
+    const { id } = req.user as { id: string };
+    const { channelId, guildId } = req.body;
+
+    if (!id || !channelId) return res.status(500);
+
+    try {
+        const notification = await prisma.notification.upsert({
+            where: {
+                userId_channelId: {
+                    userId: id,
+                    channelId
+                }
+            },
+            update: {
+                count: {
+                    increment: 1
+                }
+            },
+            create: {
+                user: { connect: { id } },
+                channel: { connect: { id: channelId } },
+                guild: guildId ? { connect: { id: guildId } } : undefined
+            }
+        });
+
+        if (!notification) return res.status(500).send({ msg: 'Failed to create notification' });
+
+        return res.status(200).send({ notification });
+    } catch (err) {
+        console.error(err);
+        return res.status(500);
+    }
+}
+
+export const userDeleteNotificationController = async (req: Request, res: Response) => {
+    const { id } = req.user as { id: string };
+    const { notificationId } = req.params;
+
+    if (!id || !notificationId) return res.status(500);
+
+    try {
+        const notification = await prisma.notification.delete({
+            where: {
+                id: notificationId
+            }
+        });
+
+        if (!notification) return res.status(500).send({ msg: 'Failed to delete notification' });
+
+        return res.status(200).send({ notificationId: notification.id });
     } catch (err) {
         console.error(err);
         return res.status(500);
