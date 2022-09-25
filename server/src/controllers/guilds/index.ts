@@ -209,7 +209,7 @@ export const getGuildMembersController = async (req: Request, res: Response) => 
     }
 }
 
-export const getGuildInviteCOntroller = async (req: Request, res: Response) => {
+export const getGuildInviteController = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     if (!id) return res.status(500);
