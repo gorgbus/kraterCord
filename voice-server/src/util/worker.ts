@@ -8,7 +8,6 @@ type worker = {
     router: Router;
 }
 
-let nextMediasoupWorkerIndex = 0;
 let worker: Worker;
 
 export const createWorker = async () => {
