@@ -20,6 +20,8 @@ export const createGuildController = async (req: Request, res: Response) => {
     const file = req.file;
     const name = req.body.serverName;
 
+    return res.status(500);
+
     if (!name) return res.status(500);
 
     try {

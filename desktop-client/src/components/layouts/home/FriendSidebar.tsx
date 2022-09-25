@@ -7,7 +7,6 @@ import ChatInput from "../ChatInput";
 import FriendBar from "./FriendBar";
 import { AddIcon, CloseIcon, FriendIcon } from "../../ui/Icons";
 import UserProfile from "../UserProfile";
-import { useSettings } from "../../../store/settings";
 
 const FriendSidebar: FC = () => {
     const { channelId } = useParams();

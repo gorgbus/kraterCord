@@ -123,8 +123,8 @@ export const getSetupController = async (req: Request, res: Response) => {
     }
 }
 
-export const logoutController = async (req: Request, res: Response) => {
-    const user = req.user;
+export const logoutController = async (_req: Request, res: Response) => {
+    // const user = req.user;
 
     try {
         return res.status(200).clearCookie('JWT').send({ msg: 'Successfully loged out' });

@@ -1,0 +1,14 @@
+{
+  "name": "kratercord",
+  "version": "0.1.0",
+  "main": "index.js",
+  "repository": "https://github.com/gorgbus/kraterCord.git",
+  "author": "gorgbus",
+  "license": "MIT",
+  "private": true,
+  "workspaces": [
+    "server",
+    "web-client",
+    "desktop-client"
+  ]
+}

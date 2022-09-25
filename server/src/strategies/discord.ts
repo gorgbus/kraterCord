@@ -11,7 +11,7 @@ passport.use(new Strategy({
     }, async (
         req: any,
         accessToken: string, 
-        refreshToken: string, 
+        _refreshToken: string, 
         profile: Profile, 
         done: VerifyCallback,
     ) => {

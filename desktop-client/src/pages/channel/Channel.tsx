@@ -3,17 +3,16 @@ import { useInfiniteQuery } from "react-query";
 import Message from "./Message";
 import { fetchMessages } from "../../utils/api";
 import { isCompact, isLast } from "../../utils";
-import { useSettings } from "../../store/settings";
 import { useParams } from "react-router-dom";
 
 const Channel: FC<{ dm?: boolean }> = ({ dm }) => {
     const { channelId } = useParams();
 
-    const { data, isLoading, isError, error, fetchNextPage, hasNextPage, isSuccess } = useInfiniteQuery(
+    const { data, fetchNextPage, hasNextPage, isSuccess } = useInfiniteQuery(
         ["channel", channelId],
         ({ pageParam = 'first' }) => fetchMessages(channelId as string, pageParam),
         {
-            getNextPageParam: (lastPage, pages) => {
+            getNextPageParam: (lastPage) => {
                 if (lastPage.nextId === 'undefined') 
                     return undefined;
                 

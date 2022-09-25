@@ -6,6 +6,7 @@ import { io } from "socket.io-client";
 import { useSocket } from "../store/socket";
 import { checkSettings } from "../utils";
 import { getVersion } from '@tauri-apps/api/app';
+import { invoke } from "@tauri-apps/api";
 
 let version: string;
 
@@ -27,7 +28,9 @@ const FetchPage: FC = () => {
             setUser(user);
 
             if (!socket) {
-                const SOCKET = io("http://localhost:3001");
+                const url = await invoke("get_api_url");
+
+                const SOCKET = io(url as string);
 
                 SOCKET.emit("setup", user.id, user.guilds.map((g: Guild) => g.id));
 

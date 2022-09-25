@@ -1,7 +1,6 @@
 import { FC } from "react";
 import { useQueryClient } from "react-query";
 import { useParams } from "react-router-dom";
-import { useSettings } from "../../../store/settings";
 import { Channel, useUser } from "../../../store/user";
 import { ChannelIcon } from "../../ui/Icons";
 

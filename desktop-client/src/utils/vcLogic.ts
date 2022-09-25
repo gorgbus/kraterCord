@@ -72,7 +72,7 @@ export const loadDevice = async ({ rtpCapabilities }: { rtpCapabilities: RtpCapa
     }
 }
 
-const getProducers = (channel: string) => {
+const getProducers = (_channel: string) => {
     const voiceSocket = useSocket.getState().voiceSocket;
 
     voiceSocket?.emit('get_producers', (producerIds: { id: string; userId: string; }[]) => {
@@ -166,7 +166,7 @@ export const createConsumer = async (id: string, userId: string) => {
         voiceSocket?.emit('crt_trans', { consumer: true }, (data: TransportOptions) => {
             const transport = device.createRecvTransport(data);
 
-            transport.on('connect', ({ dtlsParameters }, callback, errback) => {
+            transport.on('connect', ({ dtlsParameters }, callback) => {
                 voiceSocket.emit("con_trans", dtlsParameters, true, data.id);
 
                 callback();
@@ -217,7 +217,7 @@ const consume = async (transport: Transport, producerId: string, transportId: st
     }
 }
 
-const voiceActivity = (stream: MediaStream, userId: string): number => {
+const voiceActivity = (stream: MediaStream, userId: string): NodeJS.Timer => {
     const addTalkingUser = useSettings.getState().addTalkingUser;
     const removeTalkingUser = useSettings.getState().removeTalkingUser;
 

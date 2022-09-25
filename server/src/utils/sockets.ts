@@ -1,4 +1,3 @@
-import e from "express";
 import { Server, Socket } from "socket.io";
 import { prisma } from "../prisma";
 
@@ -15,7 +14,6 @@ const socketIo = async (io: Server) => {
 
         s.on("setup", async (id: string, guilds: string[]) => {
             s.join(id);
-            s.join(`${id}-status`);
 
             s.user = id;
 
@@ -197,7 +195,6 @@ const socketIo = async (io: Server) => {
 
         s.on("disconnect", async () => {
             if (!s.user) return;
-            if (io.sockets.adapter.rooms.get(`${s.user}-status`)) return;
 
             removeSocketFromGuilds(s.id);
 

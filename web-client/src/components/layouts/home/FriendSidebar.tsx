@@ -1,11 +1,10 @@
-import { FC, ReactElement } from "react";
+import { ReactElement } from "react";
 import { useUser } from "../../../store/user";
 import ChannelBar from "../channel/ChannelBar";
 import ChatInput from "../ChatInput";
 import FriendBar from "./FriendBar";
 import { AddIcon, CloseIcon, FriendIcon } from "../../ui/Icons";
 import UserProfile from "../UserProfile";
-import { useSettings } from "../../../store/settings";
 import { useRouter } from "next/router";
 import Image from 'next/future/image';
 

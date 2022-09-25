@@ -56,7 +56,6 @@ export const VoiceAndVideo: FC = () => {
 
     const producer = useSettings(state => state.producer);
     const voice = useSettings(state => state.voiceChannel);
-    const socket = useSocket(state => state.socket);
     const voiceSocket = useSocket(state => state.voiceSocket);
 
     const [dropDown, toggleDropDown] = useState(false);

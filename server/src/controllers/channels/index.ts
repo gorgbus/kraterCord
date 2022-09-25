@@ -88,7 +88,7 @@ export const createMessageController = async (req: Request, res: Response) => {
 
 export const createChannelController = async (req: Request, res: Response) => {
     const { type } = req.params;
-    const { userIds, name, guild } = req.body;
+    const { userIds, name, /*guild*/ } = req.body;
 
     if (!type || !name) return res.status(500);
 

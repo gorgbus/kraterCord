@@ -1,21 +1,36 @@
-import { FC, useEffect } from "react";
+import { useEffect } from "react";
 import { Guild, Member, useUser } from "../store/user";
 import { fetchOnLoad } from "../utils/api";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 import { useSocket } from "../store/socket";
 import { checkSettings } from "../utils";
 import { useRouter } from "next/router";
 import Image from "next/future/image";
 import { NextPage } from "next";
 
-let version = process.env.NEXT_PUBLIC_VERSION;
+const version = process.env.NEXT_PUBLIC_VERSION;
+
+const setuped = useSocket.getState().setuped;
+const setup = useSocket.getState().setup;
+const socket = useSocket.getState().socket;
+const setSocket = useSocket.getState().setSocket;
+
+let SOCKET: Socket;
+
+if (!socket) {
+    SOCKET = io(process.env.NEXT_PUBLIC_API_URL!);
+
+    setSocket(SOCKET);
+}
+
 
 const FetchPage: NextPage<{ refresh?: boolean }> = ({ refresh }) => {
     const router = useRouter();
 
     const setUser = useUser(state => state.setUser);
     const updateUser = useUser(state => state.updateUser);
-    const { setSocket, socket } = useSocket();
+    // const socket = useSocket(state => state.socket);
+    // const setSocket = useSocket(state => state.setSocket);
 
     useEffect(() => {
         (async () => {
@@ -27,10 +42,10 @@ const FetchPage: NextPage<{ refresh?: boolean }> = ({ refresh }) => {
 
             setUser(user);
 
-            if (!socket) {
-                const SOCKET = io("http://localhost:3001");
-
+            if (!setuped) {
                 SOCKET.emit("setup", user.id, user.guilds.map((g: Guild) => g.id));
+
+                setup();
 
                 SOCKET.on("online", (user: Member, id: string) => {
                     updateUser(user);

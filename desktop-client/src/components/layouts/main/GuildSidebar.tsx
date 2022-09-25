@@ -1,7 +1,6 @@
 import { ChangeEvent, FC, MutableRefObject, useEffect, useRef, useState } from "react";
 import Img from "react-cool-img";
 import { Link, Outlet, useNavigate, useParams } from "react-router-dom";
-import { useSettings } from "../../../store/settings";
 import { useSocket } from "../../../store/socket";
 import { useUser } from "../../../store/user";
 import { createGuild, joinGuild } from "../../../utils/api";

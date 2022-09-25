@@ -41,7 +41,6 @@ const AddFriend: FC = () => {
 
         const hash = content.slice(content.length - 4, content.length);
         const username = content.slice(0, content.length - 5);
-        const _user = content;
 
         setContent("");
         
@@ -89,7 +88,6 @@ const UserComponent: FC<{ friend: User; req?: FriendsRequest; reqType?: string; 
     const addFriend = useUser(state => state.addFriend);
     const removeRequest = useUser(state => state.removeRequest);
     const removeFriend = useUser(state => state.removeFriend);
-    const { socket } = useSocket();
 
     const router = useRouter();
 

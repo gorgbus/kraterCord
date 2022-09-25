@@ -9,7 +9,7 @@ const Footer: FC<{ loggedIn: boolean }> = ({ loggedIn }) => {
         const url = new URL(window.location.href);
         const redir = `${url.protocol}//${url.host}/`;
 
-        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/discord?redir=${redir}`;
+        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/discord?redir=${redir}`;
     }
 
     return (

@@ -11,10 +11,10 @@ type State = {
 export const useSocket = create<State>((set) => ({
     socket: undefined,
     voiceSocket: undefined,
-    setVoiceSocket: (voiceSocket: Socket) => set((state) => ({
+    setVoiceSocket: (voiceSocket: Socket) => set({
         voiceSocket,
-    })),
-    setSocket: (socket: Socket) => set((state) => ({
+    }),
+    setSocket: (socket: Socket) => set({
         socket,
-    })),
+    }),
 }));

@@ -1,7 +1,6 @@
 import { useRouter } from "next/router";
 import { FC, MouseEvent, useState } from "react";
 import { useMutation, useQueryClient } from "react-query";
-import { useSettings } from "../../store/settings";
 import { useSocket } from "../../store/socket";
 import { Channel, Message, useUser } from "../../store/user";
 import { addMessage } from "../../utils";

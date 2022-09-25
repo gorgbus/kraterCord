@@ -13,7 +13,7 @@ router.get("/discord", (req, res, next) => {
     const authenticator = passport.authenticate('discord', { session: false, state: redir.toString() });
 
     authenticator(req, res, next);
-}, (req, res) => {
+}, (_req, res) => {
     res.send(200);
 });
 

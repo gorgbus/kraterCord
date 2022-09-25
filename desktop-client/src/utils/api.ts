@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosResponse } from "axios";
 import { invoke } from "@tauri-apps/api/tauri";
 import { Channel, ChannelType, Guild, Member, Message, Notification, User } from "../store/user";
 
-invoke("get_api_url").then((url) => axios.defaults.baseURL = url as string);
+invoke("get_api_url").then((url) => axios.defaults.baseURL = `${url}/api` as string);
 axios.defaults.withCredentials = true;
 
 axios.interceptors.response.use((res) => {

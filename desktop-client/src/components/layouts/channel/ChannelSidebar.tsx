@@ -22,7 +22,6 @@ const ChannelSidebar: FC = () => {
     const avatar = useUser(state => state.user.avatar);
     const notifications = useUser(state => state.user.notifications);
     const guilds = useUser(state => state.user.guilds);
-    const socket = useSocket(state => state.socket);
     const voice = useSettings(state => state.voiceChannel);
     const setVoice = useSettings(state => state.setVoiceChannel);
     const setVoiceGuild = useSettings(state => state.setVoiceGuild);
@@ -196,13 +195,13 @@ const ChannelSidebar: FC = () => {
 export default ChannelSidebar;
 
 const GuildSettings: FC<{ hide: () => void; openInvite: () => void; }> = ({ hide, openInvite }) => {
-    const [settings, openSettings] = useState(false);
+    // const [settings, openSettings] = useState(false);
 
     return (
         <div className="absolute z-10 bg-gray-900 left-[7px] top-12 mt-1 w-52 rounded-md text-gray-300 flex items-center justify-center">
             <div className="flex flex-col w-48 last:mb-2">
                 <SettingOption onClick={() => {openInvite(); hide()}} title="Pozvat lidi" titleStyle="text-blue-500" icon={<InviteIcon size="16" color="text-blue-500 group-hover:text-gray-100" />} />
-                <SettingOption onClick={() => openSettings(true)} title="Nastavení serveru" icon={<SettingsIcon size="16" color="text-gray-300 group-hover:text-gray-100" />} />
+                <SettingOption onClick={() => {}/*openSettings(true)*/} title="Nastavení serveru" icon={<SettingsIcon size="16" color="text-gray-300 group-hover:text-gray-100" />} />
             </div>
         </div>
     )

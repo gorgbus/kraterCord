@@ -1,8 +1,8 @@
 import { FC, useEffect } from "react";
 import { useMutation, useQueryClient } from "react-query";
 import { useSocket } from "../../../store/socket";
-import { Channel, Message, Notification, User, useUser } from "../../../store/user";
-import { addMessage, getSettings, playSound, updateFriends } from "../../../utils";
+import { Channel, Message, User, useUser } from "../../../store/user";
+import { addMessage, getSettings, playSound } from "../../../utils";
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/api/notification'
 import { useSettings } from "../../../store/settings";
 import { createConsumer, loadDevice } from "../../../utils/vcLogic";
@@ -14,7 +14,6 @@ const Sockets: FC = () => {
 
     const socket = useSocket(state => state.socket);
     const voiceSocket = useSocket(state => state.voiceSocket);
-    const guilds = useUser(state => state.user.guilds);
     const userId = useUser(state => state.user.id);
     const notifications = useUser(state => state.user.notifications);
     const upsertNotification = useUser(state => state.upsertNotification);
@@ -214,9 +213,9 @@ const Sockets: FC = () => {
 
 
     useEffect(() => {
-        socket?.on('friend-client', (type: string, id: string) => {
-            // updateFriends(type, id, friendState);
-        });
+        // socket?.on('friend-client', (type: string, id: string) => {
+        //     // updateFriends(type, id, friendState);
+        // });
 
         socket?.on("new_message", async (data) => {
             if (channelId !== data.id) {

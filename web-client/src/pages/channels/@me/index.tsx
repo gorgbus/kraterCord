@@ -1,4 +1,3 @@
-import { NextPage } from "next";
 import { ReactElement } from "react";
 import FriendContent from "../../../components/home/FriendContent";
 import FriendSidebar from "../../../components/layouts/home/FriendSidebar";

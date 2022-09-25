@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { Channel, ChannelType, Guild, Member, Message, Notification, User } from "../store/user";
 
-axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL;
+axios.defaults.baseURL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 axios.defaults.withCredentials = true;
 
 axios.interceptors.response.use((res) => {

@@ -21,26 +21,40 @@ const GuildSidebar = ({ children }: { children: ReactNode }) => {
     const userId = useUser(state => state.user.id);
     const guilds = useUser(state => state.user.guilds);
     const notifications = useUser(state => state.user.notifications);
-    const setSocket = useSocket(state => state.setSocket);
-    const socket = useSocket(state => state.socket);
+    const getSocket = useSocket(state => state.getSocket);
+    const setup = useSocket(state => state.setup);
+    const setuped = useSocket(state => state.setuped);
     const setUser = useUser(state => state.setUser);
 
-    const { data, isLoading, isSuccess } = useQuery("main", fetchOnLoad, { refetchOnWindowFocus: false, refetchOnMount: false, enabled: userId === '123' });
+    const { isLoading } = useQuery("main", fetchOnLoad, { 
+        refetchOnWindowFocus: false, 
+        refetchOnMount: false,
+        enabled: userId === '123',
+        onSuccess: (data) => {
+            if (!data) return;
+
+            const socket = getSocket();
+
+            socket?.connect();
+
+            if (!setuped) socket?.emit("setup", data.id, data.guilds.map((g) => g.id));
+
+            setup();
+
+            setUser(data);
+        }
+    });
 
     useEffect(() => {
         document.oncontextmenu = () => false;
     }, []);
 
-    if (isLoading) {
+    if (isLoading && userId === '123') {
+        const socket = getSocket();
+
         if (socket) socket.disconnect();
-        
-        setSocket(undefined!);
 
         return <LoadingScreen refresh={true} />;
-    }
-
-    if (isSuccess && data) {
-        setUser(data);
     }
     
     return (

@@ -2,7 +2,6 @@ import '../styles/index.css'
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { AppPropsWithLayout } from '../utils/types';
 import GuildSidebar from '../components/layouts/main/GuildSidebar';
-import { useRouter } from 'next/router';
 
 export const queryClient = new QueryClient();
 

@@ -1,6 +1,5 @@
 import { ChangeEvent, Dispatch, FC, MutableRefObject, SetStateAction, useRef, useState } from "react";
 import Img from "react-cool-img";
-import { LoadingIcon } from "../../components/ui/Icons";
 import Modal from "../../components/ui/Modal";
 import { useSocket } from "../../store/socket";
 import { useUser } from "../../store/user";

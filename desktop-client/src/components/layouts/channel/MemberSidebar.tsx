@@ -2,7 +2,6 @@ import { FC } from "react";
 import Img from "react-cool-img";
 import { useQuery } from "react-query";
 import { useParams } from "react-router-dom";
-import { useSettings } from "../../../store/settings";
 import { fetchMembers } from "../../../utils/api";
 
 const MemberSidebar: FC = () => {

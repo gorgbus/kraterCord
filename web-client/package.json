@@ -1,5 +1,5 @@
 {
-  "name": "skype-client-v2",
+  "name": "@kratercord/web-client",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -15,6 +15,7 @@
     "react": "18.0.0",
     "react-dom": "18.0.0",
     "react-query": "^3.39.2",
+    "sharp": "^0.31.0",
     "socket.io-client": "^4.5.2",
     "zustand": "^4.1.1"
   },

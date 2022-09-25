@@ -1,4 +1,4 @@
-import { FC, Fragment, ReactElement } from "react";
+import { Fragment, ReactElement } from "react";
 import { useInfiniteQuery } from "react-query";
 import Message from "../../../components/ui/Message";
 import { fetchMessages } from "../../../utils/api";
@@ -10,11 +10,11 @@ import ChannelSidebar from "../../../components/layouts/channel/ChannelSidebar";
 const Channel: NextPageWithLayout<{ dm?: boolean }> = ({ dm }) => {
     const { channelId } = useRouter().query;
 
-    const { data, isLoading, isError, error, fetchNextPage, hasNextPage, isSuccess } = useInfiniteQuery(
+    const { data, fetchNextPage, hasNextPage, isSuccess } = useInfiniteQuery(
         ["channel", channelId],
         ({ pageParam = 'first' }) => fetchMessages(channelId as string, pageParam),
         {
-            getNextPageParam: (lastPage, pages) => {
+            getNextPageParam: (lastPage) => {
                 if (lastPage.nextId === 'undefined') 
                     return undefined;
                 

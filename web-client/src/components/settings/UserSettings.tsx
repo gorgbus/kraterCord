@@ -1,5 +1,4 @@
 import { ChangeEvent, Dispatch, FC, MutableRefObject, SetStateAction, useRef, useState } from "react";
-import { LoadingIcon } from "../ui/Icons";
 import Modal from "../ui/Modal";
 import { useSocket } from "../../store/socket";
 import { useUser } from "../../store/user";

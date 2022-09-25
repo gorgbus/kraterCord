@@ -30,7 +30,7 @@ document.onkeydown = (e) => {
     }
 }
 
-document.oncontextmenu = (e) => false;
+document.oncontextmenu = (_e) => false;
 
 root.render(
     <div className="w-screen bg-gray-900">
