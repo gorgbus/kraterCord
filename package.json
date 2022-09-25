@@ -9,6 +9,7 @@
   "workspaces": [
     "server",
     "web-client",
-    "desktop-client"
+    "desktop-client",
+    "voice-server"
   ]
 }
