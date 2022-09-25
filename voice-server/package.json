@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "DEBUG=mediasoup* nodemon ./src/index.ts",
-    "start": "node ./build/index.js",
+    "start": "node ./dist/index.js",
     "build": "tsc"
   },
   "devDependencies": {
