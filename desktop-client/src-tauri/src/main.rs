@@ -26,6 +26,11 @@ fn get_api_url() -> String {
   env::var("API_URL").expect("API URL must be set")
 }
 
+#[tauri::command]
+fn get_voice_url() -> String {
+  env::var("VOICE_URL").expect("VOICE URL must be set")
+}
+
 fn main() -> Result<(), Box<(dyn std::error::Error)>> {
   dotenv().ok();
 

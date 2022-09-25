@@ -5,6 +5,7 @@ import { useSettings } from "../store/settings";
 import { useSocket } from "../store/socket";
 import { useUser } from "../store/user";
 import { io } from "socket.io-client";
+import { invoke } from "@tauri-apps/api";
 
 export const disconnectSocket = () => {
     const voiceSocket = useSocket.getState().voiceSocket;
@@ -14,10 +15,13 @@ export const disconnectSocket = () => {
     setVoiceSocket(undefined!);
 }
 
-export const connectToChannel = (id: string) => {
+export const connectToChannel = async (id: string) => {
     const setVoiceSocket = useSocket.getState().setVoiceSocket;
     const userId = useUser.getState().user.id;
-    const voiceSocket = io('http://localhost:3002');
+
+    const VOICE_URL = await invoke("get_voice_url");
+
+    const voiceSocket = io(VOICE_URL as string);
 
     setVoiceSocket(voiceSocket);
 

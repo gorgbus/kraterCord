@@ -17,7 +17,7 @@ export const disconnectSocket = () => {
 export const connectToChannel = (id: string) => {
     const setVoiceSocket = useSocket.getState().setVoiceSocket;
     const userId = useUser.getState().user.id;
-    const voiceSocket = io('http://localhost:3002');
+    const voiceSocket = io(process.env.NEXT_PUBLIC_VOICE_URL!);
 
     setVoiceSocket(voiceSocket);
 
