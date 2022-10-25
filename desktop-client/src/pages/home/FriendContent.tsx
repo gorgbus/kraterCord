@@ -1,39 +1,38 @@
-import { FC, Fragment, MouseEvent, useState } from "react";
+import { FC, Fragment, MouseEvent, ReactElement, useState } from "react";
 import Img from "react-cool-img";
 import { useNavigate } from "react-router-dom";
 import { AcceptIcon, CloseIcon, MessageIcon } from "../../components/ui/Icons";
-import { useSettings } from "../../store/settings";
-import { useSocket } from "../../store/socket";
-import { FriendsRequest, User, useUser } from "../../store/user";
-import { acceptFriend, createChannel, declineFriend, removeFriendApi, sendFriendRequest } from "../../utils/api";
+import { useSettings } from "@kratercord/common/store/settings";
+import { useSocket } from "@kratercord/common/store/socket";
+import { useUserStore } from "@kratercord/common/store/user";
+import { acceptFriend, createChannel, declineFriend, removeFriendApi, sendFriendRequest } from "@kratercord/common/api";
+import { FriendsRequest, User } from "@kratercord/common/types";
 
 const FriendContent: FC = () => {
     const page = useSettings(state => state.page);
 
-    switch(page) {
-        case 'Online':
-            return <Friends online={true} />
-        
-        case 'Vše':
-            return <Friends />
-
-        case 'Nevyřízeno':
-            return <Reqs />
-        case 'add':
-            return <AddFriend />
+    type Options = {
+        [key: string]: ReactElement;
     }
 
-    return <div></div>
+    const options: Options = {
+        "Online": <Friends online={true} />,
+        "Vše": <Friends />,
+        "Nevyřízeno": <Reqs />,
+        "add": <AddFriend />
+    }
+
+    return options[page];
 }
 
 const AddFriend: FC = () => {
     const [content, setContent] = useState("");
     const [msg, setMsg] = useState<string[]>([]);
 
-    const userId = useUser(state => state.user.id);
-    const addRequest = useUser(state => state.addRequest);
-    const removeRequest = useUser(state => state.removeRequest);
-    const addFriend = useUser(state => state.addFriend);
+    const userId = useUserStore(state => state.user.id);
+    const addRequest = useUserStore(state => state.addRequest);
+    const removeRequest = useUserStore(state => state.removeRequest);
+    const addFriend = useUserStore(state => state.addFriend);
     const { socket } = useSocket();
 
     const onSubmit = async (e: MouseEvent<HTMLButtonElement>) => {
@@ -46,22 +45,25 @@ const AddFriend: FC = () => {
         
         const res = await sendFriendRequest(userId, username, hash);
 
-        if (res && res.status === 200) {
-            if (res.data.msg === 'Added as friend') {
-                addFriend(res.data.friend);
-                removeRequest(res.data.requestId);
+        if (!res) return setMsg(["Něco se nepovedlo", '500']);
 
-                return setMsg([`${res.data.friend.username} byl přidán to tvého seznamu přátel`, '200']);
-            }
+        if (res.msg === "Added as friend") {
+            addFriend(res.friend!);
+            removeRequest(res.requestId!);
 
-            addRequest(res.data.request);
+            socket?.emit("friend", "add", res.friend?.id, {
+                user: res.user,
+                requestId: res.requestId
+            });
 
-            socket?.emit('friend', 'req', res.data.request.userId);
-
-            return setMsg([`Byla poslána žádost o přátelství uživateli ${res.data.request.user.username}`, '200']);
+            return setMsg([`${res.friend?.username} byl přidán to tvého seznamu přátel`, '200']);
         }
 
-        setMsg(['Něco se nepovedlo', '500']);
+        addRequest(res.request);
+
+        socket?.emit("friend", "request", res.request.userId, res.request);
+
+        setMsg([`Byla poslána žádost o přátelství uživateli ${res.request.user.username}`, '200']);
     }
 
     return (
@@ -82,30 +84,24 @@ const AddFriend: FC = () => {
 }
 
 const UserComponent: FC<{ friend: User; req?: FriendsRequest; reqType?: string; }> = ({ friend, req, reqType }) => {
-    const userId = useUser(state => state.user.id);
-    const dms = useUser(state => state.user.dms);
-    const addDM = useUser(state => state.addDM);
-    const addFriend = useUser(state => state.addFriend);
-    const removeRequest = useUser(state => state.removeRequest);
-    const removeFriend = useUser(state => state.removeFriend);
+    const userId = useUserStore(state => state.user.id);
+    const dms = useUserStore(state => state.user.dms);
+    const addDM = useUserStore(state => state.addDM);
+    const addFriend = useUserStore(state => state.addFriend);
+    const removeRequest = useUserStore(state => state.removeRequest);
+    const removeFriend = useUserStore(state => state.removeFriend);
+    const socket = useSocket(state => state.socket);
 
     const navigate = useNavigate();
 
-    // const handleButton = async (type: string) => {
-    //     const res = await handleFriend(userId, friend.id, type);
-        
-    //     if (res && res.status === 200) {
-    //         updateFriends(res, type);
-
-    //         socket?.emit('friend', type, friend.id);
-    //     }
-    // }
-
     const decline = async () => {
         const requestId = await declineFriend(req?.id!);
+        const friendId = req?.requesterId !== userId ? req?.requesterId : req?.userId;
 
         if (requestId) {
             removeRequest(requestId);
+
+            socket?.emit("friend", "decline", friendId, req?.id);
         }
     }
 
@@ -114,6 +110,8 @@ const UserComponent: FC<{ friend: User; req?: FriendsRequest; reqType?: string; 
 
         if (friendId) {
             removeFriend(friendId);
+
+            socket?.emit("friend", "remove", friendId, userId);
         }
     } 
 
@@ -121,10 +119,15 @@ const UserComponent: FC<{ friend: User; req?: FriendsRequest; reqType?: string; 
         const res = await acceptFriend(req?.id!, userId, friend.id);
 
         if (res) {
-            const { friend, requestId } = res;
+            const { friend, requestId, user } = res;
 
             removeRequest(requestId);
             addFriend(friend);
+
+            socket?.emit("friend", "add", friend.id, {
+                user,
+                requestId
+            });
         }
     }
 
@@ -183,7 +186,7 @@ const UserComponent: FC<{ friend: User; req?: FriendsRequest; reqType?: string; 
 }
 
 const Reqs: FC = () => {
-    const user = useUser(state => state.user);
+    const user = useUserStore(state => state.user);
 
     const requests = [...user.incomingFriendReqs, ...user.outgoingFriendReqs];
 
@@ -208,7 +211,7 @@ const Reqs: FC = () => {
 }
 
 const Friends: FC<{ online?: boolean }> = ({ online }) => {
-    const friends = useUser(state => state.user.friends);
+    const friends = useUserStore(state => state.user.friends);
 
     const filteredFriends = friends.filter(friend => online ? friend.status === 'ONLINE' : friend);
 

@@ -20,11 +20,19 @@ export const createGuildController = async (req: Request, res: Response) => {
     const file = req.file;
     const name = req.body.serverName;
 
-    return res.status(500);
-
     if (!name) return res.status(500);
 
     try {
+        const user = await prisma.user.findUnique({
+            where: {
+                id: userId
+            }
+        });
+
+        if (!user) return res.status(500).send({ msg: 'User not found' });
+
+        if (user.guildLimit === 0) return res.status(500).send({ msg: "Cannot create guild" });
+
         if (file) {
             const newFileName = `${Date.now()}-${req.file?.originalname}`;
             const blob = bucket.file(newFileName);
@@ -79,6 +87,17 @@ export const createGuildController = async (req: Request, res: Response) => {
 
                 if (!guild || !updatedGuild) return res.status(500).send({ msg: 'Guild not found' });
 
+                await prisma.user.update({
+                    where: {
+                        id: userId
+                    },
+                    data: {
+                        guildLimit: {
+                            decrement: 1
+                        }
+                    }
+                });
+
                 res.status(200).send({ guild });
             })
 
@@ -127,6 +146,17 @@ export const createGuildController = async (req: Request, res: Response) => {
 
         if (!guild || !updatedGuild) return res.status(500).send({ msg: 'Guild not found' });
 
+        await prisma.user.update({
+            where: {
+                id: userId
+            },
+            data: {
+                guildLimit: {
+                    decrement: 1
+                }
+            }
+        });
+
         return res.status(200).send({ guild: updatedGuild });
     } catch (err) {
         console.error(err);
@@ -137,14 +167,14 @@ export const createGuildController = async (req: Request, res: Response) => {
 
 export const joinGuildController = async (req: Request, res: Response) => {
     const { id: userId } = req.user as { id: string };
-    const { id } = req.params;
+    const { code } = req.params;
 
-    if (!id || !userId) return res.status(500);
+    if (!code || !userId) return res.status(500);
 
     try {
         const invite = await prisma.invite.findUnique({
             where: {
-                code: id
+                code
             }
         });
 
@@ -185,14 +215,14 @@ export const joinGuildController = async (req: Request, res: Response) => {
 }
 
 export const getGuildMembersController = async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const { guildId } = req.params;
 
-    if (!id) return res.status(500);
+    if (!guildId) return res.status(500);
 
     try {
         const members = await prisma.member.findMany({
             where: {
-                guildId: id
+                guildId
             },
             include: {
                 user: true
@@ -210,14 +240,14 @@ export const getGuildMembersController = async (req: Request, res: Response) => 
 }
 
 export const getGuildInviteController = async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const { guildId } = req.params;
 
-    if (!id) return res.status(500);
+    if (!guildId) return res.status(500);
 
     try {
         const invite = await prisma.invite.findFirst({
             where: {
-                guildId: id
+                guildId
             }
         });
 
@@ -226,7 +256,7 @@ export const getGuildInviteController = async (req: Request, res: Response) => {
         const newInvite = await prisma.invite.create({
             data: {
                 code: nanoid(6),
-                guild: { connect: { id } },
+                guild: { connect: { id: guildId } },
                 valid: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7)
             }
         });
@@ -234,6 +264,36 @@ export const getGuildInviteController = async (req: Request, res: Response) => {
         if (!newInvite) return res.status(500).send({ msg: 'Invite not found' });
 
         return res.status(200).send({ invite: newInvite.code });
+    } catch (err) {
+        console.error(err);
+
+        return res.status(500);
+    }
+}
+
+export const updateMemberController = async (req: Request, res: Response) => {
+    const { guildId, memberId } = req.params;
+    const { update } = req.body;
+
+    if (!guildId || !memberId) return res.status(500);
+    if (!update) return res.status(500);
+
+    try {
+        const member = await prisma.member.update({
+            where: {
+                id: memberId
+            },
+            data: {
+                ...update
+            },
+            include: {
+                user: true
+            }
+        });
+
+        if (!member) return res.status(500).send({ msg: 'Member not found' });
+
+        return res.status(200).send({ member });
     } catch (err) {
         console.error(err);
 

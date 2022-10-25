@@ -1,10 +1,9 @@
 import { Dispatch, FC, SetStateAction, useEffect, useState } from "react";
 import { AcceptIcon, DropDownIcon } from "../ui/Icons";
-import { useSettings } from "../../store/settings";
-import { useSocket } from "../../store/socket";
-import { getSettings, setSetting } from "../../utils";
-import { logout } from "../../utils/api";
-import { loadDevice } from "../../utils/vcLogic";
+import { useSettings } from "@kratercord/common/store/settings";
+import { useSocket } from "@kratercord/common/store/socket";
+import { useUtil, useVoiceChannel } from "@kratercord/common/hooks";
+import { logout } from "@kratercord/common/api";
 import ToggleLabel from "./ToggleLabel";
 import UnsavedWarning from "./UnsavedWarning";
 import { useRouter } from "next/router";
@@ -14,6 +13,7 @@ const AppSettings: FC<{ set: Dispatch<SetStateAction<string>>; }> = ({ set }) =>
     const closeSettings = useSettings(state => state.closeSettings);
     const socket = useSocket(state => state.socket);
     const setSocket = useSocket(state => state.setSocket);
+    const unsaved = useSettings(state => state.unsaved);
 
     const handleLogout = async () => {
         const logedOut = await logout();
@@ -36,13 +36,12 @@ const AppSettings: FC<{ set: Dispatch<SetStateAction<string>>; }> = ({ set }) =>
 
             <span className="ml-2 text-sm font-bold uppercase">Nastavení aplikace</span>
 
-            <button onClick={() => set('hlas')} className="item">Hlas a video</button>
-            <button onClick={() => set('oznameni')} className="item">Oznámení</button>
-            <button onClick={() => set('windows')} className="item">Nastavení Windows</button>
+            <button disabled={unsaved} onClick={() => set('hlas')} className="item">Hlas a video</button>
+            <button disabled={unsaved} onClick={() => set('oznameni')} className="item">Oznámení</button>
 
             <div className="h-[2px] ml-2 bg-gray-600 mt-2 w-48"></div>
 
-            <button className="item hover:text-red-500 hover:bg-transparent" onClick={handleLogout} >Odhlásit se</button>
+            <button disabled={unsaved} className="item hover:text-red-500 hover:bg-transparent" onClick={handleLogout} >Odhlásit se</button>
         </div>
     )
 }
@@ -53,6 +52,9 @@ export const VoiceAndVideo: FC = () => {
     const producer = useSettings(state => state.producer);
     const voice = useSettings(state => state.voiceChannel);
     const voiceSocket = useSocket(state => state.voiceSocket);
+
+    const { getSettings, setSetting } = useUtil();
+    const { loadDevice } = useVoiceChannel();
 
     const settings = getSettings();
 
@@ -139,6 +141,8 @@ export const VoiceAndVideo: FC = () => {
 }
 
 export const Notifications: FC = () => {
+    const { getSettings } = useUtil();
+
     const settings = getSettings();
 
     if (!settings) return <div></div>
@@ -151,26 +155,6 @@ export const Notifications: FC = () => {
 
             <h1 className="mt-4 text-lg font-semibold text-gray-100">Zvuky</h1>
             <ToggleLabel name='nfSound' value={settings.nfSound} label='Zpráva' />
-        </div>
-    )
-}
-
-export const System: FC = () => {
-    const settings = getSettings();
-
-    if (!settings) return <div></div>
-
-    return (
-        <div className="m-4 mt-0">
-            <h1 className="text-lg font-semibold text-gray-100">Nastavení Windows</h1>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase">Chování při spuštění systému</h3>
-
-            <ToggleLabel name='startup' value={settings.startup} label='Otevřít kraterCord' desc='kraterCord se spustí, když spustíš počítač' />
-            <ToggleLabel name='startupSilent' value={settings.startupSilent} label='Spouštět v liště' desc='kraterCord se spustí na pozadí' />
-
-            <h3 className="mt-4 text-xs font-semibold text-gray-400 uppercase">Tlačítko pro zaveření</h3>
-
-            <ToggleLabel name='minimize' value={settings.minimize} label='Minimalizovat na lištu' desc='Kliknutím na X bude kraterCord schovaný v systémové liště' />
         </div>
     )
 }

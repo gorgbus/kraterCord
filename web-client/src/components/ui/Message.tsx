@@ -1,6 +1,7 @@
 import Image from "next/future/image";
 import { FC } from "react";
-import { Message } from "../../store/user";
+import { Message } from "@kratercord/common/types";
+import { memo } from "react";
 
 interface Props {
     msg: Message;
@@ -31,11 +32,11 @@ const MessageComponent: FC<Props> = ({ msg, compact, last }) => {
                 !compact &&
                     (
                         <div className={`grid mt-3 message hover:bg-gray-800 hover:bg-opacity-30 ${last ? `mb-3` : ``}`}>
-                            <Image width={36} height={36} className="mt-1 ml-2 rounded-full avatar" src={msg.author.avatar} alt={`${msg.author.username}:avatar`} />
+                            <Image width={36} height={36} className="mt-1 ml-2 rounded-full w-9 h-9 avatar" src={msg.member?.avatar || msg.author.avatar} alt={`${msg.author.username}:avatar`} />
                             
                             <div className="content mt-[-36px]">
                                 <div className="info">
-                                    <span className="mr-2 text-sm font-semibold text-gray-100">{msg.author.username}</span>
+                                    <span className="mr-2 text-sm font-semibold text-gray-100">{msg.member?.nickname || msg.author.username}</span>
                                     <span className="text-xs font-semibold text-gray-300">{formatDate(msg.createdAt)}</span>
                                 </div>
                             
@@ -59,7 +60,7 @@ const MessageComponent: FC<Props> = ({ msg, compact, last }) => {
     )
 }
 
-export default MessageComponent;
+export default memo(MessageComponent);
 
 // const StyledContent: FC<{ content: string }> = ({ content }) => {
 //     return (

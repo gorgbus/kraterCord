@@ -1,5 +1,5 @@
 import { ReactElement } from "react";
-import { useUser } from "../../../store/user";
+import { useUserStore } from "@kratercord/common/store/user";
 import ChannelBar from "../channel/ChannelBar";
 import ChatInput from "../ChatInput";
 import FriendBar from "./FriendBar";
@@ -12,8 +12,8 @@ const FriendSidebar = ({ children }: { children: ReactElement }) => {
     const router = useRouter();
     const { channelId } = router.query;
 
-    const dms = useUser(state => state.user.dms);
-    const userId = useUser(state => state.user.id);
+    const dms = useUserStore(state => state.user.dms);
+    const userId = useUserStore(state => state.user.id);
 
     return (
         <div className="flex w-full h-full">

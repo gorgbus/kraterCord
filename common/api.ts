@@ -1,8 +1,11 @@
-import axios, { AxiosError, AxiosResponse } from "axios";
-import { invoke } from "@tauri-apps/api/tauri";
-import { Channel, ChannelType, Guild, Member, Message, Notification, User } from "../store/user";
+import axios, { AxiosError } from "axios";
+import { Channel, ChannelType, FriendsRequest, Guild, Member, Message, Notification, updatedPropertiesType, User } from "./types";
+import { getApiURL } from "@kratercord/desktop-client/src/utils";
 
-invoke("get_api_url").then((url) => axios.defaults.baseURL = `${url}/api` as string);
+(process.env.NEXT_PUBLIC_API_URL) ?
+    axios.defaults.baseURL = `${process.env.NEXT_PUBLIC_API_URL}/api`
+:
+    getApiURL().then(url => axios.defaults.baseURL = `${url}/api`);
 axios.defaults.withCredentials = true;
 
 axios.interceptors.response.use((res) => {
@@ -77,10 +80,10 @@ export const getGuildInvite = async (guild: string) : returnType<string> => {
     }
 }
 
-export const createMessage = async ({ channelId, authorId, content } : { channelId: string; authorId: string; content: string }) : returnType<Message> => {
+export const createMessage = async ({ channelId, guildId, content } : { channelId: string; guildId?: string; content: string; member?: Member; author?: { id: string; avatar: string; username: string; } }) : returnType<Message> => {
     try {
         const response = await axios.post(`/channels/${channelId}/message`, {
-            authorId,
+            guildId,
             content,
         });
 
@@ -92,7 +95,7 @@ export const createMessage = async ({ channelId, authorId, content } : { channel
     }
 }
 
-export const sendFriendRequest = async (id: string, username: string, hash: string) : Promise<AxiosResponse | undefined> => {
+export const sendFriendRequest = async (id: string, username: string, hash: string) : returnType<{ msg: string; request: FriendsRequest; user?: User; friend?: User; requestId?: string; } | undefined> => {
     try {
         const response = await axios.post(`/user/friend/request`, {
             username,
@@ -100,7 +103,7 @@ export const sendFriendRequest = async (id: string, username: string, hash: stri
             id
         });
 
-        return response;
+        return { request: response.data.request, msg: response.data.msg, friend: response.data.friend, requestId: response.data.requestId };
     } catch (err) {
         console.error(err);
 
@@ -132,7 +135,7 @@ export const removeFriendApi = async (userId: string, friendId: string) : return
     }
 }
 
-export const acceptFriend = async (requestId: string, userId: string, friendId: string) : returnType<{ friend: User; requestId: string; } | undefined> => {
+export const acceptFriend = async (requestId: string, userId: string, friendId: string) : returnType<{ friend: User; requestId: string; user: User; } | undefined> => {
     try {
         const response = await axios.post('/user/friend/accept', { requestId, userId, friendId });
 
@@ -156,9 +159,9 @@ export const createChannel = async (userIds: { id: string; }[], type: ChannelTyp
     }
 }
 
-export const joinChannel = async ({ channelId, muted, deafen } : { channelId: string; muted: boolean; deafen: boolean; }) : returnType<Channel> => {
+export const joinChannel = async ({ channelId, muted, deafen, member } : { guildId: string; channelId: string; muted: boolean; deafen: boolean; member?: Member; }) : returnType<Channel> => {
     try {
-        const response = await axios.post(`/channels/${channelId}/join`, { muted, deafen });
+        const response = await axios.post(`/channels/${channelId}/join`, { muted, deafen, memberId: member?.id });
 
         return response.data.channel;
     } catch (err) {
@@ -168,11 +171,11 @@ export const joinChannel = async ({ channelId, muted, deafen } : { channelId: st
     }
 }
 
-export const updateVoiceState = async ({ muted, deafen } : { muted: boolean; deafen: boolean; }) : returnType<User> => {
+export const updateVoiceState = async ({ muted, deafen, memberId } : { muted: boolean; deafen: boolean; guildId: string; channelId: string, memberId: string }) : returnType<Member> => {
     try {
-        const response = await axios.post('/user/update/voice', { muted, deafen });
+        const response = await axios.post('/channels/member/update', { muted, deafen, memberId });
 
-        return response.data.user;
+        return response.data.member;
     } catch (err) {
         console.error(err);
 
@@ -180,9 +183,9 @@ export const updateVoiceState = async ({ muted, deafen } : { muted: boolean; dea
     }
 }
 
-export const leaveChannel = async (channelId: string) : returnType<Channel> => {
+export const leaveChannel = async ({ channelId, memberId } : { guildId: string; channelId: string; memberId: string; }) : returnType<Channel> => {
     try {
-        const response = await axios.post(`/channels/${channelId}/leave`);
+        const response = await axios.post(`/channels/${channelId}/leave`, { memberId });
 
         return response.data.channel;
     } catch (err) {
@@ -254,11 +257,23 @@ export const uploadFile = async (data: FormData) : Promise<string | undefined> =
     }
 }
 
-export const updateUserApi = async (id: string, username: string, avatar: string) : Promise<User | undefined> => {
+export const updateUserApi = async (updateData: { voiceChannelId?: string; guildId?: string; guildsIds?: string[]; userId: string; update: updatedPropertiesType<User> }) : Promise<User | undefined> => {
     try {
-        const response = await axios.post('/user/update', { username, avatar, id });
+        const response = await axios.post('/user/update', { update: updateData.update });
 
         return response.data.user;
+    } catch(err) {
+        console.error(err);
+
+        return undefined;
+    }
+}
+
+export const updateMemberApi = async (updateData: { voiceChannelId?: string; channelId?: string; guildId: string; memberId: string; update: updatedPropertiesType<Member>; }) : Promise<{ channelId?: string; member: Member } | undefined> => {
+    try {
+        const response = await axios.post(`/guilds/${updateData.guildId}/${updateData.memberId}`, { update: updateData.update });
+
+        return { channelId: updateData.channelId, member: response.data.member };
     } catch(err) {
         console.error(err);
 

@@ -1,9 +1,9 @@
 import { ChangeEvent, FC, MutableRefObject, useEffect, useRef, useState } from "react";
 import Img from "react-cool-img";
 import { Link, Outlet, useNavigate, useParams } from "react-router-dom";
-import { useSocket } from "../../../store/socket";
-import { useUser } from "../../../store/user";
-import { createGuild, joinGuild } from "../../../utils/api";
+import { useSocket } from "@kratercord/common/store/socket";
+import { useUserStore } from "@kratercord/common/store/user";
+import { createGuild, joinGuild } from "@kratercord/common/api";
 import { AddIcon, DropDownIcon } from "../../ui/Icons";
 import Modal from "../../ui/Modal";
 import Sockets from "./Sockets";
@@ -14,10 +14,10 @@ const GuildSidebar: FC = () => {
 
     const { guildId } = useParams();
 
-    const dms = useUser(state => state.user.dms);
-    const userId = useUser(state => state.user.id);
-    const guilds = useUser(state => state.user.guilds);
-    const notifications = useUser(state => state.user.notifications);
+    const dms = useUserStore(state => state.user.dms);
+    const userId = useUserStore(state => state.user.id);
+    const guilds = useUserStore(state => state.user.guilds);
+    const notifications = useUserStore(state => state.user.notifications);
     const setSocket = useSocket(state => state.setSocket);
     const socket = useSocket(state => state.socket);
 
@@ -90,9 +90,9 @@ const GuildSidebar: FC = () => {
 export default GuildSidebar;
 
 const AddGuildModal: FC<{ close: () => void; set: (bol: boolean) => void; }> = ({ close, set }) => {
-    const userName = useUser(state => state.user.username);
-    const userId = useUser(state => state.user.id);
-    const addGuild = useUser(state => state.addGuild);
+    const userName = useUserStore(state => state.user.username);
+    const userId = useUserStore(state => state.user.id);
+    const addGuild = useUserStore(state => state.addGuild);
 
     const navigate = useNavigate();
 

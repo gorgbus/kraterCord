@@ -1,19 +1,18 @@
 import { FC, MouseEvent, useState } from "react";
-import { useMutation, useQueryClient } from "react-query";
 import { useParams } from "react-router-dom";
-import { useSocket } from "../../store/socket";
-import { Channel, Message, useUser } from "../../store/user";
-import { addMessage } from "../../utils";
-import { createMessage } from "../../utils/api";
+import { useQueryClient } from "react-query";
+import { useUserStore } from "@kratercord/common/store/user";
+import { Channel } from "@kratercord/common/types";
+import { useChannel } from "@kratercord/common/hooks";
 
 const ChatInput: FC = () => {
     const { guildId, channelId } = useParams();
 
-    const dms = useUser(state => state.user.dms);
-    const userId = useUser(state => state.user.id);
-    const avatar = useUser(state => state.user.avatar);
-    const username = useUser(state => state.user.username);
-    const socket = useSocket(state => state.socket);
+    const dms = useUserStore(state => state.user.dms);
+    const userId = useUserStore(state => state.user.id);
+    const avatar = useUserStore(state => state.user.avatar);
+    const username = useUserStore(state => state.user.username);
+    const members = useUserStore(state => state.user.members);
 
     const dm = dms.find(dm => dm.id === channelId);
     const friend = dm?.users[0].id === userId ? dm.users[1] : dm?.users[0]
@@ -23,46 +22,9 @@ const ChatInput: FC = () => {
 
     const channels = queryClient.getQueryData<Channel[]>(["channels", guildId]);
     const channel = channels?.find(ch => ch.id === channelId);
+    const member = members.find(member => member.guildId === guildId);
 
-    const { mutate } = useMutation(createMessage, {
-        onMutate: async (msg) => {
-            await queryClient.cancelQueries(['channel', channelId]);
-
-            const message = {
-                ...msg,
-                createdAt: new Date(Date.now()),
-                updatedAt: new Date(Date.now()),
-                author: {
-                    id: userId,
-                    avatar, 
-                    username
-                }
-            }
-
-            const cache = queryClient.getQueryData<{ pages: { messages: Message[]; nextId: string }[]; pageParams: [] }>(["channel", channelId]);
-            const newCache = addMessage(message, cache);
-
-            const socketData = {
-                id: channelId,
-                msg: message,
-                guild: guildId
-            }
-
-            queryClient.setQueryData(["channel", channelId], newCache);
-
-            if (dm) socket?.emit('create_message_dm', friend?.id, socketData); else socket?.emit("create_message", socketData);
-
-            return {
-                cache,
-            }
-        },
-        onError: (_error, _data, context: any) => {
-            queryClient.setQueryData(['channel', channelId], context?.cache);
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries(['channel', channelId]);
-        }
-    })
+    const { addMessageSender } = useChannel();
 
     const sendMessage = async (e: MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
@@ -71,10 +33,16 @@ const ChatInput: FC = () => {
 
         setContent("");
 
-        mutate({
-            authorId: userId,
+        addMessageSender({
+            guildId: guildId as string | undefined,
             channelId: channelId as string,
-            content
+            content,
+            member,
+            author: {
+                username,
+                avatar,
+                id: userId
+            }
         })
     }
 

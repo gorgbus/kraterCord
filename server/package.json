@@ -7,7 +7,10 @@
     "start": "node ./dist/index.js",
     "dev": "nodemon ./src/index.ts",
     "build": "tsc",
-    "db": "yarn prisma studio --schema=./src/prisma/schema.prisma"
+    "db-studio": "yarn prisma studio --schema=./src/prisma/schema.prisma",
+    "db-mig-dev": "yarn prisma migrate dev --schema=./src/prisma/schema.prisma",
+    "db-mig-deploy": "yarn prisma migrate deploy --schema=./src/prisma/schema.prisma",
+    "db-gen": "yarn prisma generate --schema=./src/prisma/schema.prisma"
   },
   "keywords": [],
   "author": "",
@@ -33,6 +36,7 @@
     "@google-cloud/storage": "^5.18.3",
     "@prisma/client": "^4.2.1",
     "axios": "^0.27.2",
+    "cookie": "^0.5.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "crypto-js": "^4.1.1",

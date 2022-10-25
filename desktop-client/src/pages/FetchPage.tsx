@@ -1,21 +1,24 @@
 import { FC, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Guild, Member, useUser } from "../store/user";
-import { fetchOnLoad } from "../utils/api";
+import { useUserStore } from "@kratercord/common/store/user";
+import { fetchOnLoad } from "@kratercord/common/api";
 import { io } from "socket.io-client";
-import { useSocket } from "../store/socket";
-import { checkSettings } from "../utils";
+import { useSocket } from "@kratercord/common/store/socket";
 import { getVersion } from '@tauri-apps/api/app';
 import { invoke } from "@tauri-apps/api";
+import { Guild, Member } from "@kratercord/common/types";
+import useUtil from "@kratercord/common/hooks/useUtil";
 
 let version: string;
 
 const FetchPage: FC = () => {
     const navigate = useNavigate();
 
-    const setUser = useUser(state => state.setUser);
-    const updateUser = useUser(state => state.updateUser);
+    const setUser = useUserStore(state => state.setUser);
+    const updateUser = useUserStore(state => state.updateUser);
     const { setSocket, socket } = useSocket();
+
+    const { checkSettings } = useUtil();
 
     useEffect(() => {
         (async () => {
@@ -30,9 +33,9 @@ const FetchPage: FC = () => {
             if (!socket) {
                 const url = await invoke("get_api_url");
 
-                const SOCKET = io(url as string);
+                const SOCKET = io(url as string, { withCredentials: true });
 
-                SOCKET.emit("setup", user.id, user.guilds.map((g: Guild) => g.id));
+                SOCKET.emit("setup", user.guilds.map((g: Guild) => g.id));
 
                 SOCKET.on("online", (user: Member, id: string) => {
                     updateUser(user);

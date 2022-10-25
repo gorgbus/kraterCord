@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { useSettings } from "../../../store/settings";
+import { useSettings } from "@kratercord/common/store/settings";
 import { FriendIcon } from "../../ui/Icons";
 
 const FriendBar: FC = () => {

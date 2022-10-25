@@ -10,7 +10,7 @@ export const isAuthenticated = (req: Request, res: Response, next: NextFunction)
 
     token = token.access ? token.access : null;
 
-    if (token == null) return res.status(401).send({ msg: "Missing token" });
+    if (token === null) return res.status(401).send({ msg: "Missing token" });
     
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!, async (err: any, user: any) => {
         if (err) return res.status(403).send({ msg: "Unauthorized" });

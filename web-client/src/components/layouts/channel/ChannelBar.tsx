@@ -1,14 +1,16 @@
 import { useRouter } from "next/router";
 import { FC } from "react";
 import { useQueryClient } from "react-query";
-import { Channel, useUser } from "../../../store/user";
+import { useUserStore } from "@kratercord/common/store/user";
 import { ChannelIcon } from "../../ui/Icons";
+import { Channel } from "@kratercord/common/types";
+import Head from "next/head";
 
 const ChannelBar: FC = () => {
     const { guildId, channelId } = useRouter().query;
 
-    const dms = useUser(state => state.user.dms);
-    const userId = useUser(state => state.user.id);
+    const dms = useUserStore(state => state.user.dms);
+    const userId = useUserStore(state => state.user.id);
 
     const dm = dms.find(dm => dm.id === channelId);
 
@@ -20,7 +22,10 @@ const ChannelBar: FC = () => {
     const channel = channels?.find(ch => ch.id === channelId);
 
     return (
-        <div>   
+        <div>
+            <Head>
+                <title>{channel?.name || friend?.username}</title>
+            </Head>
             {
                 !dm ?
                     <div className="font-bold text-white h-12 w-full ml-56 fixed flex items-center bg-gray-700 border-b-[1px] border-gray-900">

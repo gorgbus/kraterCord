@@ -1,36 +1,24 @@
 import { useEffect } from "react";
-import { Guild, Member, useUser } from "../store/user";
-import { fetchOnLoad } from "../utils/api";
-import { io, Socket } from "socket.io-client";
-import { useSocket } from "../store/socket";
-import { checkSettings } from "../utils";
+import { useUserStore } from "@kratercord/common/store/user";
+import { Guild, Member } from "@kratercord/common/types"
+import { fetchOnLoad } from "@kratercord/common/api";
+import { io } from "socket.io-client";
+import { useSocket } from "@kratercord/common/store/socket";
+import useUtil from "@kratercord/common/hooks/useUtil";
 import { useRouter } from "next/router";
 import Image from "next/future/image";
 import { NextPage } from "next";
 
 const version = process.env.NEXT_PUBLIC_VERSION;
 
-const setuped = useSocket.getState().setuped;
-const setup = useSocket.getState().setup;
-const socket = useSocket.getState().socket;
-const setSocket = useSocket.getState().setSocket;
-
-let SOCKET: Socket;
-
-if (!socket) {
-    SOCKET = io(process.env.NEXT_PUBLIC_API_URL!);
-
-    setSocket(SOCKET);
-}
-
-
 const FetchPage: NextPage<{ refresh?: boolean }> = ({ refresh }) => {
     const router = useRouter();
 
-    const setUser = useUser(state => state.setUser);
-    const updateUser = useUser(state => state.updateUser);
-    // const socket = useSocket(state => state.socket);
-    // const setSocket = useSocket(state => state.setSocket);
+    const setUser = useUserStore(state => state.setUser);
+    const updateUser = useUserStore(state => state.updateUser);
+    const socket = useSocket(state => state.getSocket);
+    const setSocket = useSocket(state => state.setSocket);
+    const { checkSettings } = useUtil();
 
     useEffect(() => {
         (async () => {
@@ -42,10 +30,12 @@ const FetchPage: NextPage<{ refresh?: boolean }> = ({ refresh }) => {
 
             setUser(user);
 
-            if (!setuped) {
-                SOCKET.emit("setup", user.id, user.guilds.map((g: Guild) => g.id));
+            if (!socket()) {
+                const SOCKET = io(process.env.NEXT_PUBLIC_API_URL!, { withCredentials: true });
 
-                setup();
+                setSocket(SOCKET);
+
+                SOCKET.emit("setup", user.guilds.map((g: Guild) => g.id));
 
                 SOCKET.on("online", (user: Member, id: string) => {
                     updateUser(user);

@@ -1,95 +1,14 @@
 import create from "zustand";
-
-export type User = {
-  id: string
-  hash: string
-  username: string
-  avatar: string
-  status: StatusType
-  muted: boolean
-  deafen: boolean
-  friends: User[]
-  incomingFriendReqs: FriendsRequest[]
-  outgoingFriendReqs: FriendsRequest[]
-  notifications: Notification[]
-  guilds: Guild[]
-  dms: Channel[]
-}
-
-export type FriendsRequest = {
-  id: string
-  user: User
-  userId: string
-  requester: User
-  requesterId: string
-}
-
-export type Guild = {
-  id: string
-  name: string
-  avatar: string
-  owner: User
-  ownerId: string
-  redirectId: string
-  members: Member[]
-  channels: Channel[]
-  invites: Invite[]
-}
-
-type Invite = {
-    id: string
-    code: string
-    guildId: string
-}
-
-export type Channel = {
-  id: string
-  name: string
-  type: ChannelType
-  guildId: string | null
-  users: User[]
-  members: User[]
-  notifications: Notification[]
-}
-
-export type Member = {
-  id: string
-  userId: string
-  user: User
-  guildId: string
-}
-
-export type Message = {
-  id: string
-  author: User
-  authorId: string
-  content: string
-  channelId: string
-  createdAt: Date
-  updatedAt: Date
-}
-
-export type Notification = {
-  id: string
-  userId: string
-  channelId: string
-  guildId: string | null
-  count: number
-  createdAt: Date
-}
-
-export type ChannelType = 'VOICE' | 'TEXT' | 'DM'
-
-type StatusType = 'ONLINE' | 'OFFLINE'
-
+import { User, Guild, FriendsRequest, Channel, Member, Notification, updatedPropertiesType } from "../types";
 
 type State = {
     user: User
-    updateUser: (args: object) => void
+    updateUser: (update: updatedPropertiesType<User>) => void
     setUser: (user: User) => void
     addGuild: (guild: Guild) => void
     removeGuild: (guildId: string) => void
     addFriend: (friend: User) => void
+    updateFriend: (friendId: string, update: updatedPropertiesType<User>) => void
     removeFriend: (friendId: string) => void
     addRequest: (request: FriendsRequest) => void
     removeRequest: (requestId: string) => void
@@ -97,15 +16,19 @@ type State = {
     removeNotification: (notificationId: string) => void
     addDM: (dm: Channel) => void
     removeDM: (dmId: string) => void
+    updateMember: (memberId: string, update: updatedPropertiesType<Member>) => void
+    updateMemberUser: (update: updatedPropertiesType<User>) => void
+    addMember: (member: Member) => void
 }
 
-export const useUser = create<State>((set) => ({
+export const useUserStore = create<State>((set) => ({
     user: {
         username: "none",
         id: "123",
         avatar: "/none",
         hash: "0000",
         status: "OFFLINE",
+        background: "",
         muted: false,
         deafen: false,
         friends: [],
@@ -113,13 +36,15 @@ export const useUser = create<State>((set) => ({
         outgoingFriendReqs: [],
         notifications: [],
         guilds: [],
-        dms: []
+        dms: [],
+        members: [],
+        createdAt: new Date()
     },
-    updateUser: (args: object) => {
+    updateUser: (update: updatedPropertiesType<User>) => {
         set((state) => ({
             user: {
                 ...state.user,
-                ...args
+                ...update
             }
         }))
     },
@@ -153,6 +78,14 @@ export const useUser = create<State>((set) => ({
             user: {
                 ...state.user,
                 friends: state.user.friends.filter((friend) => friend.id !== friendId)
+            }
+        }))
+    },
+    updateFriend: (friendId: string, update: updatedPropertiesType<User>) => {
+        set((state) => ({
+            user: {
+                ...state.user,
+                friends: state.user.friends.map((friend) => friend.id === friendId ? { ...friend, ...update } : friend)
             }
         }))
     },
@@ -201,6 +134,30 @@ export const useUser = create<State>((set) => ({
             user: {
                 ...state.user,
                 dms: state.user.dms.filter((dm) => dm.id !== dmId)
+            }
+        }))
+    },
+    updateMember: (memberId: string, update: updatedPropertiesType<Member>) => {
+        set((state) => ({
+            user: {
+                ...state.user,
+                members: state.user.members.map((member) => member.id === memberId ? { ...member, ...update } : member)
+            }
+        }))
+    },
+    addMember: (member: Member) => {
+        set((state) => ({
+            user: {
+                ...state.user,
+                members: [...state.user.members, member]
+            }
+        }))
+    },
+    updateMemberUser: (update: updatedPropertiesType<User>) => {
+        set((state) => ({
+            user: {
+                ...state.user,
+                members: state.user.members.map((member) => ({ ...member, user: { ...member.user, ...update } }))
             }
         }))
     }

@@ -19,6 +19,7 @@ async function main() {
             pingTimeout: 60000,
             cors: {
                 origin: HOST!,
+                credentials: true
             }
         });
 

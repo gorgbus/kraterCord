@@ -1,7 +1,18 @@
-import { FC } from "react";
+import { FC, useEffect } from "react";
 import { LoadingIcon } from "../ui/Icons";
+import { useSettings } from "@kratercord/common/store/settings";
 
 const UnsavedWarning: FC<{ save: () => Promise<void> | void; discard: () => void; saving: boolean; }> = ({ save, discard, saving }) => {
+    const setUnsaved = useSettings(state => state.setUnsaved);
+
+    useEffect(() => {
+        setUnsaved(true);
+
+        return () => {
+            setUnsaved(false);
+        }
+    }, []);
+
     return (
         <div className="absolute left-0 z-20 flex items-center justify-between w-full h-10 bg-gray-900 rounded-md animate-slideFromBottom bottom-12">
             <span className="ml-2 text-sm font-semibold text-gray-100">Máš tu neuložené změny!</span>

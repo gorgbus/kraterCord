@@ -2,7 +2,7 @@ import { FC } from "react";
 import Img from "react-cool-img";
 import { useQuery } from "react-query";
 import { useParams } from "react-router-dom";
-import { fetchMembers } from "../../../utils/api";
+import { fetchMembers } from "@kratercord/common/api";
 
 const MemberSidebar: FC = () => {
     const { guildId } = useParams();

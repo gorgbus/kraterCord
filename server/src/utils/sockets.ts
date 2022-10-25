@@ -1,5 +1,8 @@
 import { Server, Socket } from "socket.io";
 import { prisma } from "../prisma";
+import cookie from "cookie";
+import jwt from "jsonwebtoken";
+import { decrypt } from "./crypto";
 
 interface ISocket extends Socket {
     user?: string;
@@ -10,15 +13,60 @@ const guildSockets = new Map<string, string[]>();
 
 const socketIo = async (io: Server) => {
     io.on("connection", (s: ISocket) => {
-        console.log(`Socket: ${s.id} has connected`);
+        if (!s.handshake.headers.cookie) return s.disconnect(true);
 
-        s.on("setup", async (id: string, guilds: string[]) => {
-            s.join(id);
+        const cookies = cookie.parse(s.handshake.headers.cookie);
 
-            s.user = id;
+        if (!cookies.JWT) return s.disconnect(true);
 
-            const socket = sockets.get(id);
+        let token = JSON.parse(cookies.JWT);
 
+        token = token.access ? token.access : null;
+
+        if (token === null) return s.disconnect(true);
+
+        jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!, async (err: any, user: any) => {
+            if (err) return s.disconnect(true);
+
+            try {
+                const tokens = await prisma.token.findUnique({
+                    where: {
+                        discordId: user.discordId
+                    }
+                });
+
+                if (!tokens) return s.disconnect(true);
+
+                if (decrypt(tokens.accessToken) !== token) return s.disconnect(true);
+
+                console.log(`[${new Date(Date.now()).toLocaleTimeString()}] user: \x1b[33m${user.id}\x1b[0m connected with socket: \x1b[31m${s.id}\x1b[0m`);
+
+                s.user = user.id;
+
+                const socket = sockets.get(user.id);
+
+                if (socket) {
+                    sockets.set(user.id, [...socket, s.id]);
+                } else {
+                    sockets.set(user.id, [s.id]);
+
+                    await prisma.user.update({
+                        where: {
+                            id: user.id
+                        },
+                        data: {
+                            status: "ONLINE"
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error(err);
+
+                return s.disconnect(true);
+            }
+        });
+
+        s.on("setup", async (guilds: string[]) => {
             guilds.forEach((g) => {
                 const guild = guildSockets.get(g);
 
@@ -28,48 +76,47 @@ const socketIo = async (io: Server) => {
                     guildSockets.set(g, [s.id]);
                 }
             });
+        });
 
-            if (socket) {
-                sockets.set(id, [...socket, s.id]);
-            } else {
-                sockets.set(id, [s.id]);
+        s.on("update", (type: string, updateData) => {
+            switch(type) {
+                case "member": {
+                    emitToGuild(updateData.guildId, io, "update_client", "member", updateData);
 
-                const user = await prisma.user.update({
-                    where: {
-                        id
-                    },
-                    data: {
-                        status: "ONLINE"
-                    }
-                });
+                    break;
+                }
 
-                s.broadcast.emit("online", user, s.id);
+                case "user": {
+                    emitToUserGuilds(s.id, io, "update_client", "user", updateData);
+
+                    break;
+                }
+
+                case "friend": {
+                    emitToUsers(updateData.friendIds, io, "update_client", "friend", updateData);
+
+                    break;
+                }
             }
         });
 
-        s.on("status", (user, id: string) => {
-            io.to(id).emit("online", user);
-        });
+        // s.on("status", (user, id: string) => {
+        //     io.to(id).emit("online", user);
+        // });
 
-        s.on("update_user", async (user) => {
-            const updatedUser = await prisma.user.update({
-                where: {
-                    id: user.id
-                },
-                data: user
-            });
+        // s.on("update_user", async (user) => {
+        //     const updatedUser = await prisma.user.update({
+        //         where: {
+        //             id: user.id
+        //         },
+        //         data: user
+        //     });
             
-            s.broadcast.emit("online", updatedUser);
-        });
+        //     s.broadcast.emit("online", updatedUser);
+        // });
 
-        s.on("friend", (type, id, friendId) => {
-            emitToUser(friendId, io, 'friend-client', type, id);
-        });
-
-        s.on("dm_create", (_id, dm) => {
-            s.join(_id);
-            s.to(_id).emit("dm_created", (dm));
-            s.leave(_id);
+        s.on("friend", (type, friendId, data) => {
+            emitToUser(friendId, io, 'friend_client', type, data);
         });
 
         s.on("create_message_dm", async (id, data) => {
@@ -217,14 +264,14 @@ const socketIo = async (io: Server) => {
                 s.broadcast.emit("online", user);
             }
 
-            console.log(`Socket: ${s.id} has disconnected`);
+            console.log(`[${new Date(Date.now()).toLocaleTimeString()}] user: \x1b[33m${s.user}\x1b[0m with socket: \x1b[31m${s.id}\x1b[0m has disconnected`);
         });
     });
 }
 
-const emitToUser = (id: string, io: Server, event: string, ...args: any) => {
-    const user = sockets.get(id);
-    let users: string[] = [];
+const emitToUser = (userId: string, io: Server, event: string, ...args: any) => {
+    const user = sockets.get(userId);
+    const users: string[] = [];
 
     if (user) {
         user.forEach((s) => {
@@ -235,8 +282,22 @@ const emitToUser = (id: string, io: Server, event: string, ...args: any) => {
     }
 }
 
-const emitToGuild = (id: string, io: Server, event: string, ...args: any) => {
-    const guild = guildSockets.get(id);
+const emitToUsers = (userIds: string[], io: Server, event: string, ...args: any) => {
+    const users: string[] = [];
+    const socketsIds = [...sockets];
+    const userSockets = socketsIds.filter(([id]) => userIds.some((userId) => userId === id));
+
+    userSockets.forEach(([, socket]) => {
+        socket.forEach((s) => {
+            users.push(s);
+        });
+    });
+
+    io.to(users).emit(event, ...args);
+}
+
+const emitToGuild = (guildId: string, io: Server, event: string, ...args: any) => {
+    const guild = guildSockets.get(guildId);
     let users: string[] = [];
 
     if (guild) {
@@ -246,6 +307,20 @@ const emitToGuild = (id: string, io: Server, event: string, ...args: any) => {
 
         io.to(users).emit(event, ...args);
     }
+}
+
+const emitToUserGuilds = (socketId: string, io: Server, event: string, ...args: any) => {
+    const userGuilds = [...guildSockets];
+    const guilds = userGuilds.filter(([_, arr]) => arr.includes(socketId));
+    const users: string[] = [];
+
+    guilds.forEach(([, arr]) => {
+        arr.forEach((s) => {
+            users.push(s);
+        });
+    });
+
+    io.to(users).emit(event, ...args);
 }
 
 const removeSocketFromGuilds = (id: string) => {

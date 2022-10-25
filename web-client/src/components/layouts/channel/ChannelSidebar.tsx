@@ -4,25 +4,24 @@ import ChatInput from "../ChatInput";
 import MemberSidebar from "./MemberSidebar";
 import UserProfile from "../UserProfile";
 import { ChannelIcon, CloseIcon, DeafenHeadphoneIcon, DropDownIcon, InviteIcon, LoadingIcon, MutedMicIcon, SettingsIcon, VoiceChannelIcon } from "../../ui/Icons";
-import { Channel, User, useUser } from "../../../store/user";
-import { useSocket } from "../../../store/socket";
-import { connectToChannel } from "../../../utils/vcLogic";
-import { useSettings } from "../../../store/settings";
-import { useMutation, useQuery, useQueryClient } from "react-query";
-import { fetchChannels, getGuildInvite, createMessage, createChannel, joinChannel } from "../../../utils/api";
+import { useUserStore } from "@kratercord/common/store/user";
+import { useSocket } from "@kratercord/common/store/socket";
+import { useSettings } from "@kratercord/common/store/settings";
+import { useQuery } from "react-query";
+import { fetchChannels, getGuildInvite, createMessage, createChannel } from "@kratercord/common/api";
 import Modal from '../../ui/Modal';
 import { useRouter } from "next/router";
 import Image from "next/future/image";
+import { Member } from "@kratercord/common/types";
+import { useChannel, useVoiceChannel } from "@kratercord/common/hooks";
 
 const ChannelSidebar = ({ children }: { children: ReactElement }) => {
     const router = useRouter();
     const { guildId, channelId } = router.query;
 
-    const userId = useUser(state => state.user.id);
-    const username = useUser(state => state.user.username);
-    const avatar = useUser(state => state.user.avatar);
-    const notifications = useUser(state => state.user.notifications);
-    const guilds = useUser(state => state.user.guilds);
+    const notifications = useUserStore(state => state.user.notifications);
+    const guilds = useUserStore(state => state.user.guilds);
+    const members = useUserStore(state => state.user.members);
     const voice = useSettings(state => state.voiceChannel);
     const setVoice = useSettings(state => state.setVoiceChannel);
     const setVoiceGuild = useSettings(state => state.setVoiceGuild);
@@ -32,60 +31,28 @@ const ChannelSidebar = ({ children }: { children: ReactElement }) => {
     const talkingUsers = useSettings(state => state.talkingUsers);
 
     const guildName = guilds.find(gld => gld.id === guildId)?.name;
+    const member = members.find(member => member.guildId === guildId);
 
     const [guildSettings, showSettings] = useState(false);
     const [invite, openInvite] = useState(false);
 
-    const queryClient = useQueryClient();
+    const { data, isLoading, isError, isSuccess } = useQuery(['channels', guildId], () => fetchChannels(guildId as string));
 
-    const { data, isLoading, isError } = useQuery(['channels', guildId], () => fetchChannels(guildId as string));
+    const { joinChannelUser } = useChannel();
+    const { connectToChannel } = useVoiceChannel();
 
-    const { mutate } = useMutation(joinChannel, {
-        onMutate: async (channel) => {
-            await queryClient.cancelQueries(["channels", guildId]);
-
-            const cache = queryClient.getQueryData<Channel[]>(["channels", guildId]);
-
-            if (!cache) return;
-
-            const user = {
-                id: userId,
-                username,
-                avatar,
-                muted: getMuted(),
-                deafen: getDeafen(),
-            }
-
-            const newCache = cache;
-
-            const index = newCache.findIndex(chnl => chnl.id === channel.channelId);
-
-            if (index === -1) return;
-
-            newCache[index].members = [...newCache[index].members, user as User];
-
-            queryClient.setQueryData(["channels", guildId], newCache);
-
-            return { cache };
-        },
-        onError: (_error, _data, context: any) => {
-            queryClient.setQueryData(["channels", guildId], context.cache);
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries(["channels", guildId]);
-        }
-    });
-
-    const join = (id: string, user?: User) => {
+    const join = (id: string, user?: Member) => {
         if (id === voice || user) return;
 
         setVoice(id);
         setVoiceGuild(guildId as string);
         
-        mutate({
+        joinChannelUser({
             channelId: id,
             deafen: getDeafen(),
-            muted: getMuted()
+            muted: getMuted(),
+            guildId: guildId as string,
+            member,
         });
 
         connectToChannel(id);
@@ -125,7 +92,7 @@ const ChannelSidebar = ({ children }: { children: ReactElement }) => {
                         }
 
                         {
-                            data &&
+                            isSuccess && data &&
                                 data.filter(ch => ch.guildId === guildId && ch.type === 'TEXT').map((ch) => {
                                     const notification = notifications.find(n => n.channelId === ch.id);
 
@@ -140,9 +107,11 @@ const ChannelSidebar = ({ children }: { children: ReactElement }) => {
                         }
 
                         {   
-                            data &&
+                            isSuccess && data &&
                                 data.filter(ch => ch.guildId === guildId && ch.type === 'VOICE').map((ch) => {
-                                    const user = ch.members?.find(user => user.id === userId);
+                                    const user = ch.members?.find(user => user.id === member?.id);
+                                    const channelIndex = data.findIndex(c => c.id === ch.id);
+                                    const channelMembers = data[channelIndex].members
 
                                     return (
                                         <div key={ch.id} className="flex flex-col">
@@ -153,14 +122,14 @@ const ChannelSidebar = ({ children }: { children: ReactElement }) => {
 
                                             <ul>
                                                 {
-                                                    ch.members?.map((u) => {
+                                                    channelMembers?.map((u) => {
                                                         const talking = talkingUsers.find(id => id === u.id);
 
                                                         return (
                                                             <li key={u.id} className='flex items-center justify-between p-1 rounded-md ml-9 w-44 group hover:bg-gray-600' >
                                                                 <div className={`flex items-center ${!u.muted && !u.deafen ? 'w-[calc(100%-4px)]' : u.deafen ? 'w-[calc(100%-36px)]' : 'w-[calc(100%-18px)]'}`}>
-                                                                    <Image className={`rounded-full ${talking && voice !== 'none' && !u.muted ? 'border-2 border-green-500 w-6 h-6' : 'w-5 h-5 m-[2px]'}`} width={24} height={24} src={u.avatar} alt={u.username} />
-                                                                    <span className={`ml-2 text-xs w-full whitespace-nowrap text-ellipsis overflow-hidden text-gray-400 group-hover:text-gray-100`}>{u.username}</span>
+                                                                    <Image className={`rounded-full ${talking && voice !== 'none' && !u.muted ? 'border-2 border-green-500 w-6 h-6' : 'w-5 h-5 m-[2px]'}`} width={24} height={24} src={u.avatar || u.user.avatar} alt={u.user.username} />
+                                                                    <span className={`ml-2 text-xs w-full whitespace-nowrap text-ellipsis overflow-hidden text-gray-400 group-hover:text-gray-100`}>{u.nickname || u.user.username}</span>
                                                                 </div>
 
                                                                 <div className="flex items-center">
@@ -220,12 +189,12 @@ const SettingOption: FC<{ title: string; titleStyle?: string; icon: ReactNode; o
 const InviteModal: FC = () => {
     const { guildId } = useRouter().query;
 
-    const friends = useUser(state => state.user.friends);
-    const guilds = useUser(state => state.user.guilds);
+    const friends = useUserStore(state => state.user.friends);
+    const guilds = useUserStore(state => state.user.guilds);
     const guild = guilds.find(guild => guild.id === guildId);
-    const dms = useUser(state => state.user.dms);
-    const addDM = useUser(state => state.addDM);
-    const userId = useUser(state => state.user.id);
+    const dms = useUserStore(state => state.user.dms);
+    const addDM = useUserStore(state => state.addDM);
+    const userId = useUserStore(state => state.user.id);
     const socket = useSocket(state => state.socket);
 
     const [code, setCode] = useState('');
@@ -252,7 +221,7 @@ const InviteModal: FC = () => {
 
         setSend(prev => [...prev, { friendId, sending: true }]);
 
-        const message = await createMessage({ channelId: dm ? dm.id : newDM?.id!, authorId: userId, content: `https://krater-cord.tech/invite/${code}` });
+        const message = await createMessage({ channelId: dm ? dm.id : newDM?.id!, content: `https://krater-cord.tech/invite/${code}` });
 
         if (!message) return;
 

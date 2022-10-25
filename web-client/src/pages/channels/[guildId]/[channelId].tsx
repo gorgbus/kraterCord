@@ -1,14 +1,16 @@
 import { Fragment, ReactElement } from "react";
 import { useInfiniteQuery } from "react-query";
 import Message from "../../../components/ui/Message";
-import { fetchMessages } from "../../../utils/api";
-import { isCompact, isLast } from "../../../utils";
+import { fetchMessages } from "@kratercord/common/api";
+import useUtil from "@kratercord/common/hooks/useUtil";
 import { useRouter } from "next/router";
 import { NextPageWithLayout } from "../../../utils/types";
 import ChannelSidebar from "../../../components/layouts/channel/ChannelSidebar";
 
 const Channel: NextPageWithLayout<{ dm?: boolean }> = ({ dm }) => {
     const { channelId } = useRouter().query;
+
+    const { isCompact, isLast } = useUtil();
 
     const { data, fetchNextPage, hasNextPage, isSuccess } = useInfiniteQuery(
         ["channel", channelId],

@@ -1,11 +1,10 @@
 import { Dispatch, FC, SetStateAction, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AcceptIcon, DropDownIcon } from "../../components/ui/Icons";
-import { useSettings } from "../../store/settings";
-import { useSocket } from "../../store/socket";
-import { getSettings, setSetting } from "../../utils";
-import { logout } from "../../utils/api";
-import { loadDevice } from "../../utils/vcLogic";
+import { useSettings } from "@kratercord/common/store/settings";
+import { useSocket } from "@kratercord/common/store/socket";
+import { useUtil, useVoiceChannel } from "@kratercord/common/hooks";
+import { logout } from "@kratercord/common/api";
 import ToggleLabel from "./ToggleLabel";
 import UnsavedWarning from "./UnsavedWarning";
 
@@ -14,6 +13,7 @@ const AppSettings: FC<{ set: Dispatch<SetStateAction<string>>; }> = ({ set }) =>
     const closeSettings = useSettings(state => state.closeSettings);
     const socket = useSocket(state => state.socket);
     const setSocket = useSocket(state => state.setSocket);
+    const unsaved = useSettings(state => state.unsaved);
 
     const handleLogout = async () => {
         const logedOut = await logout();
@@ -36,13 +36,13 @@ const AppSettings: FC<{ set: Dispatch<SetStateAction<string>>; }> = ({ set }) =>
 
             <span className="ml-2 text-sm font-bold uppercase">Nastavení aplikace</span>
 
-            <button onClick={() => set('hlas')} className="item">Hlas a video</button>
-            <button onClick={() => set('oznameni')} className="item">Oznámení</button>
-            <button onClick={() => set('windows')} className="item">Nastavení Windows</button>
+            <button disabled={unsaved} onClick={() => set('hlas')} className="item">Hlas a video</button>
+            <button disabled={unsaved} onClick={() => set('oznameni')} className="item">Oznámení</button>
+            <button disabled={unsaved} onClick={() => set('windows')} className="item">Nastavení Windows</button>
 
             <div className="h-[2px] ml-2 bg-gray-600 mt-2 w-48"></div>
 
-            <button className="item hover:text-red-500 hover:bg-transparent" onClick={handleLogout} >Odhlásit se</button>
+            <button disabled={unsaved} className="item hover:text-red-500 hover:bg-transparent" onClick={handleLogout} >Odhlásit se</button>
         </div>
     )
 }
@@ -50,6 +50,9 @@ const AppSettings: FC<{ set: Dispatch<SetStateAction<string>>; }> = ({ set }) =>
 export default AppSettings;
 
 export const VoiceAndVideo: FC = () => {
+    const { getSettings, setSetting } = useUtil();
+    const { loadDevice } = useVoiceChannel();
+
     const settings = getSettings();
 
     if (!settings) return <div></div>
@@ -139,6 +142,8 @@ export const VoiceAndVideo: FC = () => {
 }
 
 export const Notifications: FC = () => {
+    const { getSettings } = useUtil();
+
     const settings = getSettings();
 
     if (!settings) return <div></div>
@@ -156,6 +161,8 @@ export const Notifications: FC = () => {
 }
 
 export const System: FC = () => {
+    const { getSettings } = useUtil();
+
     const settings = getSettings();
 
     if (!settings) return <div></div>

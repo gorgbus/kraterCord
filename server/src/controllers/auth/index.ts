@@ -108,7 +108,8 @@ export const getSetupController = async (req: Request, res: Response) => {
                 friends: true,
                 incomingFriendReqs: { include: { requester: true } },
                 outgoingFriendReqs: { include: { user: true } },
-                notifications: true
+                notifications: true,
+                members: { include: { user: true, channels: true } }
             }
         });
 

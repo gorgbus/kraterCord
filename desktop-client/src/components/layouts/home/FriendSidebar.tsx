@@ -1,7 +1,7 @@
 import { FC } from "react";
 import Img from "react-cool-img";
 import { Link, Outlet, useParams } from "react-router-dom";
-import { useUser } from "../../../store/user";
+import { useUserStore } from "@kratercord/common/store/user";
 import ChannelBar from "../channel/ChannelBar";
 import ChatInput from "../ChatInput";
 import FriendBar from "./FriendBar";
@@ -11,8 +11,8 @@ import UserProfile from "../UserProfile";
 const FriendSidebar: FC = () => {
     const { channelId } = useParams();
 
-    const dms = useUser(state => state.user.dms);
-    const userId = useUser(state => state.user.id);
+    const dms = useUserStore(state => state.user.dms);
+    const userId = useUserStore(state => state.user.id);
 
     return (
         <div className="flex w-full h-full">

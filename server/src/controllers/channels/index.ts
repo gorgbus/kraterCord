@@ -13,7 +13,7 @@ export const getChannelsController = async (req: Request, res: Response) => {
                 guildId: guild
             },
             include: {
-                members: true
+                members: { include: { user: true } }
             }
         });
 
@@ -47,7 +47,8 @@ export const getMessagesController = async (req: Request, res: Response) => {
             cursor: cursorObj,
             skip: cursor === 'first' ? 0 : 1,
             include: {
-                author: true
+                author: true,
+                member: { include: { user: true } }
             }
         });
 
@@ -64,7 +65,7 @@ export const getMessagesController = async (req: Request, res: Response) => {
 export const createMessageController = async (req: Request, res: Response) => {
     const { id: authorId } = req.user as { id: string };
     const { id } = req.params;
-    const { content } = req.body;
+    const { content, guildId } = req.body;
 
     if (!id) return res.status(500);
 
@@ -74,6 +75,17 @@ export const createMessageController = async (req: Request, res: Response) => {
                 author: { connect: { id: authorId } },
                 channel: { connect: { id } },
                 content,
+                member: guildId ? {
+                    connect: {
+                        userId_guildId: {
+                            userId: authorId,
+                            guildId
+                        }
+                    }
+                } : undefined
+            },
+            include: {
+                member: { include: { user: true } }
             }
         });
 
@@ -116,14 +128,14 @@ export const createChannelController = async (req: Request, res: Response) => {
 export const joinChannelController = async (req: Request, res: Response) => {
     const { id: userId } = req.user as { id: string };
     const { id } = req.params;
-    const { muted, deafen } = req.body;
+    const { muted, deafen, memberId } = req.body;
 
-    if (!userId || !id || typeof(muted) === 'undefined' || typeof(deafen) === 'undefined') return res.status(500);
+    if (!userId || !memberId || !id || typeof(muted) === 'undefined' || typeof(deafen) === 'undefined') return res.status(500);
 
     try {
-        const user = await prisma.user.update({
+        const member = await prisma.member.update({
             where: {
-                id: userId
+                id: memberId
             },
             data: {
                 muted,
@@ -131,7 +143,7 @@ export const joinChannelController = async (req: Request, res: Response) => {
             }
         });
 
-        if (!user) return res.status(500).send({ msg: 'User not found' });
+        if (!member) return res.status(500).send({ msg: 'Member not found' });
 
         const channel = await prisma.channel.findUnique({
             where: {
@@ -150,7 +162,7 @@ export const joinChannelController = async (req: Request, res: Response) => {
             },
             data: {
                 members: {
-                    set: [...channel.members, { id: userId }]
+                    set: [...channel.members, { id: memberId }]
                 }
             }
         });
@@ -165,6 +177,7 @@ export const joinChannelController = async (req: Request, res: Response) => {
 export const leaveChannelController = async (req: Request, res: Response) => {
     const { id: userId } = req.user as { id: string };
     const { id } = req.params;
+    const { memberId } = req.body;
 
     if (!userId || !id) return res.status(500);
 
@@ -186,12 +199,38 @@ export const leaveChannelController = async (req: Request, res: Response) => {
             },
             data: {
                 members: {
-                    set: channel.members.filter(user => user.id !== userId)
+                    set: channel.members.filter(user => user.id !== memberId)
                 }
             }
         });
 
         return res.status(200).send({ channel });
+    } catch (err) {
+        console.error(err);
+        return res.status(500);
+    }
+}
+
+export const memberUpdateVoiceController = async (req: Request, res: Response) => {
+    const { id } = req.user as { id: string };
+    const { muted, deafen, memberId } = req.body;
+
+    if (!id || typeof(muted) === 'undefined' || typeof(deafen) === 'undefined') return res.status(500);
+
+    try {
+        const member = await prisma.member.update({
+            where: {
+                id: memberId
+            },
+            data: {
+                muted,
+                deafen
+            }
+        });
+
+        if (!member) return res.status(500).send({ msg: "Member not found" });
+
+        return res.status(200).send({ member });
     } catch (err) {
         console.error(err);
         return res.status(500);

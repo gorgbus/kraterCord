@@ -8,5 +8,10 @@
     "strict": true,
     "alwaysStrict": true,
     "skipLibCheck": true
-  }
+  },
+  "files": [],
+  "references": [
+    { "path": "server" },
+    { "path": "common" }
+  ]
 }

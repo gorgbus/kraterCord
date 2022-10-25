@@ -1,12 +1,14 @@
 import { FC, Fragment } from "react";
 import { useInfiniteQuery } from "react-query";
 import Message from "./Message";
-import { fetchMessages } from "../../utils/api";
-import { isCompact, isLast } from "../../utils";
+import { fetchMessages } from "@kratercord/common/api";
 import { useParams } from "react-router-dom";
+import useUtil from "@kratercord/common/hooks/useUtil";
 
 const Channel: FC<{ dm?: boolean }> = ({ dm }) => {
     const { channelId } = useParams();
+
+    const { isCompact, isLast } = useUtil();
 
     const { data, fetchNextPage, hasNextPage, isSuccess } = useInfiniteQuery(
         ["channel", channelId],

@@ -1,14 +1,15 @@
 import { FC } from "react";
 import { useQueryClient } from "react-query";
 import { useParams } from "react-router-dom";
-import { Channel, useUser } from "../../../store/user";
+import { useUserStore } from "@kratercord/common/store/user";
 import { ChannelIcon } from "../../ui/Icons";
+import { Channel } from "@kratercord/common/types";
 
 const ChannelBar: FC = () => {
     const { guildId, channelId } = useParams();
 
-    const dms = useUser(state => state.user.dms);
-    const userId = useUser(state => state.user.id);
+    const dms = useUserStore(state => state.user.dms);
+    const userId = useUserStore(state => state.user.id);
 
     const dm = dms.find(dm => dm.id === channelId);
 

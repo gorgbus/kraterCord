@@ -1,25 +1,24 @@
 import { FC, useEffect, useState } from "react";
 import Img from "react-cool-img";
-import { useMutation, useQueryClient } from "react-query";
+import { useQueryClient } from "react-query";
 import Settings from "../../pages/settings/Settings";
-import { useSettings } from "../../store/settings";
-import { useSocket } from "../../store/socket";
-import { Channel, useUser } from "../../store/user";
-import { leaveChannel } from "../../utils/api";
-import { disconnectSocket } from "../../utils/vcLogic";
+import { useSettings } from "@kratercord/common/store/settings";
+import { useUserStore } from "@kratercord/common/store/user";
+import { Channel } from "@kratercord/common/types";
+import { useChannel, useVoiceChannel } from "@kratercord/common/hooks";
 import { ConnectionIcon, DeafenHeadphoneIcon, HeadphoneIcon, LeaveCallIcon, MicIcon, MutedMicIcon, SettingsIcon } from "../ui/Icons";
 
 const UserProfile: FC = () => {
     const openSettings = useSettings(state => state.openSettings);
     const open = useSettings(state => state.open);
-    const userId = useUser(state => state.user.id);
-    const avatar = useUser(state => state.user.avatar);
-    const username = useUser(state => state.user.username);
-    const hash = useUser(state => state.user.hash);
-    const guilds = useUser(state => state.user.guilds);
+    const avatar = useUserStore(state => state.user.avatar);
+    const username = useUserStore(state => state.user.username);
+    const hash = useUserStore(state => state.user.hash);
+    const guilds = useUserStore(state => state.user.guilds);
+    const members = useUserStore(state => state.user.members);
     const guild = useSettings(state => state.voiceGuild);
     const voice = useSettings(state => state.voiceChannel);
-    const socket = useSocket(state => state.socket);
+    // const socket = useSocket(state => state.socket);
     const track = useSettings(state => state.track);
     const setTrack = useSettings(state => state.setTrack);
 
@@ -39,39 +38,13 @@ const UserProfile: FC = () => {
     const queryClient = useQueryClient();
 
     const channels = queryClient.getQueryData<Channel[]>(["channels", guild]);
+    const { leaveChannelUser } = useChannel();
+    const { disconnectSocket } = useVoiceChannel();
 
     const voiceChannel = channels?.find(c => c.id === voice);
     const voiceGuild = guilds.find(g => g.id === guild);
 
-    const { mutate } = useMutation(leaveChannel, {
-        onMutate: async (channelId) => {
-            await queryClient.cancelQueries(['channels', guild]);
-
-            const cache = queryClient.getQueryData<Channel[]>(["channels", guild]);
-
-            if (!cache) return;
-
-            const newCache = cache;
-
-            const index = newCache.findIndex(c => c.id === channelId);
-
-            if (index === -1) return;
-
-            newCache[index].members = newCache[index].members.filter(u => u.id !== userId);
-
-            queryClient.setQueryData(["channels", guild], newCache);
-
-            socket?.emit("leave_channel", guild, channelId, userId);
-
-            return { cache };
-        },
-        onError: (_error, _data, context: any) => {
-            queryClient.setQueryData(["channels", guild], context?.cache);
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries(['channels', guild]);
-        }
-    });
+    const member = members.find(m => m.guildId === voiceGuild?.id);
 
     const disconnect = () => {
         if (leaving) return;
@@ -98,39 +71,37 @@ const UserProfile: FC = () => {
     const voiceStatusColor = (status: string) => {
         if (leaving) return 'text-red-500';
 
-        switch(status) {
-            case 'connected':
-                return 'text-green-500';
-            case 'connecting':
-                return 'text-orange-500';
-            case 'failed':
-                return 'text-red-500';
-            case 'closed':
-                return 'text-red-500';
-            case 'disconnected':
-                return 'text-red-500';
-            default:
-                return 'text-orange-500';
+        type Options = {
+            [key: string]: string;
         }
+
+        const statusColors: Options = {
+            "connected": "text-green-500",
+            "connecting": "text-orange-500",
+            "failed": "text-red-500",
+            "closed": "text-red-500",
+            "disconnected": "text-red-500",
+        }
+
+        return statusColors[status];
     }
 
     const voiceStatusText = (status: string) => {
         if (leaving) return 'Odpojeno';
 
-        switch(status) {
-            case 'connected':
-                return 'Hlas připojen';
-            case 'connecting':
-                return 'Připojování'; 
-            case 'failed':
-                return 'Odpojeno';
-            case 'closed':
-                return 'Odpojeno';
-            case 'disconnected':
-                return 'Odpojeno';
-            default:
-                return 'Připojování';
+        type Options = {
+            [key: string]: string;
         }
+
+        const statusTexts: Options = {
+            "connected": "Hlas připojen",
+            "connecting": "Připojování",
+            "failed": "Odpojeno",
+            "closed": "Odpojeno",
+            "disconnected": "Odpojeno",
+        }
+
+        return statusTexts[status];
     }
 
     useEffect(() => {
@@ -141,7 +112,11 @@ const UserProfile: FC = () => {
         setVoiceGuild('none');
         setTalkingUsers([]);
 
-        mutate(voice);
+        leaveChannelUser({
+            guildId: voiceGuild?.id!,
+            channelId: voice,
+            memberId: member?.id!
+        });
 
         setLeave(false);
     }, [voiceStatus]);

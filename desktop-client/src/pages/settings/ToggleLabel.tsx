@@ -1,10 +1,11 @@
 import { FC, useState } from "react";
 import { AcceptIcon, CloseIcon } from "../../components/ui/Icons";
-import { setSetting } from "../../utils";
-
+import useUtil from "@kratercord/common/hooks/useUtil";
 
 const ToggleLabel: FC<{ name: string; value: boolean; label: string; desc?: string; }> = ({ label, desc, value, name }) => {
     const [checked, setChecked] = useState(value);
+
+    const { setSetting } = useUtil();
 
     return (
         <div className="flex items-center justify-between pt-4 pb-4 border-b-2 border-gray-500 cursor-pointer" onClick={() => setChecked(current => { 

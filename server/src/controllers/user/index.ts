@@ -38,7 +38,7 @@ export const friendReqController = async (req: Request, res: Response) => {
 
             const friendIds = user.friends.map(friend => ({ id: friend.id }));
 
-            await prisma.user.update({
+            const updatedUser = await prisma.user.update({
                 where: {
                     id
                 },
@@ -49,7 +49,7 @@ export const friendReqController = async (req: Request, res: Response) => {
                 }
             });
 
-            return res.status(200).send({ msg: 'Added as friend', friend: hasRequested.requester, requestId: request.id });
+            return res.status(200).send({ msg: 'Added as friend', user: updatedUser, friend: hasRequested.requester, requestId: request.id });
         }
 
         const friend = await prisma.user.findUnique({
@@ -135,7 +135,7 @@ export const friendAcceptController = async (req: Request, res: Response) => {
 
         if (!user || !friend) return res.status(500).send({ msg: 'User/Friend not found' });
 
-        await prisma.user.update({
+        const updatedUser = await prisma.user.update({
             where: {
                 id: userId
             },
@@ -157,7 +157,7 @@ export const friendAcceptController = async (req: Request, res: Response) => {
             }
         });
 
-        return res.status(200).send({ friend, requestId: request.id });
+        return res.status(200).send({ friend, user: updatedUser, requestId: request.id });
     } catch (err) {
         console.error(err);
         return res.status(500);
@@ -224,46 +224,18 @@ export const friendRemoveController = async (req: Request, res: Response) => {
 
 export const userUpdateController = async (req: Request, res: Response) => {
     const { id } = req.user as { id: string };
-    const { avatar, username } = req.body;
+    const { update } = req.body;
 
     if (!id) return res.status(500);
-    if (!avatar && !username) return res.status(500);
+    if (!update) return res.status(500);
 
     try {
-        const update = (avatar && username) ? { avatar, username } : avatar ? { avatar } : { username };
-
         const user = await prisma.user.update({
             where: {
                 id
             },
             data: update
         })
-
-        if (!user) return res.status(500);
-
-        return res.status(200).send({ user });
-    } catch (err) {
-        console.error(err);
-        return res.status(500);
-    }
-}
-
-export const userUpdateVoiceController = async (req: Request, res: Response) => {
-    const { id } = req.user as { id: string };
-    const { muted, deafen } = req.body;
-
-    if (!id || typeof(muted) === 'undefined' || typeof(deafen) === 'undefined') return res.status(500);
-
-    try {
-        const user = await prisma.user.update({
-            where: {
-                id
-            },
-            data: {
-                muted,
-                deafen
-            }
-        });
 
         if (!user) return res.status(500);
 

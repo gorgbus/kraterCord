@@ -4,6 +4,7 @@ import { Device } from "mediasoup-client/lib/types";
 type State = {
     page: string;
     open: boolean;
+    unsaved: boolean;
     muted: boolean;
     wasMuted: boolean;
     deafen: boolean;
@@ -37,11 +38,13 @@ type State = {
     setTalkingUsers: (users: string[]) => void;
     addTalkingUser: (user: string) => void;
     removeTalkingUser: (user: string) => void;
+    setUnsaved: (unsaved: boolean) => void;
 }
 
 export const useSettings = create<State>((set, get) => ({
     page: 'Online',
     open: false,
+    unsaved: false,
     muted: true,
     wasMuted: true,
     deafen: false,
@@ -80,4 +83,5 @@ export const useSettings = create<State>((set, get) => ({
     getDeafen: () => get().deafen,
     getVoiceChannel: () => get().voiceChannel,
     getVoiceGuild: () => get().voiceGuild,
+    setUnsaved: (unsaved) => set({ unsaved })
 }));

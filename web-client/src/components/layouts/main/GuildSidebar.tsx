@@ -1,14 +1,15 @@
 import Image from "next/future/image";
 import { useRouter } from "next/router";
 import { ChangeEvent, FC, MutableRefObject, ReactNode, useEffect, useRef, useState } from "react";
-import { useQuery } from "react-query";
-import { useSocket } from "../../../store/socket";
-import { useUser } from "../../../store/user";
-import { createGuild, fetchOnLoad, joinGuild } from "../../../utils/api";
+import { useQuery, useQueryClient } from "react-query";
+import { useSocket } from "@kratercord/common/store/socket";
+import { useUserStore } from "@kratercord/common/store/user";
+import { createGuild, fetchOnLoad, joinGuild } from "@kratercord/common/api";
 import { AddIcon, DropDownIcon } from "../../ui/Icons";
 import Modal from "../../ui/Modal";
 import Sockets from "./Sockets";
 import LoadingScreen from "../../../pages/app";
+import { io } from "socket.io-client";
 
 const GuildSidebar = ({ children }: { children: ReactNode }) => {
     const [modal, setModal] = useState(false);
@@ -17,14 +18,15 @@ const GuildSidebar = ({ children }: { children: ReactNode }) => {
     const router = useRouter();
     const { guildId } = router.query;
 
-    const dms = useUser(state => state.user.dms);
-    const userId = useUser(state => state.user.id);
-    const guilds = useUser(state => state.user.guilds);
-    const notifications = useUser(state => state.user.notifications);
+    const dms = useUserStore(state => state.user.dms);
+    const userId = useUserStore(state => state.user.id);
+    const guilds = useUserStore(state => state.user.guilds);
+    const notifications = useUserStore(state => state.user.notifications);
     const getSocket = useSocket(state => state.getSocket);
-    const setup = useSocket(state => state.setup);
-    const setuped = useSocket(state => state.setuped);
-    const setUser = useUser(state => state.setUser);
+    const setSocket = useSocket(state => state.setSocket);
+    const setUser = useUserStore(state => state.setUser);
+
+    const queryClient = useQueryClient();
 
     const { isLoading } = useQuery("main", fetchOnLoad, { 
         refetchOnWindowFocus: false, 
@@ -33,15 +35,19 @@ const GuildSidebar = ({ children }: { children: ReactNode }) => {
         onSuccess: (data) => {
             if (!data) return;
 
+            setUser(data);
+
+            queryClient.invalidateQueries();
+
             const socket = getSocket();
 
-            socket?.connect();
+            if (socket) return;
 
-            if (!setuped) socket?.emit("setup", data.id, data.guilds.map((g) => g.id));
+            const SOCKET = io(process.env.NEXT_PUBLIC_API_URL!, { withCredentials: true });
 
-            setup();
+            setSocket(SOCKET);
 
-            setUser(data);
+            SOCKET.emit("setup", data.guilds.map((g) => g.id));
         }
     });
 
@@ -91,7 +97,14 @@ const GuildSidebar = ({ children }: { children: ReactNode }) => {
 
                             return (
                                 <div className="relative m-1 cursor-pointer w-14 h-14 group" key={i} onClick={() => router.push(`/channels/${gld.id}/${gld.redirectId}`)} >
-                                    <Image width={56} height={56} className={`mb-2 w-14 h-14 transition-all duration-300 rounded-[50%] hover:rounded-2xl ${guildId === gld.id && `rounded-2xl`}`} src={gld.avatar} alt={gld.name} />
+                                    {
+                                        gld.avatar ?
+                                            <Image width={56} height={56} className={`mb-2 w-14 h-14 transition-all duration-300 rounded-[50%] hover:rounded-2xl ${guildId === gld.id && `rounded-2xl`}`} src={gld.avatar} alt={gld.name} />
+                                        :
+                                            <div className={`mb-2 flex justify-center items-center bg-gray-800 w-14 h-14 transition-all duration-300 rounded-[50%] hover:rounded-2xl ${guildId === gld.id && `rounded-2xl`}`}>
+                                                <span className="text-xl font-semibold text-gray-100">{gld.name[0]}</span>
+                                            </div>
+                                    }
                                     <span className={`absolute transition-all duration-300 -translate-y-1/2 bg-white rounded-lg -left-[34px] scale-0 group-hover:scale-100 w-7 top-1/2 ${guildId === gld.id ? `scale-100 h-10` : notification ? `scale-100 h-2 group-hover:h-6` : `h-6`} `}></span>
                                 </div>
                             )
@@ -119,9 +132,9 @@ const GuildSidebar = ({ children }: { children: ReactNode }) => {
 export default GuildSidebar;
 
 const AddGuildModal: FC<{ close: () => void; set: (bol: boolean) => void; }> = ({ close, set }) => {
-    const userName = useUser(state => state.user.username);
-    const userId = useUser(state => state.user.id);
-    const addGuild = useUser(state => state.addGuild);
+    const userName = useUserStore(state => state.user.username);
+    const userId = useUserStore(state => state.user.id);
+    const addGuild = useUserStore(state => state.addGuild);
 
     const router = useRouter();
 

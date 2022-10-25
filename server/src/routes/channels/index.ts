@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createChannelController, createMessageController, getChannelsController, getMessagesController, joinChannelController, leaveChannelController } from "../../controllers/channels";
+import { createChannelController, createMessageController, getChannelsController, getMessagesController, joinChannelController, leaveChannelController, memberUpdateVoiceController } from "../../controllers/channels";
 import { isAuthenticated } from "../../utils/middlewares";
 
 const router = Router();
@@ -15,5 +15,7 @@ router.post("/create/:type", isAuthenticated, createChannelController);
 router.post("/:id/join", isAuthenticated, joinChannelController);
 
 router.post("/:id/leave", isAuthenticated, leaveChannelController);
+
+router.post("/member/update", isAuthenticated, memberUpdateVoiceController);
 
 export default router;

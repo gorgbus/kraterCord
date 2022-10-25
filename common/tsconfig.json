@@ -3,9 +3,13 @@
   "compilerOptions": {
     "target": "ESNext",
     "useDefineForClassFields": true,
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ESNext"
+    ],
     "allowJs": false,
-    "esModuleInterop": false,
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "module": "ESNext",
     "moduleResolution": "Node",
@@ -15,9 +19,10 @@
     "jsx": "react-jsx",
     "composite": true
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx"
+  "exclude": [
+    "node_modules"
   ],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "references": [
+    { "path": "../desktop-client" }
+  ]
 }

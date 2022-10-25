@@ -1,0 +1,20 @@
+{
+  "name": "@kratercord/common",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "author": "gorgbus",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "@types/react": "18.0.0",
+    "typescript": "4.8.3"
+  },
+  "dependencies": {
+    "react": "18.0.0",
+    "react-query": "^3.39.2",
+    "axios": "^0.27.2",
+    "zustand": "^4.1.1",
+    "mediasoup-client": "^3.6.57",
+    "socket.io-client": "^4.5.2"
+  }
+}

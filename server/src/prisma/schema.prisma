@@ -28,6 +28,8 @@ model User {
     username            String
     avatar              String
     status              StatusType
+    about               String?             @db.VarChar(255)
+    background          String?
     muted               Boolean             @default(false)
     deafen              Boolean             @default(false)
     friend              User?               @relation("friends", fields: [friendId], references: [id])
@@ -39,9 +41,10 @@ model User {
     guilds              Guild[]             @relation("members")
     ownedGuilds         Guild[]             @relation("owned")
     dms                 Channel[]           @relation("dms")
-    voiceChannels       Channel[]           @relation("voice")
+    guildLimit          Int                 @default(1)
     members             Member[]
     messages            Message[]
+    createdAt           DateTime            @default(now())
 
     @@unique([username, hash])
 }
@@ -59,7 +62,7 @@ model FriendsRequest {
 model Guild {
     id                  String              @id @default(uuid())
     name                String
-    avatar              String
+    avatar              String?
     users               User[]              @relation("members")
     owner               User                @relation("owned",fields: [ownerId], references: [id])
     ownerId             String
@@ -69,6 +72,7 @@ model Guild {
     channels            Channel[]           @relation("channels")
     notifications       Notification[]
     invites             Invite[]
+    createdAt           DateTime            @default(now())
 }
 
 model Invite {
@@ -90,7 +94,7 @@ model Channel {
     guildId             String?
     redirectGuild       Guild?              @relation("redirect")
     users               User[]              @relation("dms")
-    members             User[]              @relation("voice")
+    members             Member[]            
     messages            Message[]
     notifications       Notification[]
 }
@@ -101,6 +105,14 @@ model Member {
     userId              String
     guild               Guild               @relation(fields: [guildId], references: [id])
     guildId             String
+    nickname            String?
+    background          String?
+    avatar              String?
+    muted               Boolean             @default(false)
+    deafen              Boolean             @default(false)
+    channels            Channel[]
+    messages            Message[]
+
     
     @@unique([userId, guildId])
 }
@@ -112,6 +124,8 @@ model Message {
     content             String
     channel             Channel             @relation(fields: [channelId], references: [id])
     channelId           String
+    member              Member?             @relation(fields: [memberId], references: [id])
+    memberId            String?
     createdAt           DateTime            @default(now())
     updatedAt           DateTime            @updatedAt
 }

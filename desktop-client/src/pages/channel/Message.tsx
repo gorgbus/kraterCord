@@ -1,7 +1,7 @@
 import { FC } from "react";
 import Img from "react-cool-img";
 import ReactMarkdown from 'react-markdown'
-import { Message } from "../../store/user";
+import { Message } from "@kratercord/common/types";
 
 interface Props {
     msg: Message;

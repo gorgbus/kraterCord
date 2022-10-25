@@ -10,6 +10,7 @@
     "server",
     "web-client",
     "desktop-client",
-    "voice-server"
+    "voice-server",
+    "common"
   ]
 }

@@ -9,6 +9,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@kratercord/common": "1.0.0",
     "@tauri-apps/api": "^1.1.0",
     "form-data": "^4.0.0",
     "mediasoup-client": "^3.6.57",
