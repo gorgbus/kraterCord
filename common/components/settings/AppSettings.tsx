@@ -107,7 +107,7 @@ export const VoiceAndVideo: FC = () => {
     if (!settings) return <div></div>
 
     return (
-        <div className="relative w-[calc(100%-2rem)] h-[calc(100%-1rem)] m-4 mt-0">
+        <div className="relative w-[calc(100%_-_2rem)] h-[calc(100%_-_1rem)] m-4 mt-0">
             <h1 className="text-lg font-semibold text-gray-100">Nastavení hlasu</h1>
 
             <div className="mt-2">

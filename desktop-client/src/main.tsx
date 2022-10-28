@@ -10,7 +10,7 @@ import {
     Outlet,
 } from "react-router-dom";
 
-import HomePage from './pages/home/@me';
+import HomePage from '@kratercord/common/components/home/FriendContent';
 import GuildSidebar from '@kratercord/common/components/layouts/main/GuildSidebar';
 import FriendSidebar from '@kratercord/common/components/layouts/home/FriendSidebar';
 import ChannelSidebar from '@kratercord/common/components/layouts/channel/ChannelSidebar';
@@ -22,6 +22,9 @@ import TitleBar from './components/layouts/main/TitleBar';
 import Login from './pages/Login';
 import NoAccess from './pages/NoAccess';
 import Img from 'react-cool-img';
+import { FC } from 'react';
+import { setApiUrl } from '@kratercord/common/api';
+import { invoke } from '@tauri-apps/api';
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 
@@ -36,11 +39,48 @@ document.onkeydown = (e) => {
 
 document.oncontextmenu = (_e) => false;
 
-const params = useParams();
-const navigate = useNavigate();
+const GuildSidebarWrapper: FC = () => {
+    const navigate = useNavigate();
+    const params = useParams();
+
+    return <GuildSidebar children={<Outlet />} Image={Img} navigate={navigate} params={params} />
+}
+
+const FriendSidebarWrapper: FC = () => {
+    const navigate = useNavigate();
+    const params = useParams();
+
+    return <FriendSidebar children={<Outlet />} Image={Img} navigate={navigate} params={params} />
+}
+
+const ChannelSidebarWrapper: FC = () => {
+    const navigate = useNavigate();
+    const params = useParams();
+
+    return <ChannelSidebar children={<Outlet />} Image={Img} navigate={navigate} params={params} />
+}
+
+const ChannelWrapper: FC<{ dm?: boolean }> = ({ dm }) => {
+    const navigate = useNavigate();
+    const params = useParams();
+
+    return <Channel dm={dm} Image={Img} navigate={navigate} params={params} />
+}
+
+const HomePageWrapper: FC = () => {
+    const navigate = useNavigate();
+
+    return (
+        <div className="bg-gray-700 h-full w-[calc(100vw_-_300px)] mt-12">
+            <HomePage Image={Img} navigate={navigate} />
+        </div>
+    )
+}
+
+invoke("get_api_url").then(url => setApiUrl(url as string));
 
 root.render(
-    <div className="w-screen bg-gray-900">
+    <div className="w-screen h-screen bg-gray-900">
         <QueryClientProvider client={queryClient}>
             <BrowserRouter>
                 <Routes>
@@ -53,15 +93,15 @@ root.render(
 
                         <Route path="app" element={<FetchPage />} />
 
-                        <Route path="channels" element={<GuildSidebar children={<Outlet />} Image={Img} navigate={navigate} params={params} />} >
-                            <Route path="@me" element={<FriendSidebar children={<Outlet />} Image={Img} navigate={navigate} params={params} />} >
-                                <Route index element={<HomePage />} />
-                                <Route path=":channelId" element={<Channel Image={Img} navigate={navigate} params={params} dm={true} />} />
+                        <Route path="channels" element={<GuildSidebarWrapper />} >
+                            <Route path="@me" element={<FriendSidebarWrapper />} >
+                                <Route index element={<HomePageWrapper />} />
+                                <Route path=":channelId" element={<ChannelWrapper dm={true} />} />
                             </Route>
 
                             <Route path=":guildId">
-                                <Route path=":channelId" element={<ChannelSidebar children={<Outlet />} Image={Img} navigate={navigate} params={params} />} >
-                                    <Route index element={<Channel Image={Img} navigate={navigate} params={params} />} />
+                                <Route path=":channelId" element={<ChannelSidebarWrapper />} >
+                                    <Route index element={<ChannelWrapper />} />
                                 </Route>
                             </Route>
                         </Route>
@@ -70,5 +110,4 @@ root.render(
             </BrowserRouter>
         </QueryClientProvider>
     </div>
-
 )

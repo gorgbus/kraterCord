@@ -11,8 +11,6 @@ interface Props extends Optional<BaseProps, "params"> {
     refresh?: boolean
 }
 
-const version = process.env.NEXT_PUBLIC_VERSION;
-
 const LoadingScreen: FC<Props> = ({ Image, navigate, refresh }) => {
     const setUser = useUserStore(state => state.setUser);
     const updateUser = useUserStore(state => state.updateUser);
@@ -21,6 +19,8 @@ const LoadingScreen: FC<Props> = ({ Image, navigate, refresh }) => {
     const setWeb = useSettings(state => state.setWeb);
 
     const { checkSettings } = useUtil();
+
+    const version = process.env.NEXT_PUBLIC_VERSION;
 
     useEffect(() => {
         setWeb(true);

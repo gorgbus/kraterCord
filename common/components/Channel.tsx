@@ -4,6 +4,7 @@ import Message from "./Message";
 import { fetchMessages } from "@kratercord/common/api";
 import useUtil from "@kratercord/common/hooks/useUtil";
 import { BaseProps } from "../types";
+import { useSettings } from "../store/settings";
 
 interface Props extends BaseProps {
     dm?: boolean
@@ -13,6 +14,8 @@ const Channel: FC<Props> = ({ dm, Image, navigate, params }) => {
     const { channelId } = params;
 
     const { isCompact, isLast } = useUtil();
+
+    const web = useSettings(state => state.web);
 
     const { data, fetchNextPage, hasNextPage, isSuccess } = useInfiniteQuery(
         ["channel", channelId],
@@ -44,7 +47,7 @@ const Channel: FC<Props> = ({ dm, Image, navigate, params }) => {
     }
 
     return (
-        <div className={`bg-gray-700 h-[calc(100vh-112px)] ${dm ? `w-[calc(100vw-300px)]` : `w-[calc(100vw-524px)]`} mt-12`}>
+        <div className={`bg-gray-700 ${web ? "h-[calc(100vh_-_112px)]" : "h-[calc(100vh_-_132px)]"} ${dm ? `w-[calc(100vw_-_300px)]` : `w-[calc(100vw_-_524px)]`} mt-12`}>
             <div onScroll={onScroll} onLoad={fetchMore} className="flex flex-col-reverse h-full overflow-scroll overflow-x-hidden scrollbar" >
                 {
                     isSuccess && data.pages.map((group, i) => {

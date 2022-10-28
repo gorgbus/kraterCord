@@ -1,17 +1,18 @@
 import axios, { AxiosError } from "axios";
 import { Channel, ChannelType, FriendsRequest, Guild, Member, Message, Notification, updatedPropertiesType, User } from "./types";
-import { getApiURL } from "@kratercord/desktop-client/src/util";
 
-(process.env.NEXT_PUBLIC_API_URL) ?
-    axios.defaults.baseURL = `${process.env.NEXT_PUBLIC_API_URL}/api`
-:
-    getApiURL().then(url => axios.defaults.baseURL = `${url}/api`);
+export const setApiUrl = (url: string) => {
+    axios.defaults.baseURL = `${url}/api`;
+}
+
 axios.defaults.withCredentials = true;
 
 axios.interceptors.response.use((res) => {
     return res;
 }, (err: AxiosError) => {
     if (err.response?.status !== 403 && err.response?.status !== 401) return Promise.reject(err);
+
+    console.log("more")
 
     window.location.href = '/';
 

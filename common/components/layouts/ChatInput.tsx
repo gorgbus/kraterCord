@@ -1,12 +1,11 @@
-import { useRouter } from "next/router";
 import { FC, MouseEvent, useState } from "react";
 import { useQueryClient } from "react-query";
 import { useUserStore } from "@kratercord/common/store/user";
-import { Channel } from "@kratercord/common/types";
+import { BaseProps, Channel, Optional } from "@kratercord/common/types";
 import { useChannel } from "@kratercord/common/hooks";
 
-const ChatInput: FC = () => {
-    const { guildId, channelId } = useRouter().query;
+const ChatInput: FC<Optional<Optional<BaseProps, "navigate">, "Image">> = ({ params }) => {
+    const { guildId, channelId } = params;
 
     const dms = useUserStore(state => state.user.dms);
     const userId = useUserStore(state => state.user.id);

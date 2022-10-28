@@ -66,7 +66,7 @@ const FriendSidebar: FC<Props> = ({ children, Image, params, navigate }) => {
             <div className="flex flex-col">
                 {children}
 
-                {channelId && <ChatInput />}
+                {channelId && <ChatInput params={params} />}
             </div>
         </div>
     )

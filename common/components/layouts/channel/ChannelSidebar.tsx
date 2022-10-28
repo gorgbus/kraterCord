@@ -128,7 +128,7 @@ const ChannelSidebar: FC<Props> = ({ children, Image, params, navigate }) => {
 
                                                     return (
                                                         <li key={u.id} className='flex items-center justify-between p-1 rounded-md ml-9 w-44 group hover:bg-gray-600' >
-                                                            <div className={`flex items-center ${!u.muted && !u.deafen ? 'w-[calc(100%-4px)]' : u.deafen ? 'w-[calc(100%-36px)]' : 'w-[calc(100%-18px)]'}`}>
+                                                            <div className={`flex items-center ${!u.muted && !u.deafen ? 'w-[calc(100%_-_4px)]' : u.deafen ? 'w-[calc(100%_-_36px)]' : 'w-[calc(100%_-_18px)]'}`}>
                                                                 <Image className={`rounded-full ${talking && voice !== 'none' && !u.muted ? 'border-2 border-green-500 w-6 h-6' : 'w-5 h-5 m-[2px]'}`} width={24} height={24} src={u.avatar || u.user.avatar} alt={u.user.username} />
                                                                 <span className={`ml-2 text-xs w-full whitespace-nowrap text-ellipsis overflow-hidden text-gray-400 group-hover:text-gray-100`}>{u.nickname || u.user.username}</span>
                                                             </div>
@@ -155,7 +155,7 @@ const ChannelSidebar: FC<Props> = ({ children, Image, params, navigate }) => {
             <div className="flex flex-col">
                 {children}
 
-                <ChatInput />
+                <ChatInput params={params} />
             </div>
 
             <MemberSidebar Image={Image} params={params} />

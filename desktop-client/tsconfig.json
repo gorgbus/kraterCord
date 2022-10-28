@@ -13,7 +13,8 @@
     "isolatedModules": true,
     "noEmit": false,
     "jsx": "react-jsx",
-    "composite": true
+    "composite": true,
+    "outDir": "./dist"
   },
   "include": [
     "**/*.ts",

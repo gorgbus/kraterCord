@@ -12,9 +12,10 @@ import { BaseProps, Optional } from "../../../types";
 
 interface Props extends BaseProps {
     children: ReactNode;
+    web?: boolean;
 }
 
-const GuildSidebar: FC<Props> = ({ children, Image, navigate, params }) => {
+const GuildSidebar: FC<Props> = ({ children, Image, navigate, params, web }) => {
     const [modal, setModal] = useState(false);
     const [saving, setSaving] = useState(false);
 
@@ -33,7 +34,7 @@ const GuildSidebar: FC<Props> = ({ children, Image, navigate, params }) => {
     const { isLoading } = useQuery("main", fetchOnLoad, {
         refetchOnWindowFocus: false,
         refetchOnMount: false,
-        enabled: userId === '123',
+        enabled: userId === '123' && web,
         onSuccess: (data) => {
             if (!data) return;
 
@@ -57,7 +58,7 @@ const GuildSidebar: FC<Props> = ({ children, Image, navigate, params }) => {
         document.oncontextmenu = () => false;
     }, []);
 
-    if (isLoading && userId === '123') {
+    if (isLoading && userId === '123' && web) {
         const socket = getSocket();
 
         if (socket) socket.disconnect();
@@ -70,7 +71,7 @@ const GuildSidebar: FC<Props> = ({ children, Image, navigate, params }) => {
             <Sockets params={params} />
 
             <div className="flex flex-col items-center w-[76px] h-full bg-gray-900 relative">
-                <div className="flex flex-col items-center w-full h-[calc(100%-4rem)]">
+                <div className="flex flex-col items-center w-full h-[calc(100%_-_4rem)]">
                     <div onClick={() => navigate("/channels/@me")} className={`transition-all m-1 relative cursor-pointer rounded-[50%] group duration-300 h-14 w-14 hover:bg-blue-500 hover:rounded-2xl ${!guildId ? `rounded-2xl bg-blue-500` : `bg-slate-800`}`} >
                         <span className={`absolute transition-all duration-300 -translate-y-1/2 bg-white rounded-lg -left-[34px] scale-0 group-hover:scale-100 w-7 top-1/2 ${!guildId ? `scale-100 h-10` : `h-6`}`}></span>
                     </div>
@@ -193,7 +194,7 @@ const AddGuildModal: FC<ModalProps> = ({ close, set, Image, navigate }) => {
 
     return (
         <div className="flex flex-col items-center justify-between w-full h-full font-semibold text-gray-800">
-            <div className="w-full h-[calc(100%-3.5rem)] flex items-center flex-col justify-center">
+            <div className="w-full h-[calc(100%_-_3.5rem)] flex items-center flex-col justify-center">
                 {
                     stage === 'main' &&
                     <div onClick={() => setStage('create')} className="flex items-center justify-between w-4/5 p-2 pl-4 pr-4 transition-all border-2 border-gray-300 rounded-md cursor-pointer hover:bg-gray-300 hover:border-gray-400">
