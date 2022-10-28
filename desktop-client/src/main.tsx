@@ -18,7 +18,7 @@ import Channel from '@kratercord/common/components/Channel';
 import FetchPage from './pages/FetchPage';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import SplashScreen from './pages/Splashscreen';
-import TitleBar from './components/layouts/main/TitleBar';
+import TitleBar from './components/TitleBar';
 import Login from './pages/Login';
 import NoAccess from './pages/NoAccess';
 import Img from 'react-cool-img';
