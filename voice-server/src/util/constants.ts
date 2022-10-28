@@ -14,7 +14,7 @@ export const MS_CONFIG = {
         numWorkers: Object.keys(os.cpus()).length,
         worker: {
             rtcMinPort: 10000,
-            rtcMaxPort: 10100,
+            rtcMaxPort: 10500,
             logLevel: "debug",
             logTags: [
                 "info",

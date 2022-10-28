@@ -41,6 +41,7 @@ type State = {
     addTalkingUser: (user: string) => void;
     removeTalkingUser: (user: string) => void;
     setUnsaved: (unsaved: boolean) => void;
+    getDevice: () => Device | undefined;
 }
 
 export const useSettings = create<State>((set, get) => ({
@@ -87,5 +88,6 @@ export const useSettings = create<State>((set, get) => ({
     getDeafen: () => get().deafen,
     getVoiceChannel: () => get().voiceChannel,
     getVoiceGuild: () => get().voiceGuild,
-    setUnsaved: (unsaved) => set({ unsaved })
+    setUnsaved: (unsaved) => set({ unsaved }),
+    getDevice: () => get().device
 }));

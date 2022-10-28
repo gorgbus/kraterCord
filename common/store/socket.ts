@@ -7,6 +7,7 @@ type State = {
     setVoiceSocket: (voiceSocket: Socket) => void; 
     setSocket: (socket: Socket) => void;
     getSocket: () => Socket | undefined;
+    getVoiceSocket: () => Socket | undefined;
 }
 
 export const useSocket = create<State>((set, get) => ({
@@ -19,4 +20,5 @@ export const useSocket = create<State>((set, get) => ({
         socket,
     }),
     getSocket: () => get().socket,
+    getVoiceSocket: () => get().voiceSocket,
 }));

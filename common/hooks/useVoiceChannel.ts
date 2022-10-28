@@ -9,7 +9,7 @@ import useUtil from "../hooks/useUtil";
 const useVoiceChannel = () => {
     const { getSettings } = useUtil();
 
-    const voiceSocket = useSocket(state => state.voiceSocket);
+    const voiceSocket = useSocket(state => state.getVoiceSocket);
     const setVoiceSocket = useSocket(state => state.setVoiceSocket);
     const userId = useUserStore(state => state.user.id);
     const socket = useSocket(state => state.socket);
@@ -20,7 +20,7 @@ const useVoiceChannel = () => {
     const setDevice = useSettings(state => state.setDevice);
     const getMuted = useSettings(state => state.getMuted);
     const getDeafen = useSettings(state => state.getDeafen);
-    const device = useSettings(state => state.device);
+    const getDevice = useSettings(state => state.getDevice);
     const channel = useSettings(state => state.voiceChannel);
     const muted = useSettings(state => state.muted);
     const setProducer = useSettings(state => state.setProducer);
@@ -32,7 +32,7 @@ const useVoiceChannel = () => {
     const removeTalkingUser = useSettings(state => state.removeTalkingUser);
 
     const disconnectSocket = () => {
-        voiceSocket?.disconnect();
+        voiceSocket()?.disconnect();
         setVoiceSocket(undefined!);
     }
 
@@ -40,8 +40,6 @@ const useVoiceChannel = () => {
         const voiceSocket = io(process.env.NEXT_PUBLIC_VOICE_URL!);
 
         setVoiceSocket(voiceSocket);
-
-        console.log('connected to voice channel');
 
         voiceSocket.emit('setup', userId, id, loadDevice);
     }
@@ -67,7 +65,7 @@ const useVoiceChannel = () => {
 
             if (!device) return;
 
-            voiceSocket?.emit('crt_trans', {
+            voiceSocket()?.emit('crt_trans', {
                 rtpCapabilities: device.rtpCapabilities,
                 channel: getVoice(),
                 consumer: false
@@ -82,7 +80,7 @@ const useVoiceChannel = () => {
     }
 
     const getProducers = (_channel: string) => {
-        voiceSocket?.emit('get_producers', (producerIds: { id: string; userId: string; }[]) => {
+        voiceSocket()?.emit('get_producers', (producerIds: { id: string; userId: string; }[]) => {
             producerIds.forEach(({ id, userId }) => {
                 createConsumer(id, userId);
             });
@@ -91,10 +89,14 @@ const useVoiceChannel = () => {
 
     const createProducer = async (data: TransportOptions) => {
         try {
-            if (!device) return;
+            console.log("creating producer");
 
-            const transport = device.createSendTransport(data);
+            if (!getDevice()) return;
+
+            const transport = getDevice()?.createSendTransport(data);
             const settings = getSettings();
+
+            if (!transport) return;
 
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
@@ -114,7 +116,7 @@ const useVoiceChannel = () => {
 
             transport.on('connect', async ({ dtlsParameters }, callback, errback) => {
                 try {
-                    voiceSocket?.emit('con_trans', dtlsParameters, false);
+                    voiceSocket()?.emit('con_trans', dtlsParameters, false);
 
                     callback();
                 } catch (err: any) {
@@ -124,12 +126,12 @@ const useVoiceChannel = () => {
 
             transport.on('produce', async ({ kind, rtpParameters }, callback, errback) => {
                 try {
-                    voiceSocket?.emit('produce', kind, rtpParameters, false, ({ id, producerExists }: { id: string, producerExists: boolean }) => {
+                    voiceSocket()?.emit('produce', kind, rtpParameters, false, ({ id, producerExists }: { id: string, producerExists: boolean }) => {
                         callback({ id });
 
                         setProducer(id);
 
-                        if (muted) voiceSocket.emit('pause', id, true);
+                        if (muted) voiceSocket()?.emit('pause', id, true);
 
                         if (producerExists) return getProducers(channel);
                     });
@@ -156,13 +158,15 @@ const useVoiceChannel = () => {
 
     const createConsumer = async (id: string, userId: string) => {
         try {
-            if (!device) return;
+            if (!getDevice()) return;
 
-            voiceSocket?.emit('crt_trans', { consumer: true }, (data: TransportOptions) => {
-                const transport = device.createRecvTransport(data);
+            voiceSocket()?.emit('crt_trans', { consumer: true }, (data: TransportOptions) => {
+                const transport = getDevice()?.createRecvTransport(data);
+
+                if (!transport) return;
 
                 transport.on('connect', ({ dtlsParameters }, callback) => {
-                    voiceSocket.emit("con_trans", dtlsParameters, true, data.id);
+                    voiceSocket()?.emit("con_trans", dtlsParameters, true, data.id);
 
                     callback();
                 });
@@ -176,9 +180,9 @@ const useVoiceChannel = () => {
 
     const consume = async (transport: Transport, producerId: string, transportId: string, userId: string) => {
         try {
-            if (!device) return;
+            if (!getDevice()) return;
             
-            voiceSocket?.emit('consume', device.rtpCapabilities, producerId, transportId, async ({ id, producerId, kind, rtpParameters }: { id: string; producerId: string; rtpParameters: RtpParameters; kind: MediaKind; }) => {
+            voiceSocket()?.emit('consume', getDevice()?.rtpCapabilities, producerId, transportId, async ({ id, producerId, kind, rtpParameters }: { id: string; producerId: string; rtpParameters: RtpParameters; kind: MediaKind; }) => {
                 const consumer = await transport.consume({ id, producerId, kind, rtpParameters });
 
                 const { track } = consumer;
@@ -200,7 +204,7 @@ const useVoiceChannel = () => {
                     clearInterval(interval);
                 });
 
-                voiceSocket.emit("resume", id);
+                voiceSocket()?.emit("resume", id);
             });
         } catch (err) {
             console.error(err);

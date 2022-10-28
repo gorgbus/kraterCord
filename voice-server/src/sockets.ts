@@ -67,9 +67,11 @@ export const sockets = async (s: Socket) => {
             console.log(error);
         });
     });
+
     s.on("con_trans", async (dtlsParameters, consumer, id?) => {
         getTransport(s.id, consumer, id).connect({ dtlsParameters });
     });
+
     s.on("produce", async (kind, rtpParameters, consumer, callback) => {
         const producer = await getTransport(s.id, consumer).produce({ kind, rtpParameters })
         const { channel } = peers[s.id];
@@ -83,6 +85,7 @@ export const sockets = async (s: Socket) => {
             producerExists: producers.length > 1 ? true : false
         });
     });
+
     s.on("get_producers", (callback) => {
         const { channel } = peers[s.id];
         let producerList: {id: string; userId: string;}[] = [];
@@ -95,6 +98,7 @@ export const sockets = async (s: Socket) => {
 
         callback(producerList);
     });
+
     s.on("consume", async (rtpCapabilities, producerId, transportId, callback) => {
         try {
             const { channel } = peers[s.id];
@@ -131,11 +135,13 @@ export const sockets = async (s: Socket) => {
             console.error(err);
         }
     });
+
     s.on('pause', async (id, pause) => {
         const producer = producers.find(p => p.producer.id === id)?.producer;
 
         pause ? await producer?.pause() : await producer?.resume();
     });
+
     s.on("resume", async (id) => {
         const consumer = consumers.find(c => c.consumer.id === id)?.consumer;
 
