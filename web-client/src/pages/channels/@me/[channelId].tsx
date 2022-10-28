@@ -1,14 +1,22 @@
+import { useRouter } from "next/router";
 import { ReactElement } from "react";
-import FriendSidebar from "../../../components/layouts/home/FriendSidebar";
+import FriendSidebar from "@kratercord/common/components/layouts/home/FriendSidebar";
 import { NextPageWithLayout } from "../../../utils/types";
-import ChannelComponent from '../[guildId]/[channelId]';
+import ChannelComponent from '@kratercord/common/components/Channel';
+import Image from "next/future/image";
 
 const Channel: NextPageWithLayout<any> = () => {
-    return <ChannelComponent dm={true} />
+    const router = useRouter();
+    const navigate = (url: string) => router.push(url);
+
+    return <ChannelComponent params={router.query} Image={Image} navigate={navigate} dm={true} />
 }
 
 Channel.getLayout = (page: ReactElement) => {
-    return <FriendSidebar>{page}</FriendSidebar>
+    const router = useRouter();
+    const navigate = (url: string) => router.push(url);
+
+    return <FriendSidebar params={router.query} Image={Image} navigate={navigate} children={page} />
 }
 
 Channel.app = true;

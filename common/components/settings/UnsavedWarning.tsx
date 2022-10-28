@@ -1,5 +1,5 @@
 import { FC, useEffect } from "react";
-import { LoadingIcon } from "../ui/Icons";
+import { LoadingIcon } from "../Icons";
 import { useSettings } from "@kratercord/common/store/settings";
 
 const UnsavedWarning: FC<{ save: () => Promise<void> | void; discard: () => void; saving: boolean; }> = ({ save, discard, saving }) => {

@@ -5,7 +5,16 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "outDir": "./dist",
+    "rootDir": "./src",
     "isolatedModules": true,
     "esModuleInterop": true,
-  }
+    "composite": true
+  },
+  "exclude": [
+    "node_modules"
+  ],
+  "include": [
+    "./**/*.ts",
+    "./**/*.tsx"
+  ],
 }

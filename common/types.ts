@@ -104,3 +104,11 @@ type WritableKeys<T> = {
 export type updatedPropertiesType<T> = {
     [Property in keyof Pick<T, WritableKeys<T>>]?: T[Property]; 
 }
+
+export type BaseProps = {
+    Image: (props: any) => JSX.Element;
+    params: any;
+    navigate: (url: string) => void;
+}
+
+export type Optional<T, K extends keyof T> = K extends keyof T ? Pick<Partial<T>, K> & Omit<T, K> : T;

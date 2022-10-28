@@ -16,6 +16,8 @@ type State = {
     talkingUsers: string[];
     voiceChannel: string;
     voiceGuild: string;
+    web: boolean;
+    setWeb: (web: boolean) => void;
     setTrack: (track: MediaStreamTrack) => void;
     setVoiceStatus: (status: string) => void;
     setPage: (page: string) => void;
@@ -56,6 +58,8 @@ export const useSettings = create<State>((set, get) => ({
     talkingUsers: [],
     voiceChannel: 'none',
     voiceGuild: 'none',
+    web: false,
+    setWeb: (web: boolean) => set({ web }),
     setTrack: (track: MediaStreamTrack) => set({ track }),
     setVoiceStatus: (status) => set({ voiceStatus: status }),
     setPage: (page: string) => set({ page }),

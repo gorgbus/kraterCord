@@ -22,6 +22,10 @@
   "exclude": [
     "node_modules"
   ],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ],
   "references": [
     { "path": "../desktop-client" }
   ]

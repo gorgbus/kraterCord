@@ -3,11 +3,11 @@ import { useSocket } from "@kratercord/common/store/socket";
 import { useUserStore } from "@kratercord/common/store/user";
 import { useSettings } from "@kratercord/common/store/settings";
 import { createNotfication, deleteNotification } from "@kratercord/common/api";
-import { useRouter } from "next/router";
 import { useChannel, useMember, useUser, useUtil, useVoiceChannel } from "@kratercord/common/hooks";
+import { BaseProps, Optional } from "../../../types";
 
-const Sockets: FC = () => {
-    const { channelId } = useRouter().query;
+const Sockets: FC<Optional<Optional<BaseProps, "Image">, "navigate">> = ({ params }) => {
+    const { channelId } = params;
 
     const socket = useSocket(state => state.socket);
     const voiceSocket = useSocket(state => state.voiceSocket);
@@ -64,12 +64,12 @@ const Sockets: FC = () => {
 
     useEffect(() => {
         if (getVoice() !== 'none')
-            updateVoice({ 
+            updateVoice({
                 muted: getMuted(),
                 deafen: getDeafen(),
                 guildId: voiceGuild,
                 channelId: voice,
-                memberId: userId 
+                memberId: userId
             });
     }, [muted, deafen])
 
@@ -90,7 +90,7 @@ const Sockets: FC = () => {
         });
 
         socket?.on("update_client", (type: string, updateData) => {
-            switch(type) {
+            switch (type) {
                 case "member": {
                     updateMemberSocket(updateData);
 
@@ -112,7 +112,7 @@ const Sockets: FC = () => {
         });
 
         socket?.on("friend_client", (type: string, data) => {
-            switch(type) {
+            switch (type) {
                 case "add": {
                     addFriend(data.user);
                     removeRequest(data.requestId);

@@ -1,16 +1,15 @@
 import { ChangeEvent, Dispatch, FC, MutableRefObject, SetStateAction, useEffect, useRef, useState } from "react";
-import Modal from "../ui/Modal";
+import Modal from "../Modal";
 import { useUserStore } from "@kratercord/common/store/user";
 import useUtil from "@kratercord/common/hooks/useUtil";
 import { uploadFile } from "@kratercord/common/api";
 import ToggleLabel from "./ToggleLabel";
 import UnsavedWarning from "./UnsavedWarning";
-import Image from "next/future/image";
-import ProfileCard from "../ui/ProfileCard";
+import ProfileCard from "@kratercord/common/components/profile/ProfileCard";
 import { useSettings } from "@kratercord/common/store/settings";
-import { AcceptIcon, DropDownIcon } from "../ui/Icons";
+import { AcceptIcon, DropDownIcon } from "../Icons";
 import { useMember, useUser } from "@kratercord/common/hooks";
-import { useRouter } from "next/router";
+import { BaseProps, Optional } from "../../types";
 
 const UserSettings: FC<{ set: Dispatch<SetStateAction<string>>; }> = ({ set }) => {
     const unsaved = useSettings(state => state.unsaved);
@@ -28,7 +27,11 @@ const UserSettings: FC<{ set: Dispatch<SetStateAction<string>>; }> = ({ set }) =
 
 export default UserSettings;
 
-export const Account: FC<{ set: Dispatch<SetStateAction<string>>; }> = ({ set }) => {
+interface AccountProps extends Optional<Optional<BaseProps, "navigate">, "params"> {
+    set: Dispatch<SetStateAction<string>>;
+}
+
+export const Account: FC<AccountProps> = ({ set, Image }) => {
     const username = useUserStore(state => state.user.username);
     const avatar = useUserStore(state => state.user.avatar);
     const banner = useUserStore(state => state.user.background);
@@ -124,8 +127,8 @@ export const Account: FC<{ set: Dispatch<SetStateAction<string>>; }> = ({ set })
     )
 }
 
-export const Profiles: FC = () => {
-    const { channelId } = useRouter().query;
+export const Profiles: FC<Optional<BaseProps, "navigate">> = ({ params, Image }) => {
+    const { channelId } = params;
 
     const userAbout = useUserStore(state => state.user.about);
     const username = useUserStore(state => state.user.username);
@@ -195,7 +198,7 @@ export const Profiles: FC = () => {
         aboutRef.current.value = "";
     }
 
-    const uploadProfileFiles = async () : Promise<{ newBanner?: string; newAvatar?: string; }> => {
+    const uploadProfileFiles = async (): Promise<{ newBanner?: string; newAvatar?: string; }> => {
         let newBanner: string | undefined;
         let newAvatar: string | undefined;
 
@@ -245,7 +248,7 @@ export const Profiles: FC = () => {
 
         const voiceChannelId = member?.channels[0].id;
 
-        updateMember(selectedGuild.id, member?.id!, { 
+        updateMember(selectedGuild.id, member?.id!, {
             background: removedBanner ? null! : newBanner,
             avatar: removedAvatar ? null! : newAvatar,
             nickname: nickname?.length! < 1 ? null! : nickname
@@ -263,7 +266,7 @@ export const Profiles: FC = () => {
     return (
         <div className="relative m-4 mt-0 h-[calc(100%-1rem)]">
             <h1 className="text-lg font-semibold text-gray-100">Profily</h1>
-            
+
             <div className="w-full border-b-[1px] h-12 border-gray-500 flex items-center font-semibold mb-4">
                 <button disabled={unsaved} onClick={() => selectProfile("user")} className={`h-full text-gray-300 ${profile === "user" ? "border-blue-400 border-b-[1px] cursor-default text-gray-100" : "hover:border-blue-600 hover:border-b-[1px] hover:text-gray-200"}`}>Uživatelský profil</button>
                 {guilds.length > 0 && <button disabled={unsaved} onClick={() => selectProfile("server")} className={`h-full ml-4 text-gray-300 ${profile === "server" ? "border-blue-400 border-b-[1px] cursor-default text-gray-100" : "hover:border-blue-600 hover:border-b-[1px] hover:text-gray-200"}`}>Profily serverů</button>}
@@ -303,16 +306,16 @@ export const Profiles: FC = () => {
                         <div>
                             <h3 className="text-xs font-semibold text-gray-400 uppercase">náhled</h3>
 
-                            <ProfileCard close={() => {}} customClass="mt-2" user={{ username, hash, avatar: removedAvatar ? undefined : profileAvatar || userAvatar, about: about || "", banner: removedBanner ? undefined : background || userBanner }} />
+                            <ProfileCard Image={Image} close={() => { }} customClass="mt-2" user={{ username, hash, avatar: removedAvatar ? undefined : profileAvatar || userAvatar, about: about || "", banner: removedBanner ? undefined : background || userBanner }} />
                         </div>
                     </div>
-                :
+                    :
                     <>
                         <h3 className="text-xs font-semibold text-gray-400 uppercase">vyber si server</h3>
                         <div className={`relative mt-1 flex items-center justify-between w-full p-2 bg-gray-900 cursor-pointer h-9 ${dropDown ? 'rounded-t-md' : 'rounded-md'}`} onClick={() => toggleDropDown(prev => !prev)}>
                             <span className="text-sm font-semibold text-gray-100">{selectedGuild.name}</span>
                             <DropDownIcon color={`text-gray-100 ${dropDown && 'rotate-180'}`} size="20" />
-                        
+
                             <div className={`absolute flex z-50 flex-col items-center top-full left-0 w-full rounded-b-md bg-gray-600 ${dropDown ? 'block' : 'hidden'}`}>
                                 {
                                     guilds.map((guild, i, arr) => {
@@ -324,9 +327,9 @@ export const Profiles: FC = () => {
                                                 <span className="w-10/12 text-sm font-semibold text-gray-100">{guild.name}</span>
                                                 {
                                                     selected &&
-                                                        <div className="flex items-center justify-center w-5 h-5 bg-blue-500 rounded-full">
-                                                            <AcceptIcon size="14" color="text-gray-100" />
-                                                        </div>
+                                                    <div className="flex items-center justify-center w-5 h-5 bg-blue-500 rounded-full">
+                                                        <AcceptIcon size="14" color="text-gray-100" />
+                                                    </div>
                                                 }
                                             </div>
                                         )
@@ -375,7 +378,7 @@ export const Profiles: FC = () => {
                             <div>
                                 <h3 className="text-xs font-semibold text-gray-400 uppercase">náhled pro {selectedGuild.name}</h3>
 
-                                <ProfileCard close={() => {}} customClass="mt-2 float-right" preview={true} member={member} user={{ username, hash, avatar: removedAvatar ? undefined : profileAvatar!, about: about || "", banner: removedBanner ? undefined : background, nickname }} />
+                                <ProfileCard Image={Image} close={() => { }} customClass="mt-2 float-right" preview={true} member={member} user={{ username, hash, avatar: removedAvatar ? undefined : profileAvatar!, about: about || "", banner: removedBanner ? undefined : background, nickname }} />
                             </div>
                         </div>
                     </>
@@ -388,7 +391,7 @@ export const Profiles: FC = () => {
 }
 
 export const Requests: FC = () => {
-    const { getSettings } = useUtil(); 
+    const { getSettings } = useUtil();
 
     const settings = getSettings();
 

@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { Channel, ChannelType, FriendsRequest, Guild, Member, Message, Notification, updatedPropertiesType, User } from "./types";
-import { getApiURL } from "@kratercord/desktop-client/src/utils";
+import { getApiURL } from "@kratercord/desktop-client/src/util";
 
 (process.env.NEXT_PUBLIC_API_URL) ?
     axios.defaults.baseURL = `${process.env.NEXT_PUBLIC_API_URL}/api`

@@ -1,15 +1,14 @@
-import Image from "next/future/image";
 import { FC, useEffect, useState } from "react";
 import { useQueryClient } from "react-query";
 import Settings from "../settings/Settings";
 import { useSettings } from "@kratercord/common/store/settings";
 // import { useSocket } from "@kratercord/common/store/socket";
 import { useUserStore } from "@kratercord/common/store/user";
-import { Channel } from "@kratercord/common/types";
+import { BaseProps, Channel } from "@kratercord/common/types";
 import { useChannel, useVoiceChannel } from "@kratercord/common/hooks";
-import { ConnectionIcon, DeafenHeadphoneIcon, HeadphoneIcon, LeaveCallIcon, MicIcon, MutedMicIcon, SettingsIcon } from "../ui/Icons";
+import { ConnectionIcon, DeafenHeadphoneIcon, HeadphoneIcon, LeaveCallIcon, MicIcon, MutedMicIcon, SettingsIcon } from "../Icons";
 
-const UserProfile: FC = () => {
+const UserProfile: FC<BaseProps> = ({ Image, navigate, params }) => {
     const openSettings = useSettings(state => state.openSettings);
     const open = useSettings(state => state.open);
     const avatar = useUserStore(state => state.user.avatar);
@@ -107,7 +106,7 @@ const UserProfile: FC = () => {
 
     useEffect(() => {
         if (!leaving && voiceStatus !== 'disconnected') return;
-        
+
         setProducer('none');
         setVoice('none');
         setVoiceGuild('none');
@@ -126,20 +125,20 @@ const UserProfile: FC = () => {
         <div className={`flex flex-col w-full bg-gray-850 ${voice === 'none' ? 'h-12' : 'h-24'}`}>
             {
                 voice !== 'none' &&
-                    <div className="h-12 border-b-[1px] border-b-gray-600 flex items-center w-full justify-between">
-                        <div className="flex flex-col m-2">
-                            <div className="flex items-start">
-                                <ConnectionIcon size="16" color={`${voiceStatusColor(voiceStatus)} mr-1`} />
-                                <span className={`text-sm font-semibold ${voiceStatusColor(voiceStatus)}`}>{voiceStatusText(voiceStatus)}</span>
-                            </div>
-
-                            <span className="w-40 overflow-hidden text-xs text-gray-400 whitespace-nowrap text-ellipsis">{voiceChannel?.name}/{voiceGuild?.name}</span>
+                <div className="h-12 border-b-[1px] border-b-gray-600 flex items-center w-full justify-between">
+                    <div className="flex flex-col m-2">
+                        <div className="flex items-start">
+                            <ConnectionIcon size="16" color={`${voiceStatusColor(voiceStatus)} mr-1`} />
+                            <span className={`text-sm font-semibold ${voiceStatusColor(voiceStatus)}`}>{voiceStatusText(voiceStatus)}</span>
                         </div>
 
-                        <div onClick={disconnect} className="m-2 icons group">
-                            <LeaveCallIcon size='20' color='text-gray-400 group-hover:text-gray-100' />
-                        </div>
+                        <span className="w-40 overflow-hidden text-xs text-gray-400 whitespace-nowrap text-ellipsis">{voiceChannel?.name}/{voiceGuild?.name}</span>
                     </div>
+
+                    <div onClick={disconnect} className="m-2 icons group">
+                        <LeaveCallIcon size='20' color='text-gray-400 group-hover:text-gray-100' />
+                    </div>
+                </div>
             }
 
             <div className="flex items-center justify-between w-full h-12">
@@ -159,7 +158,7 @@ const UserProfile: FC = () => {
                     </div>
 
                     <div onClick={toggleDeafen} className="icons group">
-                        {deafen ? <DeafenHeadphoneIcon size='18' color='text-gray-400 group-hover:text-gray-100' strikeColor='text-red-500' /> : <HeadphoneIcon size='18' color='text-gray-400 group-hover:text-gray-100' />} 
+                        {deafen ? <DeafenHeadphoneIcon size='18' color='text-gray-400 group-hover:text-gray-100' strikeColor='text-red-500' /> : <HeadphoneIcon size='18' color='text-gray-400 group-hover:text-gray-100' />}
                     </div>
 
                     <div onClick={openSettings} className="icons group">
@@ -167,7 +166,7 @@ const UserProfile: FC = () => {
                     </div>
                 </div>
 
-                {open && <Settings />}
+                {open && <Settings params={params} Image={Image} navigate={navigate} />}
             </div>
         </div>
     )

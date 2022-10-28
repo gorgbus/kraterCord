@@ -1,14 +1,12 @@
-import Image from "next/future/image";
-import { useRouter } from "next/router";
 import { FC, Fragment, ReactElement, useState, MouseEvent } from "react";
-import { AcceptIcon, CloseIcon, MessageIcon } from "../ui/Icons";
+import { AcceptIcon, CloseIcon, MessageIcon } from "../Icons";
 import { useSettings } from "@kratercord/common/store/settings";
 import { useSocket } from "@kratercord/common/store/socket";
 import { useUserStore } from "@kratercord/common/store/user";
-import { FriendsRequest, User } from "@kratercord/common/types";
+import { BaseProps, FriendsRequest, Optional, User } from "@kratercord/common/types";
 import { acceptFriend, createChannel, declineFriend, removeFriendApi, sendFriendRequest } from "@kratercord/common/api";
 
-const FriendContent: FC = () => {
+const FriendContent: FC<Optional<BaseProps, "params">> = ({ Image, navigate }) => {
     const page = useSettings(state => state.page);
 
     type Options = {
@@ -16,9 +14,9 @@ const FriendContent: FC = () => {
     }
 
     const options: Options = {
-        "Online": <Friends online={true} />,
-        "Vše": <Friends />,
-        "Nevyřízeno": <Reqs />,
+        "Online": <Friends navigate={navigate} Image={Image} online={true} />,
+        "Vše": <Friends navigate={navigate} Image={Image} />,
+        "Nevyřízeno": <Reqs navigate={navigate} Image={Image} />,
         "add": <AddFriend />
     }
 
@@ -42,7 +40,7 @@ const AddFriend: FC = () => {
         const username = content.slice(0, content.length - 5);
 
         setContent("");
-        
+
         const res = await sendFriendRequest(userId, username, hash);
 
         if (!res) return setMsg(["Něco se nepovedlo", '500']);
@@ -83,7 +81,13 @@ const AddFriend: FC = () => {
     )
 }
 
-const UserComponent: FC<{ friend: User; req?: FriendsRequest; reqType?: string; }> = ({ friend, req, reqType }) => {
+interface UserProps extends Optional<BaseProps, "params"> {
+    friend: User;
+    req?: FriendsRequest;
+    reqType?: string;
+}
+
+const UserComponent: FC<UserProps> = ({ friend, req, reqType, navigate, Image }) => {
     const userId = useUserStore(state => state.user.id);
     const dms = useUserStore(state => state.user.dms);
     const addDM = useUserStore(state => state.addDM);
@@ -91,8 +95,6 @@ const UserComponent: FC<{ friend: User; req?: FriendsRequest; reqType?: string; 
     const removeRequest = useUserStore(state => state.removeRequest);
     const removeFriend = useUserStore(state => state.removeFriend);
     const socket = useSocket(state => state.socket);
-
-    const router = useRouter();
 
     const decline = async () => {
         const requestId = await declineFriend(req?.id!);
@@ -113,7 +115,7 @@ const UserComponent: FC<{ friend: User; req?: FriendsRequest; reqType?: string; 
 
             socket?.emit("friend", "remove", friendId, userId);
         }
-    } 
+    }
 
     const accept = async () => {
         const res = await acceptFriend(req?.id!, userId, friend.id);
@@ -134,14 +136,14 @@ const UserComponent: FC<{ friend: User; req?: FriendsRequest; reqType?: string; 
     const openDM = async () => {
         const dm = dms.find(dm => dm.users[0].id === friend.id || dm.users[1].id === friend.id);
 
-        if (dm) return router.push(`/channels/@me/${dm.id}`);
+        if (dm) return navigate(`/channels/@me/${dm.id}`);
 
         const newDM = await createChannel([{ id: userId }, { id: friend.id }], 'DM', 'dm channel');
 
         if (newDM) {
             addDM(newDM);
 
-            router.push(`/channels/@me/${newDM.id}`);
+            navigate(`/channels/@me/${newDM.id}`);
         }
     }
 
@@ -158,9 +160,9 @@ const UserComponent: FC<{ friend: User; req?: FriendsRequest; reqType?: string; 
                         <span className="ml-2 text-sm font-bold text-gray-100">{friend.username}</span>
                         <span className="hidden text-sm font-semibold text-gray-400 group-hover:block">#{friend.hash}</span>
                     </div>
-                    
+
                     {req && <p className="ml-2 text-xs font-semibold text-gray-400">{reqType === 'out' ? 'Odchozí žádost o přátelství' : 'Příchozí žádost o přátelství'}</p>}
-                    {!req && <p className="ml-2 text-xs font-semibold text-gray-400 lowercase first-letter:uppercase">{friend.status}</p> }
+                    {!req && <p className="ml-2 text-xs font-semibold text-gray-400 lowercase first-letter:uppercase">{friend.status}</p>}
                 </div>
             </div>
 
@@ -185,7 +187,7 @@ const UserComponent: FC<{ friend: User; req?: FriendsRequest; reqType?: string; 
     )
 }
 
-const Reqs: FC = () => {
+const Reqs: FC<Optional<BaseProps, "params">> = ({ navigate, Image }) => {
     const user = useUserStore(state => state.user);
 
     const requests = [...user.incomingFriendReqs, ...user.outgoingFriendReqs];
@@ -201,7 +203,7 @@ const Reqs: FC = () => {
 
                     return (
                         <Fragment key={i}>
-                            <UserComponent friend={requester} req={request} reqType={type} />
+                            <UserComponent navigate={navigate} Image={Image} friend={requester} req={request} reqType={type} />
                         </Fragment>
                     )
                 })
@@ -210,7 +212,11 @@ const Reqs: FC = () => {
     )
 }
 
-const Friends: FC<{ online?: boolean }> = ({ online }) => {
+interface FriendProps extends Optional<BaseProps, "params"> {
+    online?: boolean;
+}
+
+const Friends: FC<FriendProps> = ({ online, Image, navigate }) => {
     const friends = useUserStore(state => state.user.friends);
 
     const filteredFriends = friends.filter(friend => online ? friend.status === 'ONLINE' : friend);
@@ -223,7 +229,7 @@ const Friends: FC<{ online?: boolean }> = ({ online }) => {
                 filteredFriends.map((friend, i) => {
                     return (
                         <Fragment key={i}>
-                            <UserComponent friend={friend} />
+                            <UserComponent navigate={navigate} Image={Image} friend={friend} />
                         </Fragment>
                     )
                 })

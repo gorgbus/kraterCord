@@ -1,8 +1,22 @@
-import Image from "next/future/image";
 import { FC, MutableRefObject, useEffect, useRef } from "react";
-import { Member } from "@kratercord/common/types";
+import { BaseProps, Member, Optional } from "../../types";
 
-const ProfileCard: FC<{ preview?: boolean; customClass?: string;  close: () => void; member?: Member; user?: { username: string; hash: string; about: string; avatar?: string; banner?: string; nickname?: string; }; }> = ({ close, member, user, customClass, preview }) => {
+interface Props extends Optional<Optional<BaseProps, "params">, "navigate"> {
+    preview?: boolean;
+    customClass?: string;
+    close: () => void;
+    member?: Member;
+    user?: {
+        username: string;
+        hash: string;
+        about: string;
+        avatar?: string;
+        banner?: string;
+        nickname?: string;
+    }
+}
+
+const ProfileCard: FC<Props> = ({ close, member, user, customClass, preview, Image }) => {
     const profileRef = useRef() as MutableRefObject<HTMLDivElement>;
 
     const closeProfile = (e: any) => {
@@ -38,7 +52,7 @@ const ProfileCard: FC<{ preview?: boolean; customClass?: string;  close: () => v
                     {
                         (!(preview && !user?.nickname) && (member?.nickname || user?.nickname)) ?
                             <span className="text-gray-100">{user?.nickname || member?.nickname}</span>
-                        :
+                            :
                             <>
                                 <span className="text-gray-100">{member?.user.username || user?.username}</span>
                                 <span className="text-gray-400">#{member?.user.hash || user?.hash}</span>

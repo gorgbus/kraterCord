@@ -1,6 +1,6 @@
 import { FC } from "react";
 import { useSettings } from "@kratercord/common/store/settings";
-import { FriendIcon } from "../../ui/Icons";
+import { FriendIcon } from "../../Icons";
 
 const FriendBar: FC = () => {
     const page = useSettings(state => state.page);

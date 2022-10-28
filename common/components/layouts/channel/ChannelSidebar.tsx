@@ -1,23 +1,24 @@
 import { FC, ReactElement, ReactNode, useEffect, useState } from "react";
 import ChannelBar from "./ChannelBar";
 import ChatInput from "../ChatInput";
-import MemberSidebar from "./MemberSidebar";
 import UserProfile from "../UserProfile";
-import { ChannelIcon, CloseIcon, DeafenHeadphoneIcon, DropDownIcon, InviteIcon, LoadingIcon, MutedMicIcon, SettingsIcon, VoiceChannelIcon } from "../../ui/Icons";
+import { ChannelIcon, CloseIcon, DeafenHeadphoneIcon, DropDownIcon, InviteIcon, LoadingIcon, MutedMicIcon, SettingsIcon, VoiceChannelIcon } from "../../Icons";
 import { useUserStore } from "@kratercord/common/store/user";
 import { useSocket } from "@kratercord/common/store/socket";
 import { useSettings } from "@kratercord/common/store/settings";
 import { useQuery } from "react-query";
 import { fetchChannels, getGuildInvite, createMessage, createChannel } from "@kratercord/common/api";
-import Modal from '../../ui/Modal';
-import { useRouter } from "next/router";
-import Image from "next/future/image";
-import { Member } from "@kratercord/common/types";
+import Modal from '../../Modal';
+import { BaseProps, Member, Optional } from "@kratercord/common/types";
 import { useChannel, useVoiceChannel } from "@kratercord/common/hooks";
+import MemberSidebar from "./MemberSidebar";
 
-const ChannelSidebar = ({ children }: { children: ReactElement }) => {
-    const router = useRouter();
-    const { guildId, channelId } = router.query;
+interface Props extends BaseProps {
+    children: ReactElement
+}
+
+const ChannelSidebar: FC<Props> = ({ children, Image, params, navigate }) => {
+    const { guildId, channelId } = params;
 
     const notifications = useUserStore(state => state.user.notifications);
     const guilds = useUserStore(state => state.user.guilds);
@@ -46,7 +47,7 @@ const ChannelSidebar = ({ children }: { children: ReactElement }) => {
 
         setVoice(id);
         setVoiceGuild(guildId as string);
-        
+
         joinChannelUser({
             channelId: id,
             deafen: getDeafen(),
@@ -61,7 +62,7 @@ const ChannelSidebar = ({ children }: { children: ReactElement }) => {
     return (
         <div className="flex w-full h-full">
             <div className="relative flex flex-col w-56 h-full bg-gray-800 rounded-tl-md">
-                <ChannelBar />
+                <ChannelBar params={params} />
 
                 <div onClick={() => showSettings(prev => !prev)} className={`${guildSettings ? 'bg-gray-600' : 'bg-gray-800'} font-bold rounded-tl-md fixed uppercase border-b-[1px] border-gray-900 flex items-center justify-center w-56 h-12 hover:bg-gray-600 cursor-pointer transition-all`}>
                     <div className="flex items-center justify-between w-52">
@@ -76,79 +77,79 @@ const ChannelSidebar = ({ children }: { children: ReactElement }) => {
 
                 {
                     invite &&
-                        <Modal close={() => openInvite(false)} size="w-96" content={<InviteModal />} />
+                    <Modal close={() => openInvite(false)} size="w-96" content={<InviteModal Image={Image} params={params} />} />
                 }
 
                 <div className="w-full mt-12 h-[calc(100%_-_96px)] overflow-scroll overflow-x-hidden bg-gray-800 thin-scrollbar">
                     <div className="flex flex-col items-center">
                         {
                             isLoading &&
-                                <span>loading...</span>
+                            <span>loading...</span>
                         }
 
                         {
                             isError &&
-                                <span>error</span>
+                            <span>error</span>
                         }
 
                         {
                             isSuccess && data &&
-                                data.filter(ch => ch.guildId === guildId && ch.type === 'TEXT').map((ch) => {
-                                    const notification = notifications.find(n => n.channelId === ch.id);
+                            data.filter(ch => ch.guildId === guildId && ch.type === 'TEXT').map((ch) => {
+                                const notification = notifications.find(n => n.channelId === ch.id);
 
-                                    return (
-                                        <div key={ch.id} onClick={() => router.push(`/channels/${guildId}/${ch.id}`)} className={`${channelId === ch.id ? `bg-gray-500 cursor-pointer text-gray-100` : notification ? `font-semibold text-gray-100` : `text-gray-300`} relative item ml-1 hover:text-gray-100`} >
-                                            <ChannelIcon size='20' color="text-gray-300" />
-                                            <span className="ml-2">{ch.name}</span>
-                                            {notification && channelId !== ch.id && <span className="absolute w-2 h-2 -translate-y-1/2 bg-white rounded-lg top-1/2 -left-[11px]"></span>}
-                                        </div>
-                                    )
-                                })
+                                return (
+                                    <div key={ch.id} onClick={() => navigate(`/channels/${guildId}/${ch.id}`)} className={`${channelId === ch.id ? `bg-gray-500 cursor-pointer text-gray-100` : notification ? `font-semibold text-gray-100` : `text-gray-300`} relative item ml-1 hover:text-gray-100`} >
+                                        <ChannelIcon size='20' color="text-gray-300" />
+                                        <span className="ml-2">{ch.name}</span>
+                                        {notification && channelId !== ch.id && <span className="absolute w-2 h-2 -translate-y-1/2 bg-white rounded-lg top-1/2 -left-[11px]"></span>}
+                                    </div>
+                                )
+                            })
                         }
 
-                        {   
+                        {
                             isSuccess && data &&
-                                data.filter(ch => ch.guildId === guildId && ch.type === 'VOICE').map((ch) => {
-                                    const user = ch.members?.find(user => user.id === member?.id);
-                                    const channelIndex = data.findIndex(c => c.id === ch.id);
-                                    const channelMembers = data[channelIndex].members
+                            data.filter(ch => ch.guildId === guildId && ch.type === 'VOICE').map((ch) => {
+                                const user = ch.members?.find(user => user.id === member?.id);
+                                const channelIndex = data.findIndex(c => c.id === ch.id);
+                                const channelMembers = data[channelIndex].members
 
-                                    return (
-                                        <div key={ch.id} className="flex flex-col">
-                                            <div onClick={() => join(ch.id, user)} key={ch.id} className={`${voice === ch.id || user ? 'cursor-not-allowed' : 'cursor-pointer'} relative item ml-1 text-gray-300 hover:text-gray-100`} >
-                                                <VoiceChannelIcon size='20' color="text-gray-300" />
-                                                <span className="ml-2">{ch.name}</span>
-                                            </div>
-
-                                            <ul>
-                                                {
-                                                    channelMembers?.map((u) => {
-                                                        const talking = talkingUsers.find(id => id === u.id);
-
-                                                        return (
-                                                            <li key={u.id} className='flex items-center justify-between p-1 rounded-md ml-9 w-44 group hover:bg-gray-600' >
-                                                                <div className={`flex items-center ${!u.muted && !u.deafen ? 'w-[calc(100%-4px)]' : u.deafen ? 'w-[calc(100%-36px)]' : 'w-[calc(100%-18px)]'}`}>
-                                                                    <Image className={`rounded-full ${talking && voice !== 'none' && !u.muted ? 'border-2 border-green-500 w-6 h-6' : 'w-5 h-5 m-[2px]'}`} width={24} height={24} src={u.avatar || u.user.avatar} alt={u.user.username} />
-                                                                    <span className={`ml-2 text-xs w-full whitespace-nowrap text-ellipsis overflow-hidden text-gray-400 group-hover:text-gray-100`}>{u.nickname || u.user.username}</span>
-                                                                </div>
-
-                                                                <div className="flex items-center">
-                                                                    {u.muted && <MutedMicIcon size="14" color="text-gray-400 ml-1" strikeColor="text-gray-400" />}
-                                                                    {u.deafen && <DeafenHeadphoneIcon size="14" color="text-gray-400 ml-1" strikeColor="text-gray-400"/>}
-                                                                </div>
-                                                            </li>
-                                                        )
-                                                    })
-                                                }
-                                            </ul>
+                                return (
+                                    <div key={ch.id} className="flex flex-col">
+                                        <div onClick={() => join(ch.id, user)} key={ch.id} className={`${voice === ch.id || user ? 'cursor-not-allowed' : 'cursor-pointer'} relative item ml-1 text-gray-300 hover:text-gray-100`} >
+                                            <VoiceChannelIcon size='20' color="text-gray-300" />
+                                            <span className="ml-2">{ch.name}</span>
                                         </div>
-                                    )
-                                })
+
+                                        <ul>
+                                            {
+                                                channelMembers?.map((u) => {
+                                                    const talking = talkingUsers.find(id => id === u.id);
+
+                                                    return (
+                                                        <li key={u.id} className='flex items-center justify-between p-1 rounded-md ml-9 w-44 group hover:bg-gray-600' >
+                                                            <div className={`flex items-center ${!u.muted && !u.deafen ? 'w-[calc(100%-4px)]' : u.deafen ? 'w-[calc(100%-36px)]' : 'w-[calc(100%-18px)]'}`}>
+                                                                <Image className={`rounded-full ${talking && voice !== 'none' && !u.muted ? 'border-2 border-green-500 w-6 h-6' : 'w-5 h-5 m-[2px]'}`} width={24} height={24} src={u.avatar || u.user.avatar} alt={u.user.username} />
+                                                                <span className={`ml-2 text-xs w-full whitespace-nowrap text-ellipsis overflow-hidden text-gray-400 group-hover:text-gray-100`}>{u.nickname || u.user.username}</span>
+                                                            </div>
+
+                                                            <div className="flex items-center">
+                                                                {u.muted && <MutedMicIcon size="14" color="text-gray-400 ml-1" strikeColor="text-gray-400" />}
+                                                                {u.deafen && <DeafenHeadphoneIcon size="14" color="text-gray-400 ml-1" strikeColor="text-gray-400" />}
+                                                            </div>
+                                                        </li>
+                                                    )
+                                                })
+                                            }
+                                        </ul>
+                                    </div>
+                                )
+                            })
                         }
                     </div>
                 </div>
 
-                <UserProfile />
+                <UserProfile params={params} navigate={navigate} Image={Image} />
             </div>
 
             <div className="flex flex-col">
@@ -156,8 +157,8 @@ const ChannelSidebar = ({ children }: { children: ReactElement }) => {
 
                 <ChatInput />
             </div>
-            
-            <MemberSidebar />
+
+            <MemberSidebar Image={Image} params={params} />
         </div>
     )
 }
@@ -170,8 +171,8 @@ const GuildSettings: FC<{ hide: () => void; openInvite: () => void; }> = ({ hide
     return (
         <div className="absolute z-10 bg-gray-900 left-[7px] top-12 mt-1 w-52 rounded-md text-gray-300 flex items-center justify-center">
             <div className="flex flex-col w-48 last:mb-2">
-                <SettingOption onClick={() => {openInvite(); hide()}} title="Pozvat lidi" titleStyle="text-blue-500" icon={<InviteIcon size="16" color="text-blue-500 group-hover:text-gray-100" />} />
-                <SettingOption onClick={() => {}/*openSettings(true)*/} title="Nastavení serveru" icon={<SettingsIcon size="16" color="text-gray-300 group-hover:text-gray-100" />} />
+                <SettingOption onClick={() => { openInvite(); hide() }} title="Pozvat lidi" titleStyle="text-blue-500" icon={<InviteIcon size="16" color="text-blue-500 group-hover:text-gray-100" />} />
+                <SettingOption onClick={() => { }/*openSettings(true)*/} title="Nastavení serveru" icon={<SettingsIcon size="16" color="text-gray-300 group-hover:text-gray-100" />} />
             </div>
         </div>
     )
@@ -186,8 +187,8 @@ const SettingOption: FC<{ title: string; titleStyle?: string; icon: ReactNode; o
     )
 }
 
-const InviteModal: FC = () => {
-    const { guildId } = useRouter().query;
+const InviteModal: FC<Optional<BaseProps, "navigate">> = ({ params, Image }) => {
+    const { guildId } = params;
 
     const friends = useUserStore(state => state.user.friends);
     const guilds = useUserStore(state => state.user.guilds);
@@ -251,24 +252,24 @@ const InviteModal: FC = () => {
 
             {
                 friends.length > 0 &&
-                    <div className="w-full border-t-[1px] border-b-[1px] mt-2 max-h-32 border-t-gray-800 border-b-gray-800 flex flex-col overflow-y-scroll overflow-x-hidden thin-scrollbar">
-                        {
-                            friends.map((friend, i) => {
-                                const user = send.find(user => user.friendId === friend.id);
+                <div className="w-full border-t-[1px] border-b-[1px] mt-2 max-h-32 border-t-gray-800 border-b-gray-800 flex flex-col overflow-y-scroll overflow-x-hidden thin-scrollbar">
+                    {
+                        friends.map((friend, i) => {
+                            const user = send.find(user => user.friendId === friend.id);
 
-                                return (
-                                    <div className="flex items-center justify-between p-1 m-1 ml-2 rounded group hover:bg-gray-600" key={i}>
-                                        <div className="flex items-center w-[90%] h-12 ml-2">
-                                            <Image src={friend.avatar} alt={friend.username} width={32} height={32} className="rounded-full" />
-                                            <span className="ml-2 font-semibold text-gray-100">{friend.username}</span>
-                                        </div>
-
-                                        <button onClick={() => sendInvite(friend.id)} disabled={code.length === 0 || !!user} className={`${user && !user.sending ? 'text-gray-300' : 'border-green-600 border-2 group-hover:bg-green-600 group-hover:border-green-600 hover:bg-green-700 hover:border-green-700 text-gray-100'} pl-1 pr-1 mr-2 bg-transparent rounded disabled:cursor-not-allowed `}>{user ? user.sending ? <LoadingIcon size="16" color="text-gray-300" /> : 'Odesláno' : 'Pozvat'}</button>
+                            return (
+                                <div className="flex items-center justify-between p-1 m-1 ml-2 rounded group hover:bg-gray-600" key={i}>
+                                    <div className="flex items-center w-[90%] h-12 ml-2">
+                                        <Image src={friend.avatar} alt={friend.username} width={32} height={32} className="rounded-full" />
+                                        <span className="ml-2 font-semibold text-gray-100">{friend.username}</span>
                                     </div>
-                                )
-                            })
-                        }
-                    </div>
+
+                                    <button onClick={() => sendInvite(friend.id)} disabled={code.length === 0 || !!user} className={`${user && !user.sending ? 'text-gray-300' : 'border-green-600 border-2 group-hover:bg-green-600 group-hover:border-green-600 hover:bg-green-700 hover:border-green-700 text-gray-100'} pl-1 pr-1 mr-2 bg-transparent rounded disabled:cursor-not-allowed `}>{user ? user.sending ? <LoadingIcon size="16" color="text-gray-300" /> : 'Odesláno' : 'Pozvat'}</button>
+                                </div>
+                            )
+                        })
+                    }
+                </div>
             }
 
             <div className="w-[90%] mt-2 mb-4">

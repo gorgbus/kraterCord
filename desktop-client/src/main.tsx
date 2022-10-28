@@ -2,22 +2,26 @@ import ReactDOM from 'react-dom/client';
 import './styles/index.css';
 
 import {
-  BrowserRouter,
-  Routes,
-  Route,
+    BrowserRouter,
+    Routes,
+    Route,
+    useParams,
+    useNavigate,
+    Outlet,
 } from "react-router-dom";
 
 import HomePage from './pages/home/@me';
-import GuildSidebar from './components/layouts/main/GuildSidebar';
-import FriendSidebar from './components/layouts/home/FriendSidebar';
-import ChannelSidebar from './components/layouts/channel/ChannelSidebar';
-import Channel from './pages/channel/Channel';
+import GuildSidebar from '@kratercord/common/components/layouts/main/GuildSidebar';
+import FriendSidebar from '@kratercord/common/components/layouts/home/FriendSidebar';
+import ChannelSidebar from '@kratercord/common/components/layouts/channel/ChannelSidebar';
+import Channel from '@kratercord/common/components/Channel';
 import FetchPage from './pages/FetchPage';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import SplashScreen from './pages/Splashscreen';
 import TitleBar from './components/layouts/main/TitleBar';
 import Login from './pages/Login';
 import NoAccess from './pages/NoAccess';
+import Img from 'react-cool-img';
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 
@@ -31,6 +35,9 @@ document.onkeydown = (e) => {
 }
 
 document.oncontextmenu = (_e) => false;
+
+const params = useParams();
+const navigate = useNavigate();
 
 root.render(
     <div className="w-screen bg-gray-900">
@@ -46,15 +53,15 @@ root.render(
 
                         <Route path="app" element={<FetchPage />} />
 
-                        <Route path="channels" element={<GuildSidebar />} >
-                            <Route path="@me" element={<FriendSidebar />} >
+                        <Route path="channels" element={<GuildSidebar children={<Outlet />} Image={Img} navigate={navigate} params={params} />} >
+                            <Route path="@me" element={<FriendSidebar children={<Outlet />} Image={Img} navigate={navigate} params={params} />} >
                                 <Route index element={<HomePage />} />
-                                <Route path=":channelId" element={<Channel dm={true} />} />
+                                <Route path=":channelId" element={<Channel Image={Img} navigate={navigate} params={params} dm={true} />} />
                             </Route>
-                            
+
                             <Route path=":guildId">
-                                <Route path=":channelId" element={<ChannelSidebar />} >
-                                    <Route index element={<Channel />} />
+                                <Route path=":channelId" element={<ChannelSidebar children={<Outlet />} Image={Img} navigate={navigate} params={params} />} >
+                                    <Route index element={<Channel Image={Img} navigate={navigate} params={params} />} />
                                 </Route>
                             </Route>
                         </Route>
@@ -63,5 +70,5 @@ root.render(
             </BrowserRouter>
         </QueryClientProvider>
     </div>
-    
+
 )
