@@ -20,7 +20,7 @@ function MyApp({ Component, pageProps }: AppPropsWithLayout) {
     const navigate = (url: string) => router.push(url);
 
     const getLayout = Component.getLayout ?? ((page) => page);
-    const getSidebar = Component.app ? <GuildSidebar web={true} navigate={navigate} params={router.query} Image={Image} children={getLayout(<Component {...pageProps} />)} /> : getLayout(<Component {...pageProps} />);
+    const getSidebar = Component.app ? <GuildSidebar web={true} navigate={navigate} params={router.query} Image={Image}>{getLayout(<Component {...pageProps} />)}</GuildSidebar> : getLayout(<Component {...pageProps} />);
 
     return (
         <QueryClientProvider client={queryClient}>

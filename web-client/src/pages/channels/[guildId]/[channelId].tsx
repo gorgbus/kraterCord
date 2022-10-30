@@ -3,7 +3,7 @@ import { NextPageWithLayout } from "../../../utils/types";
 import ChannelSidebar from "@kratercord/common/components/layouts/channel/ChannelSidebar";
 import Image from "next/future/image";
 import ChannelComponent from "@kratercord/common/components/Channel";
-import { ReactElement } from "react";
+import { FC, ReactElement } from "react";
 
 const Channel: NextPageWithLayout<any> = () => {
     const router = useRouter();
@@ -12,11 +12,15 @@ const Channel: NextPageWithLayout<any> = () => {
     return <ChannelComponent params={router.query} navigate={navigate} Image={Image} />
 }
 
-Channel.getLayout = (page: ReactElement) => {
+const LayoutWrapper: FC<{ page: ReactElement }> = ({ page }) => {
     const router = useRouter();
     const navigate = (url: string) => router.push(url);
 
-    return <ChannelSidebar children={page} Image={Image} navigate={navigate} params={router.query} />
+    return <ChannelSidebar Image={Image} navigate={navigate} params={router.query}>{page}</ChannelSidebar>
+}
+
+Channel.getLayout = (page: ReactElement) => {
+    return <LayoutWrapper page={page} />
 }
 
 Channel.app = true;

@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { ReactElement } from "react";
+import { FC, ReactElement } from "react";
 import FriendSidebar from "@kratercord/common/components/layouts/home/FriendSidebar";
 import { NextPageWithLayout } from "../../../utils/types";
 import ChannelComponent from '@kratercord/common/components/Channel';
@@ -12,11 +12,15 @@ const Channel: NextPageWithLayout<any> = () => {
     return <ChannelComponent params={router.query} Image={Image} navigate={navigate} dm={true} />
 }
 
-Channel.getLayout = (page: ReactElement) => {
+const LayoutWrapper: FC<{ page: ReactElement }> = ({ page }) => {
     const router = useRouter();
     const navigate = (url: string) => router.push(url);
 
-    return <FriendSidebar params={router.query} Image={Image} navigate={navigate} children={page} />
+    return <FriendSidebar params={router.query} Image={Image} navigate={navigate}>{page}</FriendSidebar>
+}
+
+Channel.getLayout = (page: ReactElement) => {
+    return <LayoutWrapper page={page} />
 }
 
 Channel.app = true;

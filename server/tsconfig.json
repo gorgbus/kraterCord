@@ -8,7 +8,6 @@
     "rootDir": "./src",
     "isolatedModules": true,
     "esModuleInterop": true,
-    "composite": true
   },
   "exclude": [
     "node_modules"

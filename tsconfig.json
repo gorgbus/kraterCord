@@ -10,10 +10,6 @@
     "skipLibCheck": true,
   },
   "references": [
-    { "path": "server" },
-    { "path": "voice-server" },
     { "path": "common" },
-    { "path": "web-client" },
-    { "path": "desktop-client" }
   ]
 }

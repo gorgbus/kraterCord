@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macOs-latest]
+        os: [windows-latest, ubuntu-latest]
 
     env:
       RUST_VERSION: 1.62.1
@@ -23,6 +23,7 @@ jobs:
       VOICE_URL: ${{ secrets.VOICE_URL }}
       DISCORD_APP_ID: ${{ secrets.DISCORD_APP_ID }}
       TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+      TAURI_KEY_PASSWORD:
 
     steps:
       - name: Clone repository
@@ -70,13 +71,11 @@ jobs:
           yarn tauri build
 
       - name: Release App
-        uses: softprops/action-gh-release@master
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: "kratercord release"
-          draft: true
           files: |
-            desktop-client/src-tauri/target/release/bundle/dmg/kratercord.dmg
-            desktop-client/src-tauri/target/release/bundle/deb/kratercord.deb
-            desktop-client/src-tauri/target/release/bundle/msi/kratercord.msi
+            desktop-client/src-tauri/target/release/bundle/appimage/kratercord_*.AppImage.*
+            desktop-client/src-tauri/target/release/bundle/msi/*

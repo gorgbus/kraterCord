@@ -1,4 +1,4 @@
-import { ReactElement } from "react";
+import { FC, ReactElement } from "react";
 import FriendContent from "@kratercord/common/components/home/FriendContent";
 import FriendSidebar from "@kratercord/common/components/layouts/home/FriendSidebar";
 import { NextPageWithLayout } from "../../../utils/types";
@@ -16,11 +16,15 @@ const HomePage: NextPageWithLayout<any> = () => {
     )
 }
 
-HomePage.getLayout = (page: ReactElement) => {
+const LayoutWrapper: FC<{ page: ReactElement }> = ({ page }) => {
     const router = useRouter();
     const navigate = (url: string) => router.push(url);
 
-    return <FriendSidebar params={router.query} Image={Image} navigate={navigate} children={page} />
+    return <FriendSidebar params={router.query} Image={Image} navigate={navigate}>{page}</FriendSidebar>
+}
+
+HomePage.getLayout = (page: ReactElement) => {
+    return <LayoutWrapper page={page} />
 }
 
 HomePage.app = true;

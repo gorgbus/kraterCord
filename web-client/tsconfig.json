@@ -18,7 +18,6 @@
     "noEmit": false,
     "jsx": "preserve",
     "incremental": true,
-    "composite": true
   },
   "include": [
     "next-env.d.ts",
