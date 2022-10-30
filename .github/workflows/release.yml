@@ -2,17 +2,19 @@ name: Build
 
 on:
   push:
-    branches: [ release ]
+    branches:
+      - release
     paths:
       - "common/**"
       - "desktop-client/**"
-      - ".github/workflow/build.yml"
+      - ".github/workflow/release.yml"
   pull_request:
-    branches: [ release ]
+    branches: 
+      - release
     paths:
       - "common/**"
       - "desktop-client/**"
-      - ".github/workflow/build.yml"
+      - ".github/workflow/release.yml"
 
 jobs:
   build:
