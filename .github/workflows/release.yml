@@ -46,7 +46,8 @@ jobs:
       - name: Build application
         working-directory: ./desktop-client
         run: |
-          yarn
+          yarn workspace @kratercord/common install
+          yarn workspace @kratercord/desktop-client install
           yarn tauri build
 
       - name: Release App
