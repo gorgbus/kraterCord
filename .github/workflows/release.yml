@@ -21,6 +21,7 @@ jobs:
       RUST_BACKTRACE: full
       API_URL: ${{ secrets.API_URL }}
       VOICE_URL: ${{ secrets.VOICE_URL }}
+      DISCORD_APP_ID: ${{ secrets.DISCORD_APP_ID }}
       TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
 
     steps:
