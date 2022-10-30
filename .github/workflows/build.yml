@@ -4,13 +4,15 @@ on:
   push:
     branches: [ release ]
     paths:
-      - "./common/**"
-      - "./desktop-client/**"
+      - "common/**"
+      - "desktop-client/**"
+      - ".github/workflow/build.yml"
   pull_request:
     branches: [ release ]
     paths:
-      - "./common/**"
-      - "./desktop-client/**"
+      - "common/**"
+      - "desktop-client/**"
+      - ".github/workflow/build.yml"
 
 jobs:
   build:
