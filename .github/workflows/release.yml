@@ -46,7 +46,6 @@ jobs:
       - name: Build application
         working-directory: ./desktop-client
         run: |
-          cargo install tauri-bundler
           yarn
           yarn tauri build
 
