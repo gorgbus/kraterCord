@@ -11,7 +11,7 @@ interface ISocket extends Socket {
 const sockets = new Map<string, string[]>();
 const guildSockets = new Map<string, string[]>();
 
-const socketIo = async (io: Server) => {
+const socketIo = async (io: Server, serverIo: Server) => {
     io.on("connection", (s: ISocket) => {
         if (!s.handshake.headers.cookie) return s.disconnect(true);
 
@@ -265,6 +265,36 @@ const socketIo = async (io: Server) => {
             }
 
             console.log(`[${new Date(Date.now()).toLocaleTimeString()}] user: \x1b[33m${s.user}\x1b[0m with socket: \x1b[31m${s.id}\x1b[0m has disconnected`);
+        });
+    });
+
+    serverIo.on("connection", (s) => {
+        s.on("user_left", async (userId: string, channelId: string) => {
+            try {
+                const members = await prisma.channel.findUnique({
+                    where: {
+                        id: channelId
+                    },
+                    select: {
+                        members: true
+                    }
+                });
+
+                if (!members) return;
+
+                await prisma.channel.update({
+                    where: {
+                        id: channelId
+                    },
+                    data: {
+                        members: {
+                            set: members.members.filter(member => member.userId === userId)
+                        }
+                    }
+                });
+            } catch (err) {
+                console.error(err);
+            }
         });
     });
 }

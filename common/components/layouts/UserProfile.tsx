@@ -38,7 +38,7 @@ const UserProfile: FC<BaseProps> = ({ Image, navigate, params }) => {
     const queryClient = useQueryClient();
 
     const channels = queryClient.getQueryData<Channel[]>(["channels", guild]);
-    const { leaveChannelUser } = useChannel();
+    const { leaveChannelMember } = useChannel();
     const { disconnectSocket } = useVoiceChannel();
 
     const voiceChannel = channels?.find(c => c.id === voice);
@@ -112,7 +112,7 @@ const UserProfile: FC<BaseProps> = ({ Image, navigate, params }) => {
         setVoiceGuild('none');
         setTalkingUsers([]);
 
-        leaveChannelUser({
+        leaveChannelMember({
             guildId: voiceGuild?.id!,
             channelId: voice,
             memberId: member?.id!

@@ -3,6 +3,10 @@ import { createRouter } from "./util/worker";
 import { Producer, WebRtcTransport, Consumer } from "mediasoup/node/lib/types";
 import { createWebRtcTrans } from "./util/createWebrtcTrans";
 import { transports, producer, consumer, rooms, peers } from "./util/types";
+import { io } from "socket.io-client";
+import { config } from "dotenv";
+
+config();
 
 let rooms: rooms = {};
 let peers: peers = {};
@@ -16,6 +20,12 @@ export const sockets = async (s: Socket) => {
 
     s.on('disconnect', () => {
         console.log(`Socket ${s.id} has disconnected`);
+
+        const mainServer = io(process.env.SERVER_URL!);
+
+        mainServer.emit("user_left", (peers[s.id].user, peers[s.id].channel));
+
+        mainServer.disconnect();
 
         consumers = removeItems(consumers, s.id, "consumer");
         producers = removeItems(producers, s.id, "producer");
@@ -31,6 +41,7 @@ export const sockets = async (s: Socket) => {
                 peers: rooms[channel].peers.filter(peer => peer !== s.id),
             }
         }
+
     });
 
     s.on("setup", async (user, channel, callback) => {
