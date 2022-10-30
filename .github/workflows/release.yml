@@ -39,11 +39,11 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: install webkit2gtk
-        if: matrix.os == 'ubuntu-latest'
+      - name: install Linux dependencies
+        if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y webkit2gtk-4.0
+          sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libayatana-appindicator3-dev librsvg2-dev patchelf
 
       - name: Edit package.json
         uses: RadovanPelka/github-action-json@main
