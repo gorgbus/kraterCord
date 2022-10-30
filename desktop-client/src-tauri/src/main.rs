@@ -3,10 +3,6 @@
   windows_subsystem = "windows"
 )]
 
-extern crate dotenv;
-
-use dotenv::dotenv;
-use std::env;
 use tauri::{CustomMenuItem, SystemTray, SystemTrayMenu, SystemTrayEvent};
 use tauri::Manager;
 use discord_rich_presence::{activity::{Activity, Assets, Button, Timestamps}, DiscordIpcClient, DiscordIpc};
@@ -23,18 +19,16 @@ async fn close_splashscreen(window: tauri::Window) {
 
 #[tauri::command]
 fn get_api_url() -> String {
-  env::var("API_URL").expect("API URL must be set")
+  env!("API_URL").to_string()
 }
 
 #[tauri::command]
 fn get_voice_url() -> String {
-  env::var("VOICE_URL").expect("VOICE URL must be set")
+  env!("VOICE_URL").to_string()
 }
 
 fn main() -> Result<(), Box<(dyn std::error::Error)>> {
-  dotenv().ok();
-
-  let client_id = env::var("DISCORD_APP_ID").expect("APP ID must be set");
+  let client_id = env!("DISCORD_APP_ID").to_string();
 
   let mut client = DiscordIpcClient::new(&client_id)?;
   client.connect()?;
@@ -90,7 +84,7 @@ fn main() -> Result<(), Box<(dyn std::error::Error)>> {
       }
       _ => {}
     })
-    .invoke_handler(tauri::generate_handler![get_api_url, close_splashscreen])
+    .invoke_handler(tauri::generate_handler![get_api_url, close_splashscreen, get_voice_url])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 

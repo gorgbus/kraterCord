@@ -25,6 +25,7 @@ import Img from 'react-cool-img';
 import { FC } from 'react';
 import { setApiUrl } from '@kratercord/common/api';
 import { invoke } from '@tauri-apps/api';
+import { useSettings } from '@kratercord/common/store/settings';
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 
@@ -77,7 +78,10 @@ const HomePageWrapper: FC = () => {
     )
 }
 
+const setVoiceSocketURL = useSettings.getState().setVoiceSocketURL;
+
 invoke("get_api_url").then(url => setApiUrl(url as string));
+invoke("get_voice_url").then(url => setVoiceSocketURL(url as string));
 
 root.render(
     <div className="w-screen h-screen bg-gray-900">

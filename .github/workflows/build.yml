@@ -1,0 +1,70 @@
+name: Build
+
+on:
+  push:
+    branches: [ release ]
+    paths:
+      - "./common/**"
+      - "./desktop-client/**"
+  pull_request:
+    branches: [ release ]
+    paths:
+      - "./common/**"
+      - "./desktop-client/**"
+
+jobs:
+  build:
+    name: ${{ matrix.kind }} ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macOs-latest]
+
+    env:
+      RUST_VERSION: 1.62.1
+      NODE_VERSION: 16
+      GH_ACTIONS: true
+      RUST_BACKTRACE: full
+      API_URL: ${{ secrets.API_URL }}
+      VOICE_URL: ${{ secrets.VOICE_URL }}
+      TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+
+      - name: Install rust
+        uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: ${{ env.RUST_VERSION }}
+
+      - name: setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: install webkit2gtk
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y webkit2gtk-4.0
+
+      - name: Build application
+        working-directory: ./desktop-client
+        run: |
+          cargo install tauri-bundler
+          yarn
+          yarn tauri build
+
+      - name: Release App
+        uses: softprops/action-gh-release@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "kratercord release"
+          draft: true
+          files: |
+            desktop-client/src-tauri/target/release/bundle/dmg/kratercord.dmg
+            desktop-client/src-tauri/target/release/bundle/deb/kratercord.deb
+            desktop-client/src-tauri/target/release/bundle/msi/kratercord.msi

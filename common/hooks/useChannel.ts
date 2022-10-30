@@ -1,9 +1,12 @@
 import { useMutation, useQueryClient } from "react-query";
 import { createMessage, joinChannel, leaveChannel } from "../api";
+import { useUserStore } from "../store/user";
 import { Channel, Member, Message } from "../types";
 
 const useChannel = () => {
     const queryClient = useQueryClient();
+
+    const updateMember = useUserStore(state => state.updateMember);
 
     const addMessage = (message: Message, cache?: { pages: { messages: Message[]; nextId: string }[]; pageParams: [] }) => {
         if (cache && message) {
@@ -110,7 +113,7 @@ const useChannel = () => {
 
             if (!cache) return;
 
-            const newCache = cache;
+            const newCache = [...cache];
 
             const index = newCache.findIndex(chnl => chnl.id === channelData.channelId);
 
@@ -138,13 +141,15 @@ const useChannel = () => {
 
             if (!cache) return;
 
-            const newCache = cache;
+            const newCache = [...cache];
 
             const index = newCache.findIndex(chnl => chnl.id === channel.channelId);
 
             if (index === -1) return;
 
             newCache[index].members = [...newCache[index].members, channel?.member!];
+
+            updateMember(channel.member?.id!, { channels: [newCache[index]] });            
 
             queryClient.setQueryData(["channels", channel.guildId], newCache);
 
@@ -166,13 +171,15 @@ const useChannel = () => {
 
             if (!cache) return;
 
-            const newCache = cache;
+            const newCache = [...cache];
 
             const index = newCache.findIndex(c => c.id === channelData.channelId);
 
             if (index === -1) return;
 
             newCache[index].members = newCache[index].members.filter(u => u.id !== channelData.memberId);
+
+            updateMember(channelData.memberId, { channels: [] });
 
             queryClient.setQueryData(["channels", channelData.guildId], newCache);
 
@@ -200,7 +207,7 @@ const useChannel = () => {
 
             if (!cache) return;
 
-            const newCache = cache;
+            const newCache = [...cache];
 
             const index = newCache.findIndex(c => c.id === channelData.channelId);
 

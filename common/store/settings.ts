@@ -17,6 +17,8 @@ type State = {
     voiceChannel: string;
     voiceGuild: string;
     web: boolean;
+    voiceSocketURL: string;
+    setVoiceSocketURL: (url: string) => void;
     setWeb: (web: boolean) => void;
     setTrack: (track: MediaStreamTrack) => void;
     setVoiceStatus: (status: string) => void;
@@ -60,6 +62,8 @@ export const useSettings = create<State>((set, get) => ({
     voiceChannel: 'none',
     voiceGuild: 'none',
     web: false,
+    voiceSocketURL: '',
+    setVoiceSocketURL: (url: string) => set({ voiceSocketURL: url }),
     setWeb: (web: boolean) => set({ web }),
     setTrack: (track: MediaStreamTrack) => set({ track }),
     setVoiceStatus: (status) => set({ voiceStatus: status }),

@@ -30,6 +30,16 @@ const useVoiceChannel = () => {
     const removeConsumer = useSettings(state => state.removeConsumer);
     const addTalkingUser = useSettings(state => state.addTalkingUser);
     const removeTalkingUser = useSettings(state => state.removeTalkingUser);
+    const voiceSocketURL = useSettings(state => state.voiceSocketURL);
+    const members = useUserStore(state => state.user.members);
+
+    const canJoinChannel = () => {
+        for (const member of members) {
+            if (member.channels.length > 0) return false;
+        }
+
+        return true;
+    }
 
     const disconnectSocket = () => {
         voiceSocket()?.disconnect();
@@ -37,7 +47,7 @@ const useVoiceChannel = () => {
     }
 
     const connectToChannel = (id: string) => {
-        const voiceSocket = io(process.env.NEXT_PUBLIC_VOICE_URL!);
+        const voiceSocket = io(voiceSocketURL);
 
         setVoiceSocket(voiceSocket);
 
@@ -244,7 +254,7 @@ const useVoiceChannel = () => {
         return interval;
     }
 
-    return { disconnectSocket, connectToChannel, loadDevice, createConsumer }
+    return { disconnectSocket, connectToChannel, loadDevice, createConsumer, canJoinChannel }
 }
 
 export default useVoiceChannel;

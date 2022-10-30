@@ -9,7 +9,7 @@ import { useSettings } from "@kratercord/common/store/settings";
 import { useQuery } from "react-query";
 import { fetchChannels, getGuildInvite, createMessage, createChannel } from "@kratercord/common/api";
 import Modal from '../../Modal';
-import { BaseProps, Member, Optional } from "@kratercord/common/types";
+import { BaseProps, Optional } from "@kratercord/common/types";
 import { useChannel, useVoiceChannel } from "@kratercord/common/hooks";
 import MemberSidebar from "./MemberSidebar";
 
@@ -40,11 +40,9 @@ const ChannelSidebar: FC<Props> = ({ children, Image, params, navigate }) => {
     const { data, isLoading, isError, isSuccess } = useQuery(['channels', guildId], () => fetchChannels(guildId as string));
 
     const { joinChannelUser } = useChannel();
-    const { connectToChannel } = useVoiceChannel();
+    const { connectToChannel, canJoinChannel } = useVoiceChannel();
 
-    const join = (id: string, user?: Member) => {
-        if (id === voice || user) return;
-
+    const join = (id: string) => {
         setVoice(id);
         setVoiceGuild(guildId as string);
 
@@ -110,20 +108,18 @@ const ChannelSidebar: FC<Props> = ({ children, Image, params, navigate }) => {
                         {
                             isSuccess && data &&
                             data.filter(ch => ch.guildId === guildId && ch.type === 'VOICE').map((ch) => {
-                                const user = ch.members?.find(user => user.id === member?.id);
-                                const channelIndex = data.findIndex(c => c.id === ch.id);
-                                const channelMembers = data[channelIndex].members
+                                const canJoin = canJoinChannel();
 
                                 return (
                                     <div key={ch.id} className="flex flex-col">
-                                        <div onClick={() => join(ch.id, user)} key={ch.id} className={`${voice === ch.id || user ? 'cursor-not-allowed' : 'cursor-pointer'} relative item ml-1 text-gray-300 hover:text-gray-100`} >
+                                        <div onClick={() => canJoin && join(ch.id)} key={ch.id} className={`${voice === ch.id || !canJoin ? 'cursor-not-allowed' : 'cursor-pointer'} relative item ml-1 text-gray-300 hover:text-gray-100`} >
                                             <VoiceChannelIcon size='20' color="text-gray-300" />
                                             <span className="ml-2">{ch.name}</span>
                                         </div>
 
                                         <ul>
                                             {
-                                                channelMembers?.map((u) => {
+                                                ch.members.map((u) => {
                                                     const talking = talkingUsers.find(id => id === u.id);
 
                                                     return (

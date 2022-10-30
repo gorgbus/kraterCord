@@ -6,10 +6,14 @@ import Head from 'next/head';
 import Image from 'next/future/image';
 import { useRouter } from 'next/router';
 import { setApiUrl } from '@kratercord/common/api';
+import { useSettings } from '@kratercord/common/store/settings';
 
 export const queryClient = new QueryClient();
 
+const setVoiceSocketURL = useSettings.getState().setVoiceSocketURL;
+
 setApiUrl(process.env.NEXT_PUBLIC_API_URL!);
+setVoiceSocketURL(process.env.NEXT_PUBLIC_VOICE_URL!);
 
 function MyApp({ Component, pageProps }: AppPropsWithLayout) {
     const router = useRouter();
