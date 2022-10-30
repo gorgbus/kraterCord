@@ -43,11 +43,29 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y webkit2gtk-4.0
 
+      - name: Edit package.json
+        uses: RadovanPelka/github-action-json@main
+        with:
+          path: "package.json"
+          replaceWith: |
+            {
+              "name": "kratercord",
+              "version": "0.1.0",
+              "main": "index.js",
+              "repository": "https://github.com/gorgbus/kraterCord.git",
+              "author": "gorgbus",
+              "license": "MIT",
+              "private": true,
+              "workspaces": [
+                "desktop-client",
+                "common"
+              ]
+            }
+
       - name: Build application
         working-directory: ./desktop-client
         run: |
-          yarn workspace @kratercord/common install
-          yarn workspace @kratercord/desktop-client install
+          yarn 
           yarn tauri build
 
       - name: Release App
