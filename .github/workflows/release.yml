@@ -64,6 +64,12 @@ jobs:
               ]
             }
 
+      - name: Get app version
+        id: app_version
+        uses: RadovanPelka/github-action-json@main
+        with:
+          path: "desktop-client/src-tauri/tauri.conf.json" 
+
       - name: Build application
         working-directory: ./desktop-client
         run: |
@@ -75,7 +81,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "kratercord release"
+          tag_name: "v${{ steps.app_version.outputs.package.version }}"
           files: |
             desktop-client/src-tauri/target/release/bundle/appimage/kratercord_*.AppImage.*
             desktop-client/src-tauri/target/release/bundle/msi/*
