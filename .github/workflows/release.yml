@@ -4,17 +4,6 @@ on:
   push:
     branches:
       - release
-    paths:
-      - "common/**"
-      - "desktop-client/**"
-      - ".github/workflow/release.yml"
-  pull_request:
-    branches: 
-      - release
-    paths:
-      - "common/**"
-      - "desktop-client/**"
-      - ".github/workflow/release.yml"
 
 jobs:
   build:
