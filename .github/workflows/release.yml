@@ -119,7 +119,7 @@ jobs:
       - name: Edit meta.json win download
         if: matrix.os == 'windows-latest'
         uses: gorgbus/edit-json-string@main
-        id: new_gist
+        id: new_gist_win
         with:
           json_string: ${{ steps.new_gist_ver.outputs.content }}
           field: "platforms.windows-x86_64.url"
@@ -130,14 +130,14 @@ jobs:
         uses: gorgbus/edit-json-string@main
         id: new_gist_sig_win
         with:
-          json_string: ${{ steps.new_gist.outputs.content }}
+          json_string: ${{ steps.new_gist_win.outputs.content }}
           field: "platforms.windows-x86_64.signature"
           value: ${{ steps.win_sig.outputs.content }}
 
       - name: Edit meta.json linux download
         if: matrix.os == 'ubuntu-latest'
         uses: gorgbus/edit-json-string@main
-        id: new_gist
+        id: new_gist_linux
         with:
           json_string: ${{ steps.new_gist_ver.outputs.content }}
           field: "platforms.linux-x86_64.url"
@@ -148,7 +148,7 @@ jobs:
         uses: gorgbus/edit-json-string@main
         id: new_gist_sig_linux
         with:
-          json_string: ${{ steps.new_gist.outputs.content }}
+          json_string: ${{ steps.new_gist_linux.outputs.content }}
           field: "platforms.linux-x86_64.signature"
           value: ${{ steps.linux_sig.outputs.content }}
 
