@@ -117,7 +117,7 @@ jobs:
           value: ${{ fromJson(steps.app_version.outputs.content).package.version }}
 
       - name: Edit meta.json win download
-        if: matrix.os == "windows-latest"
+        if: matrix.os == 'windows-latest'
         uses: gorgbus/edit-json-string@main
         id: new_gist
         with:
@@ -126,7 +126,7 @@ jobs:
           value: "https://github.com/gorgbus/kratercord/releases/download/v${{ fromJson(steps.app_version.outputs.content).package.version }}/kratercord_${{ fromJson(steps.app_version.outputs.content).package.version }}_x64_en-US.msi.zip"
       
       - name: Edit meta.json win sig
-        if: matrix.os == "windows-latest"
+        if: matrix.os == 'windows-latest'
         uses: gorgbus/edit-json-string@main
         id: new_gist_sig
         with:
@@ -135,7 +135,7 @@ jobs:
           value: ${{ steps.win_sig.outputs.content }}
 
       - name: Edit meta.json linux download
-        if: matrix.os == "ubuntu-latest"
+        if: matrix.os == 'ubuntu-latest'
         uses: gorgbus/edit-json-string@main
         id: new_gist
         with:
@@ -144,7 +144,7 @@ jobs:
           value: "https://github.com/gorgbus/kratercord/releases/download/v${{ fromJson(steps.app_version.outputs.content).package.version }}/kratercord_${{ fromJson(steps.app_version.outputs.content).package.version }}_amd64.AppImage.tar.gz"
 
       - name: Edit meta.json linux sig
-        if: matrix.os == "ubuntu-latest"
+        if: matrix.os == 'ubuntu-latest'
         uses: gorgbus/edit-json-string@main
         id: new_gist_sig
         with:
