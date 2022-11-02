@@ -81,9 +81,88 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "v${{ fromJson(steps.app_version.outputs).package.version }}"
+          tag_name: "v${{ fromJson(steps.app_version.outputs.content).package.version }}"
           files: |
-            desktop-client/src-tauri/target/release/bundle/deb/*
-            desktop-client/src-tauri/target/release/bundle/appimage/*
+            desktop-client/src-tauri/target/release/bundle/appimage/kratercord_*.AppImage.tar.gz
+            desktop-client/src-tauri/target/release/bundle/appimage/kratercord_*.AppImage
             desktop-client/src-tauri/target/release/bundle/msi/*
       
+      - name: Get linux .sig file
+        if: matrix.os == 'ubuntu-latest'
+        uses: juliangruber/read-file-action@v1.1.6
+        id: linux_sig
+        with:
+          path: "desktop-client/src-tauri/target/release/bundle/appimage/kratercord_*.AppImage.tar.gz.sig"
+
+      - name: Get windows .sig file
+        if: matrix.os == 'windows-latest'
+        uses: juliangruber/read-file-action@v1.1.6
+        id: win_sig
+        with:
+          path: "desktop-client/src-tauri/target/release/bundle/msi/kratercord_*.msi.zip.sig"
+
+      - name: Get meta.json from gist
+        uses: gorgbus/read-gist-file@main
+        id: gist_content
+        with:
+          gist_id: "49616bddc8762d6e8a9f43fca5b74c06"
+          file_name: "meta.json"
+
+      - name: Edit meta.json version
+        uses: gorgbus/edit-json-string@main
+        id: new_gist_ver
+        with:
+          json_string: ${{ steps.gist_content.outputs.content }}
+          field: "version"
+          value: ${{ fromJson(steps.app_version.outputs.content).package.version }}
+
+      - name: Edit meta.json win download
+        if: matrix.os == "windows-latest"
+        uses: gorgbus/edit-json-string@main
+        id: new_gist
+        with:
+          json_string: ${{ steps.new_gist_ver.outputs.content }}
+          field: "platforms.windows-x86_64.url"
+          value: "https://github.com/gorgbus/kratercord/releases/download/v${{ fromJson(steps.app_version.outputs.content).package.version }}/kratercord_${{ fromJson(steps.app_version.outputs.content).package.version }}_x64_en-US.msi.zip"
+      
+      - name: Edit meta.json win sig
+        if: matrix.os == "windows-latest"
+        uses: gorgbus/edit-json-string@main
+        id: new_gist_sig
+        with:
+          json_string: ${{ steps.new_gist.outputs.content }}
+          field: "platforms.windows-x86_64.signature"
+          value: ${{ steps.win_sig.outputs.content }}
+
+      - name: Edit meta.json linux download
+        if: matrix.os == "ubuntu-latest"
+        uses: gorgbus/edit-json-string@main
+        id: new_gist
+        with:
+          json_string: ${{ steps.new_gist_ver.outputs.content }}
+          field: "platforms.linux-x86_64.url"
+          value: "https://github.com/gorgbus/kratercord/releases/download/v${{ fromJson(steps.app_version.outputs.content).package.version }}/kratercord_${{ fromJson(steps.app_version.outputs.content).package.version }}_amd64.AppImage.tar.gz"
+
+      - name: Edit meta.json linux sig
+        if: matrix.os == "ubuntu-latest"
+        uses: gorgbus/edit-json-string@main
+        id: new_gist_sig
+        with:
+          json_string: ${{ steps.new_gist.outputs.content }}
+          field: "platforms.linux-x86_64.signature"
+          value: ${{ steps.linux_sig.outputs.content }}
+
+      - name: Create local meta.json
+        uses: jsdaniell/create-json@v1.2.1
+        with:
+          name: "meta.json"
+          json: ${{ steps.new_gist_sig.outputs.content }}
+          dir: "./"
+
+      - name: Update gist
+        uses: exuanbo/actions-deploy-gist@v1.1.4
+        with:
+          token: ${{ secrets.TOKEN }}
+          gist_id: 49616bddc8762d6e8a9f43fca5b74c06
+          gist_file_name: meta.json
+          file_path: "./meta.json"
