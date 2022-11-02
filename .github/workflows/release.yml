@@ -128,7 +128,7 @@ jobs:
       - name: Edit meta.json win sig
         if: matrix.os == 'windows-latest'
         uses: gorgbus/edit-json-string@main
-        id: new_gist_sig
+        id: new_gist_sig_win
         with:
           json_string: ${{ steps.new_gist.outputs.content }}
           field: "platforms.windows-x86_64.signature"
@@ -146,17 +146,26 @@ jobs:
       - name: Edit meta.json linux sig
         if: matrix.os == 'ubuntu-latest'
         uses: gorgbus/edit-json-string@main
-        id: new_gist_sig
+        id: new_gist_sig_linux
         with:
           json_string: ${{ steps.new_gist.outputs.content }}
           field: "platforms.linux-x86_64.signature"
           value: ${{ steps.linux_sig.outputs.content }}
 
-      - name: Create local meta.json
+      - name: Create local meta.json win
+        if: matrix.os == 'windows-latest'
         uses: jsdaniell/create-json@v1.2.1
         with:
           name: "meta.json"
-          json: ${{ steps.new_gist_sig.outputs.content }}
+          json: ${{ steps.new_gist_sig_win.outputs.content }}
+          dir: "./"
+      
+      - name: Create local meta.json linux
+        if: matrix.os == 'ubuntu-latest'
+        uses: jsdaniell/create-json@v1.2.1
+        with:
+          name: "meta.json"
+          json: ${{ steps.new_gist_sig_linux.outputs.content }}
           dir: "./"
 
       - name: Update gist
