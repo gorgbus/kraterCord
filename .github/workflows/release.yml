@@ -83,6 +83,7 @@ jobs:
         with:
           tag_name: "v${{ fromJson(steps.app_version.outputs).package.version }}"
           files: |
-            desktop-client/src-tauri/target/release/bundle/appimage/kratercord_*.AppImage.*
+            desktop-client/src-tauri/target/release/bundle/deb/*
+            desktop-client/src-tauri/target/release/bundle/appimage/*
             desktop-client/src-tauri/target/release/bundle/msi/*
       
