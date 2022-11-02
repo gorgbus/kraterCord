@@ -92,14 +92,14 @@ jobs:
         uses: juliangruber/read-file-action@v1.1.6
         id: linux_sig
         with:
-          path: "desktop-client/src-tauri/target/release/bundle/appimage/kratercord_*.AppImage.tar.gz.sig"
+          path: "desktop-client/src-tauri/target/release/bundle/appimage/kratercord_${{ fromJson(steps.app_version.outputs.content).package.version }}_amd64.AppImage.tar.gz.sig"
 
       - name: Get windows .sig file
         if: matrix.os == 'windows-latest'
         uses: juliangruber/read-file-action@v1.1.6
         id: win_sig
         with:
-          path: "desktop-client/src-tauri/target/release/bundle/msi/kratercord_*.msi.zip.sig"
+          path: "desktop-client/src-tauri/target/release/bundle/msi/kratercord_${{ fromJson(steps.app_version.outputs.content).package.version }}_x64_en-US.msi.zip.sig"
 
       - name: Get meta.json from gist
         uses: gorgbus/read-gist-file@main
