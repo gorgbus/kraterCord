@@ -218,7 +218,12 @@ const InviteModal: FC<Optional<BaseProps, "navigate">> = ({ params, Image }) => 
 
         setSend(prev => [...prev, { friendId, sending: true }]);
 
-        const message = await createMessage({ channelId: dm ? dm.id : newDM?.id!, content: `https://krater-cord.tech/invite/${code}` });
+        const message = await createMessage({
+            channelId: dm ? dm.id : newDM?.id!,
+            content: `https://krater-cord.tech/invite/${code}`,
+            createdAt: new Date(Date.now()),
+            updatedAt: new Date(Date.now())
+        });
 
         if (!message) return;
 
