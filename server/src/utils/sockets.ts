@@ -144,7 +144,7 @@ const socketIo = async (io: Server, serverIo: Server) => {
         });
 
         s.on("create_message", async (data) => {
-            emitToGuild(data.guild, io, 'new_message', data);
+            emitToGuild(data.guildId, io, 'new_message', data);
 
             const online = Array.from(sockets.keys());
 

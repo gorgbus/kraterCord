@@ -98,7 +98,16 @@ export const createGuildController = async (req: Request, res: Response) => {
                     }
                 });
 
-                res.status(200).send({ guild });
+                const member = await prisma.member.findUnique({
+                    where: {
+                        userId_guildId: {
+                            userId,
+                            guildId: guild.id
+                        }
+                    },
+                });
+
+                res.status(200).send({ guild: updatedGuild, member });
             })
 
             blobStream.end(req.file?.buffer);
@@ -157,7 +166,16 @@ export const createGuildController = async (req: Request, res: Response) => {
             }
         });
 
-        return res.status(200).send({ guild: updatedGuild });
+        const member = await prisma.member.findUnique({
+            where: {
+                userId_guildId: {
+                    userId,
+                    guildId: guild.id
+                }
+            },
+        });
+
+        return res.status(200).send({ guild: updatedGuild, member });
     } catch (err) {
         console.error(err);
 
