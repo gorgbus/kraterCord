@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "react-query";
 import { createMessage, joinChannel, leaveChannel } from "../api";
+import { useSocket } from "../store/socket";
 import { useUserStore } from "../store/user";
 import { Channel, Member, Message } from "../types";
 
@@ -7,6 +8,7 @@ const useChannel = () => {
     const queryClient = useQueryClient();
 
     const updateMember = useUserStore(state => state.updateMember);
+    const socket = useSocket(state => state.getSocket);
 
     const addMessage = (message: Message, cache?: { pages: { messages: Message[]; nextId: string }[]; pageParams: [] }) => {
         if (cache && message) {
@@ -47,26 +49,10 @@ const useChannel = () => {
         onMutate: async (msg) => {
             await queryClient.cancelQueries(['channel', msg.channelId]);
 
-            const message = {
-                ...msg,
-                createdAt: new Date(Date.now()),
-                updatedAt: new Date(Date.now()),
-                author: msg.author,
-                member: msg.member
-            }
-
             const cache = queryClient.getQueryData<{ pages: { messages: Message[]; nextId: string }[]; pageParams: [] }>(["channel", msg.channelId]);
-            const newCache = addMessage(message as Message, cache);
-
-            // const socketData = {
-            //     id: msg.channelId,
-            //     msg: message,
-            //     guild: msg.guildId
-            // }
+            const newCache = addMessage(msg as Message, cache);
 
             queryClient.setQueryData(["channel", msg.channelId], newCache);
-
-            // if (dm) socket?.emit('create_message_dm', friend?.id, socketData); else socket?.emit("create_message", socketData);
 
             return {
                 cache,
@@ -75,8 +61,12 @@ const useChannel = () => {
         onError: (_error, data, context: any) => {
             if (context) queryClient.setQueryData(['channel', data.channelId], context.cache);
         },
-        onSettled: (data) => {
-            if (data) queryClient.invalidateQueries(['channel', data.channelId]);
+        onSettled: (data, _err, vars) => {
+            if (data) {
+                queryClient.invalidateQueries(['channel', data.channelId]);
+
+                (vars.dm) ? socket()?.emit("create_message_dm", vars.friendId, data) : socket()?.emit("create_message", data);
+            }
         }
     });
 

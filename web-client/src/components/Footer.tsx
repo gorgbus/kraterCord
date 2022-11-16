@@ -15,7 +15,7 @@ const Footer: FC<{ loggedIn: boolean }> = ({ loggedIn }) => {
     return (
         <div className="w-full h-56">
             <div className="w-full h-[10rem] bg-gray-800 flex items-center flex-col justify-center">
-                <div className="flex items-center justify-between w-2/5 mb-12">
+                <div className="flex items-center justify-between w-[60rem] mb-12">
                     <div onClick={() => router.push("/")} className="flex items-center float-left text-xl font-semibold cursor-pointer drop-shadow-md">
                         <Image className="mr-2 rounded-md shadow-md" width={48} height={48} src="/images/kratercord.png" alt="kratercord-logo" />
 
@@ -41,7 +41,7 @@ const Footer: FC<{ loggedIn: boolean }> = ({ loggedIn }) => {
             </div>
 
             <div className="w-full h-[4rem] bg-gray-900 flex items-center flex-col justify-center">
-                <span className="w-2/5 font-semibold text-gray-100">&copy; 2022 kraterCord</span>
+                <span className="w-[60rem] font-semibold text-gray-100">&copy; 2022 kraterCord</span>
             </div>
         </div>
     )

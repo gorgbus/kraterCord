@@ -76,6 +76,11 @@ jobs:
           yarn 
           yarn tauri build
 
+      - name: wait 2 mins to make sure gist will update properly
+        if: matrix.os == 'windows-latest'
+        run: Start-Sleep -s 120
+        shell: powershell
+
       - name: Release App
         uses: softprops/action-gh-release@v1
         env:
@@ -85,7 +90,8 @@ jobs:
           files: |
             desktop-client/src-tauri/target/release/bundle/appimage/kratercord_*.AppImage.tar.gz
             desktop-client/src-tauri/target/release/bundle/appimage/kratercord_*.AppImage
-            desktop-client/src-tauri/target/release/bundle/msi/*
+            desktop-client/src-tauri/target/release/bundle/msi/kratercord_*.msi
+            desktop-client/src-tauri/target/release/bundle/msi/kratercord_*.msi.zip
       
       - name: Get linux .sig file
         if: matrix.os == 'ubuntu-latest'

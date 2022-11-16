@@ -13,15 +13,15 @@ const Home: NextPage<{ loggedIn: boolean; }> = ({ loggedIn }) => {
                 </video>
             </div>
 
-            <div className="flex flex-col items-center justify-center h-[20rem] ">
-                <div className="w-2/5">
+            <main className="flex flex-col items-center justify-center h-[20rem] ">
+                <div className="w-[60rem]">
                     <h2 className="text-2xl font-bold text-orange-500 uppercase">кратер</h2>
 
                     <p className="max-w-[40ch] text-gray-900 font-semibold text-xl">
                         Они держали в страхе казань 4 года устраивали перестрелки с милиции подкупали местную власть имели своих людей в больницах и военкоматах
                     </p>
                 </div>
-            </div>
+            </main>
 
             <Footer loggedIn={loggedIn} />
         </div>

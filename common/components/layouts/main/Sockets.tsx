@@ -4,7 +4,7 @@ import { useUserStore } from "@kratercord/common/store/user";
 import { useSettings } from "@kratercord/common/store/settings";
 import { createNotfication, deleteNotification } from "@kratercord/common/api";
 import { useChannel, useMember, useUser, useUtil, useVoiceChannel } from "@kratercord/common/hooks";
-import { BaseProps, Optional } from "../../../types";
+import { BaseProps, Message, Optional } from "../../../types";
 
 const Sockets: FC<Optional<Optional<BaseProps, "Image">, "navigate">> = ({ params }) => {
     const { channelId } = params;
@@ -75,9 +75,9 @@ const Sockets: FC<Optional<Optional<BaseProps, "Image">, "navigate">> = ({ param
 
 
     useEffect(() => {
-        socket?.on("new_message", async (data) => {
-            if (channelId !== data.id) {
-                const notification = await createNotfication(data.id, data.guild);
+        socket?.on("new_message", async (message: Message) => {
+            if (channelId !== message.channelId) {
+                const notification = await createNotfication(message.channelId, message.member?.guildId);
 
                 if (!notification) return;
 
@@ -86,7 +86,7 @@ const Sockets: FC<Optional<Optional<BaseProps, "Image">, "navigate">> = ({ param
                 upsertNotification(notification);
             }
 
-            addMessageReceiver(data.msg);
+            addMessageReceiver(message);
         });
 
         socket?.on("update_client", (type: string, updateData) => {

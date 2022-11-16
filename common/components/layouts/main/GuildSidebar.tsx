@@ -143,6 +143,7 @@ const AddGuildModal: FC<ModalProps> = ({ close, set, Image, navigate }) => {
     const userName = useUserStore(state => state.user.username);
     const userId = useUserStore(state => state.user.id);
     const addGuild = useUserStore(state => state.addGuild);
+    const addMember = useUserStore(state => state.addMember);
 
     const [stage, setStage] = useState('main');
     const [invite, setInvite] = useState('');
@@ -175,9 +176,9 @@ const AddGuildModal: FC<ModalProps> = ({ close, set, Image, navigate }) => {
         formData.append('serverName', serverName);
         formData.append('userId', userId);
 
-        const guild = stage === 'create' ? await createGuild(formData) : await joinGuild(invite.replace('https://krater-cord.tech/invite/', ''), userId);
+        const res = stage === 'create' ? await createGuild(formData) : await joinGuild(invite.replace('https://krater-cord.tech/invite/', ''), userId);
 
-        if (!guild) {
+        if (!res) {
             toggleError(true);
             setSaving(false);
             set(false);
@@ -185,7 +186,10 @@ const AddGuildModal: FC<ModalProps> = ({ close, set, Image, navigate }) => {
             return;
         }
 
+        const { guild, member } = res;
+
         addGuild(guild);
+        addMember(member);
         navigate(`/channels/${guild.id}/${guild.redirectId}`);
 
         close();

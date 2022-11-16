@@ -33,6 +33,8 @@ const ChatInput: FC<Optional<Optional<BaseProps, "navigate">, "Image">> = ({ par
         setContent("");
 
         addMessageSender({
+            dm: (dm) ? true : false,
+            friendId: (friend) ? friend.id : undefined,
             guildId: guildId as string | undefined,
             channelId: channelId as string,
             content,
@@ -41,7 +43,9 @@ const ChatInput: FC<Optional<Optional<BaseProps, "navigate">, "Image">> = ({ par
                 username,
                 avatar,
                 id: userId
-            }
+            },
+            createdAt: new Date(Date.now()),
+            updatedAt: new Date(Date.now()),
         })
     }
 

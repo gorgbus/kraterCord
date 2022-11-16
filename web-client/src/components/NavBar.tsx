@@ -13,7 +13,7 @@ const NavBar: FC<{ loggedIn: boolean }> = ({ loggedIn }) => {
     }
 
     return (
-        <div className="fixed z-50 w-2/5 -translate-x-1/2 top-5 left-1/2">
+        <div className="fixed z-50 w-[60rem] -translate-x-1/2 top-5 left-1/2">
             <ul className="font-semibold">
                 <li onClick={() => router.push("/")} className="flex items-center float-left text-xl cursor-pointer drop-shadow-md">
                     <Image className="mr-2 rounded-md shadow-md" width={48} height={48} src="/images/kratercord.png" alt="kratercord-logo" />

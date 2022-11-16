@@ -81,7 +81,7 @@ export const getGuildInvite = async (guild: string) : returnType<string> => {
     }
 }
 
-export const createMessage = async ({ channelId, guildId, content } : { channelId: string; guildId?: string; content: string; member?: Member; author?: { id: string; avatar: string; username: string; } }) : returnType<Message> => {
+export const createMessage = async ({ channelId, guildId, content } : { updatedAt: Date; createdAt: Date; friendId?: string; dm?: boolean; channelId: string; guildId?: string; content: string; member?: Member; author?: { id: string; avatar: string; username: string; } }) : returnType<Message> => {
     try {
         const response = await axios.post(`/channels/${channelId}/message`, {
             guildId,
@@ -196,7 +196,7 @@ export const leaveChannel = async ({ channelId, memberId } : { guildId: string; 
     }
 }
 
-export const createGuild = async (formData: FormData) : returnType<Guild> => {
+export const createGuild = async (formData: FormData) : returnType<{ guild: Guild; member: Member; }> => {
     try {
         const response = await axios.post('/guilds/create', formData);
 
@@ -208,13 +208,13 @@ export const createGuild = async (formData: FormData) : returnType<Guild> => {
     }
 }
 
-export const joinGuild = async (code: string, userId: string) : returnType<Guild> => {
+export const joinGuild = async (code: string, userId: string) : returnType<{ guild: Guild; member: Member; }> => {
     try {
         const response = await axios.post(`/guilds/join/${code}`, {
             userId
         });
 
-        return response.data.guild;
+        return response.data;
     } catch (err) {
         console.error(err);
 
